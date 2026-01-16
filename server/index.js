@@ -1,7 +1,7 @@
 import express from "express";
 import cors from "cors";
 import cookieParser from "cookie-parser";
-import { connectPostgres } from "./config/sequelize.config.js";
+import { connectPostgres, createPersistenceTables } from "./config/sequelize.config.js";
 import { authenticateJWT, configPassport } from "./config/passport.config.js";
 import authorizeRoutes from "./routes/authorize.routes.js";
 import protectedRoutes from "./routes/protected.routes.js";
@@ -15,6 +15,7 @@ const IS_PROD = process.env.NODE_ENV !== "development";
 
 // Configs
 connectPostgres();
+createPersistenceTables();
 configPassport();
 
 // Middlewares
@@ -26,6 +27,12 @@ app.use(cors({
 app.use(express.json());
 app.use(cookieParser());
 app.use(passport.initialize());
+app.use((req, res, next) => {
+  console.log(`📍 ${req.method} ${req.url}`);
+  console.log(`Cookies present:`, req.cookies ? Object.keys(req.cookies) : "None");
+  next();
+});
+
 
 // Testing Routes
 if (!IS_PROD){
