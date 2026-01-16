@@ -1,23 +1,28 @@
-import { Router } from "express";
+import express from "express";
+import { 
+  loadChatThreads, 
+  chatWithModel, 
+  loadChatHistory 
+} from "../controllers/protected.controllers.js";
 
-const router = Router();
+const router = express.Router();
 
-const verifyRoles = (...allowedRoles) => {
-  return (req, res, next) => {
-    const userRoles = req.user?.roles;
-    if (!userRoles?.length) return res.sendStatus(401); // No roles assigned
+/**
+ * @route   GET /api/chat/threads
+ * @desc    Get all existing chat thread IDs and metadata
+ */
+router.get("/threads", loadChatThreads);
 
-    // Check if at least one role is allowed
-    const hasRole = userRoles.some(role => allowedRoles.includes(role));
-    if (!hasRole) return res.sendStatus(403); // Forbidden
+/**
+ * @route   GET /api/chat/:threadId
+ * @desc    Retrieve full message history for a specific thread
+ */
+router.get("/:threadId", loadChatHistory);
 
-    next();
-  };
-};
-
-router.get("/blogs", verifyRoles("user", "admin", "moderator"), (req, res) => res.sendStatus(200));
-router.get("/lounge", verifyRoles("admin", "moderator"), (req, res) => res.sendStatus(200));
-router.get("/admin", verifyRoles("admin"), (req, res) => res.sendStatus(200));
-router.get("/moderator", verifyRoles("moderator"), (req, res) => res.sendStatus(200));
+/**
+ * @route   POST /api/chat/message
+ * @desc    Send a message to the AI model within a specific thread
+ */
+router.post("/message", chatWithModel);
 
 export default router;
