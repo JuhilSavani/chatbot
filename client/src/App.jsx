@@ -10,6 +10,7 @@ import Login from "./pages/Login";
 import Register from "./pages/Register";
 import UnAuth from "./pages/UnAuth"
 import NotFound from "./pages/NotFound";
+import ChatWindow from "./pages/ChatWindow";
 import AuthProvider from "./utils/contexts/AuthProvider";
 import { useAuth } from "./utils/hooks/useAuth";
 
@@ -34,59 +35,63 @@ function Protected({ children, allowedRoles }) {
 
 const router = createBrowserRouter(
   createRoutesFromElements(
-    <Route path="/" element={<MainLayout />}>
-      {/* public route */}
-      <Route index element={<Home />} />
+    <>
+      <Route path="/" element={<MainLayout />}>
+        {/* public route */}
+        <Route index element={<Home />} />
 
-      {/* auth routes */}
-      <Route path="login" element={<Login />} />
-      <Route path="register" element={<Register />} />
+        {/* auth routes */}
+        <Route path="login" element={<Login />} />
+        <Route path="register" element={<Register />} />
 
-      {/* protected routes */}
-      <Route
-        path="profile"
-        element={
-          <Protected allowedRoles={["user", "admin", "moderator"]}>
-            <Profile />
-          </Protected>
-        }
-      />
-      <Route
-        path="blogs"
-        element={
-          <Protected allowedRoles={["user", "admin", "moderator"]}>
-            <Blogs />
-          </Protected>
-        }
-      />
-      <Route
-        path="admin"
-        element={
-          <Protected allowedRoles={["admin"]}>
-            <Admin />
-          </Protected>
-        }
-      />
-      <Route
-        path="moderator"
-        element={
-          <Protected allowedRoles={["moderator"]}>
-            <Moderator />
-          </Protected>
-        }
-      />
-      <Route
-        path="lounge"
-        element={
-          <Protected allowedRoles={["admin", "moderator"]}>
-            <Lounge />
-          </Protected>
-        }
-      />
-      {/* error routes*/}
-      <Route path="/401" element={<UnAuth />} />
-      <Route path="*" element={<NotFound />} />
-    </Route>
+        {/* protected routes */}
+        <Route
+          path="profile"
+          element={
+            <Protected allowedRoles={["user", "admin", "moderator"]}>
+              <Profile />
+            </Protected>
+          }
+        />
+        <Route
+          path="blogs"
+          element={
+            <Protected allowedRoles={["user", "admin", "moderator"]}>
+              <Blogs />
+            </Protected>
+          }
+        />
+        <Route
+          path="admin"
+          element={
+            <Protected allowedRoles={["admin"]}>
+              <Admin />
+            </Protected>
+          }
+        />
+        <Route
+          path="moderator"
+          element={
+            <Protected allowedRoles={["moderator"]}>
+              <Moderator />
+            </Protected>
+          }
+        />
+        <Route
+          path="lounge"
+          element={
+            <Protected allowedRoles={["admin", "moderator"]}>
+              <Lounge />
+            </Protected>
+          }
+        />
+        {/* error routes*/}
+        <Route path="/401" element={<UnAuth />} />
+        <Route path="*" element={<NotFound />} />
+      </Route>
+      
+      <Route path="/chat" element={<ChatWindow />} />
+    </>
   )
 );
 
