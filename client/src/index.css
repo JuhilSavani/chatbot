@@ -1,27 +1,41 @@
 @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,100..800;1,100..800&display=swap');
+@import "tailwindcss";
 
-*, *::before, *::after{
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-}
+@layer base {
+  :root {
+    @apply font-mono font-normal leading-relaxed antialiased;
+    font-family: "JetBrains Mono", monospace;
+    font-optical-sizing: auto;
+    font-style: normal;
+    text-rendering: optimizeLegibility;
+    -moz-osx-font-smoothing: grayscale;
+    font-synthesis: none;
+  }
 
-body{
-  font-family: "JetBrains Mono", monospace;
-  font-optical-sizing: auto;
-  font-style: normal;
-  background-color: #FBD288;
-}
+  *, *::before, *::after {
+    @apply m-0 p-0 box-border;
+  }
 
-a{
-  text-decoration: none;
-  &:hover{
-    text-decoration: underline;
+  h1 {
+    @apply text-4xl font-bold mb-4; 
+  }
+
+  a {
+    @apply transition-all text-blue-800;
+    text-decoration: none;
+  }
+
+  a:hover {
+    @apply underline decoration-blue-800;
+  }
+
+  ul {
+    @apply list-none;
   }
 }
 
-ul{
-  list-style: none;
+body{
+  background-color: #FBD288;
 }
 
 .page{
