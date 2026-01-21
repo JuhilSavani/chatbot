@@ -1,8 +1,7 @@
 import { checkpointer } from './sequelize.config.js';
 import { ChatOpenAI } from "@langchain/openai"
-import { StateGraph } from "@langchain/langgraph"
 import { HumanMessage } from "@langchain/core/messages";
-import { MessagesAnnotation } from "@langchain/langgraph";
+import { StateGraph, MessagesAnnotation , Annotation } from "@langchain/langgraph";
 
 export const chatModel = new ChatOpenAI({
   configuration: {
