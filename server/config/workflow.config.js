@@ -4,24 +4,27 @@ import { StateGraph } from "@langchain/langgraph"
 import { HumanMessage } from "@langchain/core/messages";
 import { MessagesAnnotation } from "@langchain/langgraph";
 
-const llm = new ChatOpenAI({
+export const chatModel = new ChatOpenAI({
   configuration: {
     baseURL: "https://models.github.ai/inference",
   },
   apiKey: process.env.GITHUB_TOKEN,
   model: "openai/gpt-4o-mini",
-  streaming: true
 });
 
-async function callModel(state){
-  const response = await llm.invoke(state.messages);
+const GraphState = Annotation.Root({
+  ...MessagesAnnotation.spec, // This spreads the built-in reducer logic
+  threadName: Annotation(),
+});
+
+async function callAgent(state){
+  const response = await chatModel.invoke(state.messages);
   return { messages: [response] }; 
 };
 
-// LangGraph.js provides a pre-built graph for chat-based bots
-const graph = new StateGraph(MessagesAnnotation);
+const graph = new StateGraph(GraphState );
 
-graph.addNode("chatAgent", callModel);
+graph.addNode("chatAgent", callAgent);
 
 graph.addEdge("__start__", "chatAgent");
 graph.addEdge("chatAgent", "__end__");
