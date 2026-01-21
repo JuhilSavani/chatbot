@@ -60,18 +60,17 @@ export const login = async (req, res) => {
 
     const { data, error } = await supabase.auth.signInWithPassword({ email: user.email, password });
     
-    if (!data.user?.email_confirmed_at) {
-      return res.status(401).json({ message: "Please verify your email first." });
-    }
-
     if (error || !data.session) 
       return res.status(401).json({ message: "Invalid credentials." });
+
+    if (!data.user?.email_confirmed_at) 
+      return res.status(401).json({ message: "Please verify your email first." });
   
     res.cookie("authJwt", data.session?.access_token, {
       httpOnly: true,
       secure: IS_PROD,
       sameSite: IS_PROD ? "Strict" : "Lax",
-      maxAge: 5 * 60 * 1000, // 5 min
+      maxAge: 60 * 60 * 1000, // 60 min
     });
 
     return res.status(200).json({ 
