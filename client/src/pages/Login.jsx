@@ -58,7 +58,20 @@ function Login() {
             <input type="password" {...passwordField} placeholder="Password" />
             {errors.password && <span className="error">{errors.password.message}</span>}
           </li>
-          <li><button type="submit" disabled={loading}>{loading ? "..." : "Login"}</button></li>
+          <li>
+            <button 
+              type="submit" 
+              disabled={loading}
+            >
+              {loading ? (
+                <>
+                  <div className="m-auto w-9 h-9 border-3 border-slate-200 border-t-slate-600 rounded-full animate-spin" />
+                </>
+              ) : (
+                "Login"
+              )}
+          </button>
+          </li>
           <li><span>Or log in with <Link to={googleOAuthUrl}>Google</Link></span></li>
           <li><span>Don't have an account? <Link to="/register">Register</Link></span></li>
         </ul>
