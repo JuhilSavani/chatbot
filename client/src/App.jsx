@@ -85,12 +85,23 @@ const router = createBrowserRouter(
             </Protected>
           }
         />
+
+        <Route 
+          path="/chat/:threadId?"
+          element={
+            <Protected allowedRoles={["user"]}>
+              <ChatWindow />
+            </Protected>
+          }
+        />
+
         {/* error routes*/}
         <Route path="/401" element={<UnAuth />} />
         <Route path="*" element={<NotFound />} />
       </Route>
       
-      <Route path="/chat" element={<ChatWindow />} />
+      
+
     </>
   )
 );
