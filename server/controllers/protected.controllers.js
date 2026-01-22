@@ -6,7 +6,7 @@ export const loadChatThreads = async (req, res) => {
     const checkpointer = workflow.checkpointer;
 
     if (!checkpointer) 
-      return res.status(500).json({ error: "No checkpointer configured on workflow" });
+      return res.status(500).json({ message: "No checkpointer configured on workflow" });
 
     const threads = [];
     const seenThreadIds = new Set();
@@ -21,11 +21,10 @@ export const loadChatThreads = async (req, res) => {
       seenThreadIds.add(threadId);
       threads.push({
         threadId: threadId,
-        threadName: checkpoint.values?.threadName || "Untitled Chat",
-        updatedAt: checkpoint.metadata?.ts || checkpoint.metadata?.updated_at || null,
+        threadName: checkpoint.checkpoint?.channel_values?.threadName || "Untitled Chat",
+        updatedAt: checkpoint.checkpoint?.ts || checkpoint.metadata?.ts || null,
       });
     }
-
     res.json({ threads });
   } catch (error) {
     console.error("Error loading threads:", error.stack);
@@ -38,7 +37,7 @@ export const chatWithModel = async (req, res) => {
     const { message, threadId } = req.body;
 
     if (!message || !threadId) 
-      return res.status(400).json({ error: "message and threadId are required" });
+      return res.status(400).json({ message: "message and threadId are required" });
 
     // 1. Define configuration for persistence
     const config = { configurable: { thread_id: threadId } };
@@ -125,8 +124,8 @@ async function generateThreadName(userMessage, aiResponse) {
       Generate only the title, nothing else.
     `;
 
-    const titleResult = await chatModel.invoke(new HumanMessage(titlePrompt));
-    
+    const titleResult = await chatModel.invoke([ new HumanMessage(titlePrompt) ]);
+
     const title = titleResult.content
       .trim()
       .replace(/^["']|["']$/g, '') // Remove quotes if present
