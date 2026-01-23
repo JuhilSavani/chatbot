@@ -8,6 +8,7 @@ import ChatSidebar from '@/utils/components/ChatSidebar'
 import { useAuth } from '@/utils/hooks/useAuth'
 import { loadChatHistoryAction, loadChatThreadsAction } from '@/utils/actions/chat.actions'
 import { chatWithModelAction } from '@/utils/actions/chat.actions';
+import MarkdownRenderer from '@/utils/components/MarkdownRenderer';
 
 const SidebarInactiveIcon = ({ className = "w-5 h-5" }) => (
   <svg 
@@ -248,8 +249,13 @@ function MainContent({ setThreads }) {
                 }`}
               >
                 <div className={`${
-                  message.role === 'user' ? 'text-white' :  'text-zinc-800'
-                }`}>{message.content}</div>
+                  message.role === 'user' ? 'text-white' :  'p-4 text-zinc-800 w-full'
+                }`}>
+                  {message.role === 'user' 
+                    ? message.content 
+                    : <MarkdownRenderer content={message.content} />
+                  }
+                </div>
               </div>
             ))}
             

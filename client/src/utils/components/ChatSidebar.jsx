@@ -43,7 +43,7 @@ const SidebarActiveIcon = ({ className = "w-4 h-5" }) => (
 );
 
 export default function ChatSidebar({ threads = [] }) {
-  const { toggleSidebar } = useSidebar()
+  const { toggleSidebar, open, setOpen, isMobile } = useSidebar()
   const { auth } = useAuth()
   const navigate = useNavigate()
   const { threadId } = useParams()
@@ -58,11 +58,12 @@ export default function ChatSidebar({ threads = [] }) {
   }
 
   return (
+    <>
     <Sidebar 
       variant="sidebar" 
       side="left" 
       collapsible="offcanvas" 
-      className="border-none bg-zinc-950 text-white"
+      className="border-none bg-zinc-950 text-white [&>[data-slot=sidebar-gap]]:hidden [&>[data-slot=sidebar-container]]:!z-50 [&>[data-slot=sidebar-container]]:shadow-2xl"
     >
       <SidebarHeader className="pt-6 px-4 pb-0 bg-zinc-950">
         <div className="flex items-center justify-between mb-2">
@@ -141,5 +142,7 @@ export default function ChatSidebar({ threads = [] }) {
         )}
       </SidebarFooter>
     </Sidebar>
+
+    </>
   )
 }
