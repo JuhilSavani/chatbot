@@ -103,14 +103,14 @@ export default function ChatSidebar({ threads = [] }) {
               <SidebarMenuButton
                 onClick={() => handleThreadClick(thread)}
                 isActive={thread.threadId === threadId}
-                className="group relative hover:bg-zinc-800 active:bg-zinc-800 data-[active=true]:bg-zinc-800 text-zinc-400 hover:text-white active:text-white data-[active=true]:text-white h-auto py-3 items-start transition-colors"
+                className="group/thread relative w-full hover:bg-zinc-800 active:bg-zinc-800 data-[active=true]:bg-zinc-800 text-zinc-400 hover:text-white active:text-white data-[active=true]:text-white h-auto py-3 items-start transition-colors"
               >
                 <MessageSquare className="h-4 w-4 mt-1 shrink-0" />
                 <div className="flex flex-col gap-1 min-w-0 flex-1">
-                  <span className="truncate font-medium text-sm text-zinc-300 group-data-[active=true]:text-white group-hover:text-white group-active:text-white transition-colors">
+                  <span className="truncate font-medium text-sm text-zinc-300 group-data-[active=true]/thread:text-white group-hover/thread:text-white group-active/thread:text-white transition-colors">
                     {thread.threadName || "Untitled Chat"}
                   </span>
-                  <span className="text-xs text-zinc-500 truncate group-data-[active=true]:text-zinc-400 group-hover:text-zinc-400 group-active:text-zinc-400 transition-colors">
+                  <span className="text-xs text-zinc-500 truncate group-data-[active=true]/thread:text-zinc-400 group-hover/thread:text-zinc-400 group-active/thread:text-zinc-400 transition-colors">
                     {(!thread.updatedAt || isNaN(new Date(thread.updatedAt).getTime())) 
                       ? "" 
                       : new Date(thread.updatedAt).toLocaleDateString()}

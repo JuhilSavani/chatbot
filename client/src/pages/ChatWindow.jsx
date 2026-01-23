@@ -243,20 +243,19 @@ function MainContent({ setThreads }) {
                 key={index} 
                 className={`mb-4 p-4 rounded-lg ${
                   message.role === 'user' 
-                    ? 'bg-zinc-100 ml-auto max-w-[80%]' 
-                    : 'bg-blue-50 mr-auto max-w-[80%]'
+                    ? 'bg-zinc-800 ml-auto max-w-[50%] w-fit' 
+                    : 'bg-zinc-100 w-full'
                 }`}
               >
-                <div className="text-xs font-semibold mb-1 text-zinc-600">
-                  {message.role === 'user' ? 'You' : 'AI'}
-                </div>
-                <div className="text-zinc-900">{message.content}</div>
+                <div className={`${
+                  message.role === 'user' ? 'text-white' :  'text-zinc-800'
+                }`}>{message.content}</div>
               </div>
             ))}
             
             {/* Loading indicator for AI response */}
             {loadingResponse && (
-              <div className="mb-4 p-4 rounded-lg bg-blue-50 mr-auto max-w-[80%]">
+              <div className="mb-4 p-4 rounded-lg bg-blue-50 w-full">
                 <span className="text-sm">Thinking...</span>
               </div>
             )}
