@@ -1,11 +1,6 @@
 import { createBrowserRouter, createRoutesFromElements, RouterProvider, Route, Navigate, useLocation } from "react-router-dom"
 import MainLayout from "./layouts/MainLayout";
 import Home from "./pages/Home";
-import Profile from "./pages/Profile";
-import Blogs from "./pages/Blogs";
-import Admin from "./pages/Admin";
-import Moderator from "./pages/Moderator";
-import Lounge from "./pages/Lounge";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import UnAuth from "./pages/UnAuth"
@@ -15,7 +10,7 @@ import AuthProvider from "./utils/contexts/AuthProvider";
 import { useAuth } from "./utils/hooks/useAuth";
 
 // Protected wrapper
-function Protected({ children, allowedRoles }) {
+function Protected({ children }) {
   const { auth } = useAuth();
   const location = useLocation();
 
@@ -24,12 +19,7 @@ function Protected({ children, allowedRoles }) {
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
-  if (allowedRoles.length && !allowedRoles.some(role => auth.user.roles.includes(role))) {
-    // Logged in but not authorized → redirect to unauthorized page
-    return <Navigate to="/401" replace />;
-  }
-
-  // Logged in and authorized → render children
+  // Logged in (and we don't check roles anymore) → render children
   return children;
 }
 
@@ -45,51 +35,10 @@ const router = createBrowserRouter(
         <Route path="register" element={<Register />} />
 
         {/* protected routes */}
-        <Route
-          path="profile"
-          element={
-            <Protected allowedRoles={["user", "admin", "moderator"]}>
-              <Profile />
-            </Protected>
-          }
-        />
-        <Route
-          path="blogs"
-          element={
-            <Protected allowedRoles={["user", "admin", "moderator"]}>
-              <Blogs />
-            </Protected>
-          }
-        />
-        <Route
-          path="admin"
-          element={
-            <Protected allowedRoles={["admin"]}>
-              <Admin />
-            </Protected>
-          }
-        />
-        <Route
-          path="moderator"
-          element={
-            <Protected allowedRoles={["moderator"]}>
-              <Moderator />
-            </Protected>
-          }
-        />
-        <Route
-          path="lounge"
-          element={
-            <Protected allowedRoles={["admin", "moderator"]}>
-              <Lounge />
-            </Protected>
-          }
-        />
-
         <Route 
           path="/chat/:threadId?"
           element={
-            <Protected allowedRoles={["user"]}>
+            <Protected>
               <ChatWindow />
             </Protected>
           }

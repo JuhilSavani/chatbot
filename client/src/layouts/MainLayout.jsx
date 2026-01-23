@@ -13,17 +13,7 @@ function MainLayout() {
 
   if (auth?.isAuthenticated) {
     // common links for all logged-in users
-    links.push({ to: "/profile", label: "Profile" });
-    links.push({ to: "/blogs", label: "Blogs" });
-    
-    // role-specific links
-    if (auth.user.roles.includes("admin")) {
-      links.push({ to: "/admin", label: "Admin" });
-      links.push({ to: "/lounge", label: "Lounge" });
-    } else if (auth.user.roles.includes("moderator")) {
-      links.push({ to: "/moderator", label: "Moderator" });
-      links.push({ to: "/lounge", label: "Lounge" });
-    }
+    links.push({ to: "/chat", label: "Chat" });
   } else {
     // not logged in
     links.push({ to: "/login", label: "Login" });
