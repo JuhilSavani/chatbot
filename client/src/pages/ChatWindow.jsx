@@ -183,10 +183,10 @@ function MainContent({ setThreads }) {
   const isNewChat = messages.length === 0
 
   return (
-    <SidebarInset className={`transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] flex flex-col ${contentStateClasses}`}>
+    <SidebarInset className={`transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] h-screen flex flex-col overflow-hidden ${contentStateClasses}`}>
       
       {/* HEADER */}
-      <header className="flex h-14 shrink-0 items-center gap-2 border-b border-zinc-300 px-4 bg-white/50 backdrop-blur-sm sticky top-0 z-10">
+      <header className="flex h-14 shrink-0 items-center gap-2 border-b border-zinc-300 px-4 bg-white/50 backdrop-blur-sm sticky top-0 z-10 w-full">
         
         <div className={`transition-all duration-300 ${open ? 'w-0 overflow-hidden opacity-0' : 'w-auto opacity-100'}`}>
           <Button 
@@ -207,22 +207,22 @@ function MainContent({ setThreads }) {
         </div>
       </header>
 
-      {/* BODY */}
-      <div className="flex flex-1 flex-col gap-4 p-8 overflow-y-auto">
+      {/* BODY - SCROLLABLE AREA */}
+      <div className="flex-1 overflow-y-auto p-8 w-full">
         {loading && (
-          <div className="flex flex-1 items-center justify-center">
+          <div className="flex h-full items-center justify-center">
             <div className="text-zinc-500">Loading chat history...</div>
           </div>
         )}
 
         {error && (
-          <div className="flex flex-1 items-center justify-center">
+          <div className="flex h-full items-center justify-center">
             <div className="text-red-500">{error}</div>
           </div>
         )}
 
         {!loading && !error && isNewChat && (
-          <div className="flex flex-1 flex-col items-center justify-center">
+          <div className="flex h-full flex-col items-center justify-center">
             <div className="w-12 h-12 bg-zinc-50 rounded-md flex items-center justify-center mb-4 border border-zinc-200 shadow-md">
               <div className="w-3 h-3 bg-zinc-900 rounded-full animate-pulse" />
             </div>
@@ -237,19 +237,19 @@ function MainContent({ setThreads }) {
           </div>
         )}
 
-        {!loading && !error && !isNewChat && (
-          <div className="flex-1">
+        {!loading && !error && !isNewChat && messages.length > 0 && (
+          <div className="flex flex-col gap-4 max-w-3xl mx-auto w-full">
             {messages.map((message, index) => (
               <div 
                 key={index} 
                 className={`mb-4 p-4 rounded-lg ${
                   message.role === 'user' 
-                    ? 'bg-zinc-800 ml-auto max-w-[50%] w-fit' 
-                    : 'bg-zinc-100 w-full'
+                    ? 'bg-zinc-800 ml-auto max-w-[80%] w-fit' 
+                    : 'bg-zinc-100 w-full p-8'
                 }`}
               >
                 <div className={`${
-                  message.role === 'user' ? 'text-white' :  'p-4 text-zinc-800 w-full'
+                  message.role === 'user' ? 'text-white' :  'text-zinc-800 w-full'
                 }`}>
                   {message.role === 'user' 
                     ? message.content 
@@ -261,16 +261,18 @@ function MainContent({ setThreads }) {
             
             {/* Loading indicator for AI response */}
             {loadingResponse && (
-              <div className="mb-4 p-4 rounded-lg bg-blue-50 w-full">
+              <div className="mb-4 p-4 rounded-lg bg-blue-50 w-full animate-pulse">
                 <span className="text-sm">Thinking...</span>
               </div>
             )}
             <div ref={messagesEndRef} />
           </div>
         )}
+      </div>
                 
-        {/* INPUT */}
-        <div className="w-full max-w-2xl mx-auto pb-4">
+      {/* INPUT - STICKY BOTTOM */}
+      <div className="shrink-0 w-full p-4 bg-white border-t border-zinc-200">
+        <div className="max-w-2xl mx-auto">
           <ChatInput 
             threadId={currentThreadId}
             onMessageSent={handleMessageSent}

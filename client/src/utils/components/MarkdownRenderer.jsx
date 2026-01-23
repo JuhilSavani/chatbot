@@ -16,13 +16,13 @@ export default function MarkdownRenderer({ content }) {
              return <p className="mb-6 leading-7 last:mb-0">{children}</p>;
           },
           ul({ children }) {
-            return <ul className="my-6 ml-6 list-disc [&>li]:mt-2">{children}</ul>;
+            return <ul className="list-disc list-outside pl-6 mb-4 space-y-2">{children}</ul>;
           },
           ol({ children }) {
-            return <ol className="my-6 list-none [&>li]:mt-4">{children}</ol>;
+            return <ol className="list-decimal list-outside pl-10 mb-4 space-y-2">{children}</ol>;
           },
           li({ children }) {
-            return <li className="mb-2 leading-7">{children}</li>;
+            return <li className="mb-1">{children}</li>;
           },
           code({ node, inline, className, children, ...props }) {
             const match = /language-(\w+)/.exec(className || '');
