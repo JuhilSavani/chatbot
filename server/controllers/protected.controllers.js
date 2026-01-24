@@ -69,7 +69,7 @@ export const chatWithModel = async (req, res) => {
     res.json({ 
       threadId: threadId,
       threadName: threadName,
-      response: lastMessage.content
+      response: lastMessage.content,
     });
 
   } catch (error) {

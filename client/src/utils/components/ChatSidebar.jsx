@@ -42,7 +42,7 @@ const SidebarActiveIcon = ({ className = "w-4 h-5" }) => (
   </svg>
 );
 
-export default function ChatSidebar({ threads = [] }) {
+export default function ChatSidebar({ threads = [], isLoading = false }) {
   const { toggleSidebar, open, setOpen, isMobile } = useSidebar()
   const { auth } = useAuth()
   const navigate = useNavigate()
@@ -65,9 +65,9 @@ export default function ChatSidebar({ threads = [] }) {
       collapsible="offcanvas" 
       className="border-none bg-zinc-950 text-white [&>[data-slot=sidebar-gap]]:hidden [&>[data-slot=sidebar-container]]:!z-50 [&>[data-slot=sidebar-container]]:shadow-2xl"
     >
-      <SidebarHeader className="pt-6 px-4 pb-0 bg-zinc-950">
-        <div className="flex items-center justify-between mb-2">
-          <div className="flex items-center gap-2 px-2">
+      <SidebarHeader className="pt-6 pb-0 bg-zinc-950">
+        <div className="px-4 flex items-center justify-between mb-2">
+          <div className="flex items-center gap-2">
             <div className="flex items-center gap-4 font-bold text-[1.1rem] tracking-tight">
               <div className="w-5.5 h-5.5 rounded-md bg-linear-to-br from-white to-gray-300 shadow-[0_0_15px_rgba(255,255,255,0.5)]"></div>
               Sidekick
@@ -84,16 +84,23 @@ export default function ChatSidebar({ threads = [] }) {
           </Button>
         </div>
         
-        <div className="p-4 pt-0 border-b border-white/10">
-          <Button 
-            onClick={handleNewChat}
-            disabled={!auth.isAuthenticated}
-            className="w-full justify-start gap-2 bg-zinc-800 text-zinc-100 hover:bg-zinc-700 hover:text-white border border-zinc-700 mt-2 shadow-none p-6" 
-            size="sm"
-          >
-            <Plus className="h-4 w-4" />
-            New Chat
-          </Button>
+        
+        <Button 
+          onClick={handleNewChat}
+          disabled={!auth.isAuthenticated}
+          className="w-full justify-start gap-2 bg-zinc-800 text-zinc-100 hover:bg-zinc-700 hover:text-white border border-zinc-700 shadow-none p-6" 
+          size="sm"
+        >
+          <Plus className="h-4 w-4" />
+          New Chat
+        </Button>
+
+        <div className="border-t border-zinc-800">
+          {isLoading && (
+          <div className="relative h-[2px] w-full overflow-hidden">
+            <div className="meteor-effect" /> 
+          </div>
+          )}
         </div>
       </SidebarHeader>
 

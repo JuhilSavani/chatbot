@@ -49,14 +49,17 @@ const SuggestionItem = ({ text }) => (
 export default function ChatWindow() {
   const { auth } = useAuth()
   const [threads, setThreads] = useState([])
+  const [threadsLoading, setThreadsLoading] = useState(false)
 
   useEffect(() => {
     if (auth.isAuthenticated){
       (async function () {
+        setThreadsLoading(true)
         const result = await loadChatThreadsAction()
         if (!result.error) {
           setThreads(result.threads || [])
         }
+        setThreadsLoading(false)
       })()
     }
   }, [auth.isAuthenticated])
@@ -66,7 +69,7 @@ export default function ChatWindow() {
       style={{"--sidebar-width": "18rem"}} 
       className="bg-zinc-950 overflow-hidden" 
     >
-      <ChatSidebar threads={threads} />
+      <ChatSidebar threads={threads} isLoading={threadsLoading} />
       <MainContent setThreads={setThreads} />
     </SidebarProvider>
   )
@@ -127,10 +130,11 @@ function MainContent({ setThreads }) {
     // If this is a new chat (no threadId in URL), navigate to the thread URL
     if (!threadId && currentThreadId) {
       navigate(`/chat/${currentThreadId}`, { replace: true })
-      setThreads((prev) => [...prev, { 
+      setThreads((prev) => [{ 
         threadId: currentThreadId, 
-        threadName: 'Untitled Chat' 
-      }])
+        threadName: 'Untitled Chat',
+        updatedAt: new Date().toISOString()
+      }, ...prev])
     }
 
     // Set loading state for AI response
@@ -153,13 +157,15 @@ function MainContent({ setThreads }) {
           content: result.response || 'No response received'
         }])
 
-        if (result.threadName) {
-           setThreads(prevThreads => prevThreads.map(thread => 
-             thread.threadId === currentThreadId
-               ? { ...thread, threadName: result.threadName, updatedAt: result.updatedAt } 
-               : thread
-           ))
-        }
+        setThreads(prevThreads => prevThreads.map(thread => 
+          thread.threadId === currentThreadId
+            ? { 
+                threadId: currentThreadId,
+                threadName: result.threadName || thread.threadName, 
+                updatedAt: new Date().toISOString() 
+              } 
+            : thread
+        ))
         setError(null)
       }
     } catch (err) {
@@ -206,11 +212,18 @@ function MainContent({ setThreads }) {
           </span>
         </div>
       </header>
+      
+      {/* Loading Bar */}
+      {loading && (
+        <div className="relative h-[2px] w-full overflow-hidden shrink-0">
+           <div className="meteor-effect" /> 
+        </div>
+      )}
 
       {/* BODY - SCROLLABLE AREA */}
       <div className="flex-1 overflow-y-auto p-8 w-full">
         {loading && (
-          <div className="flex h-full items-center justify-center">
+          <div className="flex h-full items-center justify-center invisible">
             <div className="text-zinc-500">Loading chat history...</div>
           </div>
         )}
