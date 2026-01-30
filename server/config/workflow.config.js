@@ -1,7 +1,7 @@
 import { checkpointer } from './sequelize.config.js';
 import { ChatOpenAI } from "@langchain/openai"
 import { HumanMessage } from "@langchain/core/messages";
-import { StateGraph, MessagesAnnotation , Annotation } from "@langchain/langgraph";
+import { StateGraph, MessagesAnnotation } from "@langchain/langgraph";
 
 export const chatModel = new ChatOpenAI({
   configuration: {
@@ -11,17 +11,12 @@ export const chatModel = new ChatOpenAI({
   model: "openai/gpt-4o-mini",
 });
 
-const GraphState = Annotation.Root({
-  ...MessagesAnnotation.spec, // This spreads the built-in reducer logic
-  threadName: Annotation(),
-});
-
 async function callAgent(state){
   const response = await chatModel.invoke(state.messages);
   return { messages: [response] }; 
 };
 
-const graph = new StateGraph(GraphState );
+const graph = new StateGraph(MessagesAnnotation);
 
 graph.addNode("chatAgent", callAgent);
 
