@@ -149,7 +149,7 @@ function MainContent({ setThreads }) {
 
       if (result.error){
         setError('Failed to get response')
-        console.error('Error getting AI response:', err)
+        console.error('Error getting AI response:', result.error)
       } else {
         // Add AI response to messages
         setMessages(prev => [...prev, {

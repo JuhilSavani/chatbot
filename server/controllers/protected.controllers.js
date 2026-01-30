@@ -58,7 +58,14 @@ export const chatWithModel = async (req, res) => {
     if(!isNewThread && thread.userId !== userId) 
       return res.status(403).json({ message: "Forbidden: You don't have access to this thread." });
 
-    // 4. Update thread name if it's a new thread
+    // 4. Run the graph
+    const inputs = { messages: [new HumanMessage(message)] };
+    const result = await workflow.invoke(inputs, config);
+
+    // 5. Extract the last AI response
+    const lastMessage = result.messages[result.messages.length - 1];
+
+    // 6. Update thread name if it's a new thread
     if (isNewThread) {
       thread.title = await generateThreadName(message, lastMessage.content);
       await thread.save();
@@ -66,13 +73,6 @@ export const chatWithModel = async (req, res) => {
       thread.changed('updatedAt', true); // Force update timestamp
       await thread.save();
     }
-
-    // 5. Run the graph
-    const inputs = { messages: [new HumanMessage(message)] };
-    const result = await workflow.invoke(inputs, config);
-
-    // 6. Extract the last AI response
-    const lastMessage = result.messages[result.messages.length - 1];
 
     res.json({ 
       threadName: thread.title,
