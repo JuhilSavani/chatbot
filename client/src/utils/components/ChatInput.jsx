@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Paperclip, ArrowUp, Globe } from 'lucide-react';
+import { Paperclip, ArrowUp, Globe, Square } from 'lucide-react';
 
-const ChatInput = ({ threadId, onMessageSent, loading }) => {
+const ChatInput = ({ threadId, onMessageSent, loading, onStop }) => {
   const [message, setMessage] = useState('');
   const [isSearchEnabled, setIsSearchEnabled] = useState(false);
   const [error, setError] = useState(null);
@@ -90,18 +90,18 @@ const ChatInput = ({ threadId, onMessageSent, loading }) => {
             </button>
           </div>
 
-          {/* Right Side: Send Button */}
+          {/* Right Side: Send/Stop Button */}
           <button 
-            onClick={handleSendMessage}
-            disabled={!message.trim() || loading}
+            onClick={loading ? onStop : handleSendMessage}
+            disabled={!loading && !message.trim()}
             className={`w-9 h-9 bg-zinc-900 rounded-lg transition-all duration-200 hover:shadow-[0_0_0_4px_rgba(0,0,0,0.2)] flex items-center justify-center mb-0.5
-              ${message.trim() && !loading
+              ${(loading || message.trim())
                 ? 'text-white cursor-pointer' 
                 : 'text-[#58585A] cursor-not-allowed'
               }`}
           >
             {loading ? (
-              <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+              <Square className="w-3.5 h-3.5 fill-current" />
             ) : (
               <ArrowUp className="w-5 h-5" strokeWidth={2.5} />
             )}

@@ -4,7 +4,7 @@ import { useNavigate, useParams } from "react-router-dom"
 import { useAuth } from "../hooks/useAuth"
 import { loadChatThreadsAction } from "../actions/chat.actions"
 
-import { MessageSquare, Plus } from "lucide-react"
+import { MessageSquare, Plus, Search } from "lucide-react"
 import {
   Sidebar,
   SidebarContent,
@@ -47,15 +47,21 @@ export default function ChatSidebar({ threads = [], isLoading = false }) {
   const { auth } = useAuth()
   const navigate = useNavigate()
   const { threadId } = useParams()
+  const [searchQuery, setSearchQuery] = useState("")
 
   const handleNewChat = () => {
     // Navigate to base chat route - thread will be created on first message
     navigate('/chat')
+    setSearchQuery("")
   }
 
   const handleThreadClick = (thread) => {
     navigate(`/chat/${thread.threadId}`)
   }
+
+  const filteredThreads = threads.filter(thread => 
+    (thread.threadName || "Untitled Chat").toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   return (
     <>
@@ -84,6 +90,18 @@ export default function ChatSidebar({ threads = [], isLoading = false }) {
           </Button>
         </div>
         
+        <div className="px-0 pb-2">
+          <div className="relative group">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-500 group-focus-within:text-zinc-300 transition-colors" />
+            <input
+              type="text"
+              placeholder="Search chats..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full bg-zinc-900 text-zinc-300 rounded-lg pl-9 pr-4 py-2 text-sm border border-transparent focus:border-zinc-700 focus:bg-zinc-900 focus:outline-none transition-all placeholder:text-zinc-600"
+            />
+          </div>
+        </div>
         
         <Button 
           onClick={handleNewChat}
@@ -106,7 +124,7 @@ export default function ChatSidebar({ threads = [], isLoading = false }) {
 
       <SidebarContent className="p-2 bg-zinc-950">
         <SidebarMenu>
-          {threads.map((thread) => (
+          {filteredThreads.map((thread) => (
             <SidebarMenuItem key={thread.threadId}>
               <SidebarMenuButton
                 onClick={() => handleThreadClick(thread)}
@@ -132,6 +150,12 @@ export default function ChatSidebar({ threads = [], isLoading = false }) {
         {threads.length === 0 && (
           <div className="px-4 py-8 text-center text-sm text-zinc-500">
             No chat threads yet. Start a new chat!
+          </div>
+        )}
+        
+        {threads.length > 0 && filteredThreads.length === 0 && (
+           <div className="px-4 py-8 text-center text-sm text-zinc-500">
+            No results found.
           </div>
         )}
       </SidebarContent>

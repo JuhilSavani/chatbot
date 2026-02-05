@@ -189,7 +189,7 @@ function MainContent({ setThreads }) {
   const isNewChat = messages.length === 0
 
   return (
-    <SidebarInset className={`transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] h-screen flex flex-col overflow-hidden ${contentStateClasses}`}>
+    <SidebarInset className={`transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] flex flex-col overflow-hidden ${contentStateClasses} ${open ? 'h-[calc(100vh-1rem)]' : 'h-screen'}`}>
       
       {/* HEADER */}
       <header className="flex h-14 shrink-0 items-center gap-2 border-b border-zinc-300 px-4 bg-white/50 backdrop-blur-sm sticky top-0 z-10 w-full">
@@ -274,8 +274,9 @@ function MainContent({ setThreads }) {
             
             {/* Loading indicator for AI response */}
             {loadingResponse && (
-              <div className="mb-4 p-4 rounded-lg bg-blue-50 w-full animate-pulse">
-                <span className="text-sm">Thinking...</span>
+              <div className="mb-4 p-4 rounded-lg w-full flex items-center gap-2">
+                 <div className="w-5 h-5 border-2 border-zinc-300 border-t-zinc-900 rounded-full animate-spin"></div>
+                <span className="text-zinc-900 text-sm font-medium ml-1">Thinking...</span>
               </div>
             )}
             <div ref={messagesEndRef} />
@@ -290,6 +291,7 @@ function MainContent({ setThreads }) {
             threadId={currentThreadId}
             onMessageSent={handleMessageSent}
             loading={loadingResponse}
+            onStop={() => {}} 
           />
         </div>
       </div>
