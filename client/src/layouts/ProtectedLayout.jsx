@@ -1,4 +1,4 @@
-import { Outlet, Link } from "react-router-dom";
+import { Outlet, Link, Navigate, useLocation } from "react-router-dom";
 import { useAuth } from "../utils/hooks/useAuth";
 import Loading from "../pages/Loading";
 import useLogout from "../utils/hooks/useLogout";
@@ -44,7 +44,7 @@ const NavBar = ({ auth }) => {
 
 function MainLayout() {
   const { auth, loading } = useAuth();
-
+  const location = useLocation();
   if (loading) return <Loading />;
 
   if (!auth?.isAuthenticated) {

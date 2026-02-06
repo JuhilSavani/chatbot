@@ -1,5 +1,5 @@
 import { createBrowserRouter, createRoutesFromElements, RouterProvider, Route, Navigate, useLocation } from "react-router-dom"
-import MainLayout from "./layouts/MainLayout";
+import ProtectedLayout from "./layouts/ProtectedLayout";
 import Home from "./pages/Home";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
@@ -12,24 +12,21 @@ import { useAuth } from "./utils/hooks/useAuth";
 const router = createBrowserRouter(
   createRoutesFromElements(
     <>
-      <Route path="/" element={<MainLayout />}>
-        {/* public route */}
-        <Route index element={<Navigate to="/chat" replace />} />
-
-        {/* auth routes */}
+      <Route path="/">
+        {/* public routes */}
         <Route path="login" element={<Login />} />
         <Route path="register" element={<Register />} />
-
-        {/* protected routes */}
-        <Route path="/chat/:threadId?" element={<ChatWindow />}/>
+        
+        {/* Protected Routes */}
+        <Route element={<ProtectedLayout />}>
+          <Route index element={<Navigate to="/chat" replace />} />
+          <Route path="/chat/:threadId?" element={<ChatWindow />}/>
+        </Route>
 
         {/* error routes*/}
         <Route path="/401" element={<UnAuth />} />
         <Route path="*" element={<NotFound />} />
       </Route>
-      
-      
-
     </>
   )
 );

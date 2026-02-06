@@ -4,7 +4,8 @@ import { useNavigate, useParams } from "react-router-dom"
 import { useAuth } from "../hooks/useAuth"
 import { loadChatThreadsAction } from "../actions/chat.actions"
 
-import { MessageSquare, Plus, Search } from "lucide-react"
+import { MessageSquare, Plus, Search, LogOut } from "lucide-react"
+import useLogout from "../hooks/useLogout"
 import {
   Sidebar,
   SidebarContent,
@@ -45,6 +46,7 @@ const SidebarActiveIcon = ({ className = "w-4 h-5" }) => (
 export default function ChatSidebar({ threads = [], isLoading = false }) {
   const { toggleSidebar, open, setOpen, isMobile } = useSidebar()
   const { auth } = useAuth()
+  const { logout, logoutLoading } = useLogout()
   const navigate = useNavigate()
   const { threadId } = useParams()
   const [searchQuery, setSearchQuery] = useState("")
@@ -163,11 +165,24 @@ export default function ChatSidebar({ threads = [], isLoading = false }) {
       <SidebarFooter className="p-2 bg-zinc-950">
         {auth.isAuthenticated && auth.user && (
           <div className="px-2 py-2 text-sm text-zinc-400 border-t border-white/10">
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-full bg-zinc-800 flex items-center justify-center">
-                {auth.user.username?.[0]?.toUpperCase()}
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2 min-w-0">
+                <div className="w-8 h-8 rounded-full bg-zinc-800 flex items-center justify-center shrink-0">
+                  {auth.user.username?.[0]?.toUpperCase()}
+                </div>
+                <span className="truncate">{auth.user.username}</span>
               </div>
-              <span className="truncate">{auth.user.username}</span>
+              
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={logout}
+                disabled={logoutLoading}
+                className="h-8 w-8 text-zinc-400 hover:text-white hover:bg-zinc-800"
+                title="Logout"
+              >
+                <LogOut className="h-4 w-4" />
+              </Button>
             </div>
           </div>
         )}
