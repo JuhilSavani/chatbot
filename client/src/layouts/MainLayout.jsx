@@ -3,11 +3,9 @@ import { useAuth } from "../utils/hooks/useAuth";
 import Loading from "../pages/Loading";
 import useLogout from "../utils/hooks/useLogout";
 
-function MainLayout() {
-  const { auth, loading } = useAuth();
+// Removed
+const NavBar = ({ auth }) => {
   const { logout, logoutError, logoutLoading } = useLogout();
-
-  if (loading) return <Loading />;
 
   let links = [];
 
@@ -21,17 +19,41 @@ function MainLayout() {
   }
 
   return (
+    <nav>
+
+      {links.map(link => (
+        <Link key={link.to} to={link.to}>
+          {link.label}
+        </Link>
+      ))}
+
+      {auth?.isAuthenticated && (
+        <button
+          onClick={logout}
+          className="logout-btn"
+          disabled={logoutLoading}
+        >
+          {logoutLoading ? "..." : "Logout"}
+        </button>
+      )}
+
+      {logoutError && <span className="error">{logoutError}</span>}
+    </nav>
+  )
+}
+
+function MainLayout() {
+  const { auth, loading } = useAuth();
+
+  if (loading) return <Loading />;
+
+  if (!auth?.isAuthenticated) {
+    return <Navigate to="/login" state={{ from: location }} replace />;
+  }
+  
+  return (
     <div className={auth?.isAuthenticated ? "authenticated" : ""}>
-      <nav>
-        {links.map(link => (
-          <Link key={link.to} to={link.to}>
-            {link.label}
-          </Link>
-        ))}
-        {auth?.isAuthenticated && <button onClick={logout} className='logout-btn' disable={logoutLoading}>{logoutLoading ? "..." : "Logout"}</button>}
-        {logoutError && <span className="error">{logoutError}</span>}
-      </nav>
-      
+      {/* <Navbar auth={auth} /> */}
       <Outlet />
     </div>
   );
