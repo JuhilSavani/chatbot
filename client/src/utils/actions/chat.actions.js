@@ -22,7 +22,7 @@ export async function loadChatThreadsAction() {
 export async function chatWithModelAction({ threadId, message }) {
   try {
     if (!message || !threadId) {
-      return { error: "Message and Thread ID are required." };
+      return handleAxiosError(null, "Your request failed because no user input or thread ID was included.");
     }
 
     const response = await axios.post("/protected/chat/message", { 
@@ -43,7 +43,9 @@ export async function chatWithModelAction({ threadId, message }) {
  */
 export async function loadChatHistoryAction(threadId) {
   try {
-    if (!threadId) return { error: "Thread ID is missing" };
+    if (!threadId) {
+      return handleAxiosError(null, "Your request failed because no thread ID was included.");
+    }
 
     const response = await axios.get(`/protected/chat/${threadId}`);
     return response.data;
@@ -54,7 +56,6 @@ export async function loadChatHistoryAction(threadId) {
 }
 
 // --- Helper for cleaner error handling ---
-
 function handleAxiosError(error, defaultMessage) {
   if (error.response) {
     // Server responded with a status code that falls out of the range of 2xx

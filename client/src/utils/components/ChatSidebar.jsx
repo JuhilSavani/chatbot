@@ -91,20 +91,7 @@ export default function ChatSidebar({ threads = [], isLoading = false }) {
             <SidebarActiveIcon/>
           </Button>
         </div>
-        
-        <div className="px-0 pb-2">
-          <div className="relative group">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-500 group-focus-within:text-zinc-300 transition-colors" />
-            <input
-              type="text"
-              placeholder="Search chats..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full bg-zinc-900 text-zinc-300 rounded-lg pl-9 pr-4 py-2 text-sm border border-transparent focus:border-zinc-700 focus:bg-zinc-900 focus:outline-none transition-all placeholder:text-zinc-600"
-            />
-          </div>
-        </div>
-        
+       
         <Button 
           onClick={handleNewChat}
           disabled={!auth.isAuthenticated}
@@ -115,12 +102,20 @@ export default function ChatSidebar({ threads = [], isLoading = false }) {
           New Chat
         </Button>
 
-        <div className="border-t border-zinc-800">
-          {isLoading && (
-          <div className="relative h-[2px] w-full overflow-hidden">
-            <div className="meteor-effect" /> 
+        <div className="flex flex-col w-full">
+          <div className="relative group">
+            <Search className="absolute left-1.5 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-500 group-focus-within:text-zinc-300 transition-colors" />
+            <input
+              type="text"
+              placeholder="Search chats..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="p-3 w-full text-zinc-300 pl-8 text-sm border-b border-zinc-800 focus:border-zinc-300 focus:outline-none transition-all placeholder:text-zinc-600"
+            />
           </div>
-          )}
+          <div className="relative h-[4px] w-full overflow-hidden">
+            {isLoading && <div className="meteor-effect" />}
+          </div>
         </div>
       </SidebarHeader>
 
@@ -131,7 +126,7 @@ export default function ChatSidebar({ threads = [], isLoading = false }) {
               <SidebarMenuButton
                 onClick={() => handleThreadClick(thread)}
                 isActive={thread.threadId === threadId}
-                className="group/thread relative w-full hover:bg-zinc-800 active:bg-zinc-800 data-[active=true]:bg-zinc-800 text-zinc-400 hover:text-white active:text-white data-[active=true]:text-white h-auto py-3 items-start transition-colors"
+                className="px-4 pt-3 my-0.5 group/thread relative w-full hover:bg-zinc-800 active:bg-zinc-800 data-[active=true]:bg-zinc-800 text-zinc-400 hover:text-white active:text-white data-[active=true]:text-white h-auto items-start transition-colors"
               >
                 <MessageSquare className="h-4 w-4 mt-1 shrink-0" />
                 <div className="flex flex-col gap-1 min-w-0 flex-1">
@@ -163,29 +158,25 @@ export default function ChatSidebar({ threads = [], isLoading = false }) {
       </SidebarContent>
 
       <SidebarFooter className="p-2 bg-zinc-950">
-        {auth.isAuthenticated && auth.user && (
-          <div className="px-2 py-2 text-sm text-zinc-400 border-t border-white/10">
-            <div className="flex items-center justify-between gap-2">
-              <div className="flex items-center gap-2 min-w-0">
-                <div className="w-8 h-8 rounded-full bg-zinc-800 flex items-center justify-center shrink-0">
-                  {auth.user.username?.[0]?.toUpperCase()}
-                </div>
-                <span className="truncate">{auth.user.username}</span>
+          <div className="flex items-center justify-between m-2 border-t border-zinc-800 p-4 pb-0">
+            <div>
+              <div className="w-10 h-10 rounded-full bg-zinc-800 flex items-center justify-center shrink-0 inline-flex mr-4">
+                {auth.user.username?.[0]?.toUpperCase()}
               </div>
-              
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={logout}
-                disabled={logoutLoading}
-                className="h-8 w-8 text-zinc-400 hover:text-white hover:bg-zinc-800"
-                title="Logout"
-              >
-                <LogOut className="h-4 w-4" />
-              </Button>
+              <span className="truncate">{auth.user.username}</span>
             </div>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={logout}
+              disabled={logoutLoading}
+              className="h-8 w-8 text-zinc-400 hover:text-red-400 hover:bg-zinc-800"
+              title="Logout"
+            >
+              <LogOut className="h-4 w-4" />
+            </Button>
           </div>
-        )}
+         
       </SidebarFooter>
     </Sidebar>
 

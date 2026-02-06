@@ -52,14 +52,21 @@ export default function ChatWindow() {
   const [threadsLoading, setThreadsLoading] = useState(false)
 
   useEffect(() => {
-    if (auth.isAuthenticated){
+    if (auth.isAuthenticated) {
       (async function () {
         setThreadsLoading(true)
-        const result = await loadChatThreadsAction()
-        if (!result.error) {
-          setThreads(result.threads || [])
+        try {
+          const result = await loadChatThreadsAction()
+          if (result.error) {
+            console.error('Error loading chat threads:', result.error)
+          } else {
+            setThreads(result.threads || [])
+          }
+        } catch (error) {
+          console.error('Error loading chat threads:', error)
+        } finally {
+          setThreadsLoading(false)
         }
-        setThreadsLoading(false)
       })()
     }
   }, [auth.isAuthenticated])
@@ -74,7 +81,6 @@ export default function ChatWindow() {
     </SidebarProvider>
   )
 }
-
 
 function MainContent({ setThreads }) {
   const { open, toggleSidebar } = useSidebar()
@@ -118,7 +124,10 @@ function MainContent({ setThreads }) {
         setMessages(result.messages || [])
         setError(null)
       }
-    } finally {
+    } catch(error){
+      setError('Failed to load chat history!')
+      console.error('Error loading chat history:', error)
+    }finally {
       setLoading(false)
     }
   }
@@ -148,7 +157,11 @@ function MainContent({ setThreads }) {
       })
 
       if (result.error){
-        setError('Failed to get response')
+        // ADDED: Append error as a message instead of global state
+        setMessages(prev => [...prev, {
+          role: 'error',
+          content: result.error || 'Failed to get response'
+        }])
         console.error('Error getting AI response:', result.error)
       } else {
         // Add AI response to messages
@@ -169,7 +182,11 @@ function MainContent({ setThreads }) {
         setError(null)
       }
     } catch (err) {
-      setError('Failed to get response')
+      // ADDED: Append error as a message instead of global state
+      setMessages(prev => [...prev, {
+        role: 'error',
+        content: 'Failed to get response'
+      }])
       console.error('Error getting AI response:', err)
     } finally {
       setLoadingResponse(false)
@@ -266,7 +283,9 @@ function MainContent({ setThreads }) {
                 }`}>
                   {message.role === 'user' 
                     ? message.content 
-                    : <MarkdownRenderer content={message.content} />
+                    : message.role === 'error'
+                      ? <span className="text-red-500">{message.content}</span>
+                      : <MarkdownRenderer content={message.content} />
                   }
                 </div>
               </div>
