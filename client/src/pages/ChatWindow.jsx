@@ -76,7 +76,7 @@ export default function ChatWindow() {
       style={{"--sidebar-width": "18rem"}} 
       className="bg-zinc-950 overflow-hidden" 
     >
-      <ChatSidebar threads={threads} isLoading={threadsLoading} />
+      <ChatSidebar threads={threads} isLoading={threadsLoading} setThreads={setThreads} />
       <MainContent setThreads={setThreads} />
     </SidebarProvider>
   )

@@ -74,6 +74,24 @@ export async function syncPinStatusAction(threadId, isPinned) {
   }
 }
 
+/**
+ * Deletes a thread.
+ * Server returns: { message, threadId }
+ */
+export async function deleteThreadAction(threadId) {
+  try {
+    if (!threadId) {
+      return handleAxiosError(null, "Your request failed because no thread ID was included.");
+    }
+
+    const response = await axios.delete(`/protected/chat/${threadId}`);
+    return response.data;
+  } catch (error) {
+    console.error("Delete Thread Error:", error);
+    return handleAxiosError(error, "Failed to delete thread.");
+  }
+}
+
 // --- Helper for cleaner error handling ---
 function handleAxiosError(error, defaultMessage) {
   if (error.response) {

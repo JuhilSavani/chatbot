@@ -19,6 +19,17 @@ import {
 } from "@/components/ui/sidebar"
 import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
+import { deleteThreadAction } from "../actions/chat.actions"
 
 
 const SidebarActiveIcon = ({ className = "w-4 h-5" }) => (
@@ -45,7 +56,7 @@ const SidebarActiveIcon = ({ className = "w-4 h-5" }) => (
   </svg>
 );
 
-export default function ChatSidebar({ threads = [], isLoading = false }) {
+export default function ChatSidebar({ threads = [], isLoading = false, setThreads }) {
   const { toggleSidebar, open, setOpen, isMobile } = useSidebar()
   const { auth } = useAuth()
   const { logout, logoutLoading } = useLogout()
@@ -57,6 +68,34 @@ export default function ChatSidebar({ threads = [], isLoading = false }) {
   const { pinned, togglePin } = usePinnedThreads(
     threads.filter(t => t.isPinned).map(t => t.threadId)
   );
+
+  const [threadToDelete, setThreadToDelete] = useState(null)
+  const [isDeleting, setIsDeleting] = useState(false)
+
+  const confirmDelete = async () => {
+    if (!threadToDelete) return
+
+    setIsDeleting(true)
+    try {
+      const result = await deleteThreadAction(threadToDelete.threadId)
+      if (result.error) {
+        console.error(result.error)
+        // Optionally show toast error here
+      } else {
+        // Optimistic update
+        setThreads(prev => prev.filter(t => t.threadId !== threadToDelete.threadId))
+        
+        if (threadToDelete.threadId === threadId) {
+          navigate('/chat')
+        }
+      }
+    } catch (error) {
+      console.error("Failed to delete", error)
+    } finally {
+      setIsDeleting(false)
+      setThreadToDelete(null)
+    }
+  }
 
   const handleNewChat = () => {
     // Navigate to base chat route - thread will be created on first message
@@ -126,7 +165,7 @@ export default function ChatSidebar({ threads = [], isLoading = false }) {
               tabIndex={0}
               onClick={(e) => {
                 e.stopPropagation();
-                // Delete logic here
+                setThreadToDelete(thread);
               }}
               className="p-1 hover:bg-red-500/20 rounded-md text-zinc-400 hover:text-red-400 transition-colors"
               title="Delete thread"
@@ -254,6 +293,29 @@ export default function ChatSidebar({ threads = [], isLoading = false }) {
          
       </SidebarFooter>
     </Sidebar>
+
+    <AlertDialog open={!!threadToDelete} onOpenChange={(open) => !open && setThreadToDelete(null)}>
+      <AlertDialogContent className="bg-zinc-950 border-zinc-800 text-zinc-100">
+        <AlertDialogHeader>
+          <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+          <AlertDialogDescription className="text-zinc-400">
+            This action cannot be undone. This will permanently delete the chat thread
+            <span className="font-semibold text-zinc-200"> "{threadToDelete?.threadName || 'Untitled Chat'}" </span>
+            and remove all associated messages.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel className="bg-transparent border-zinc-700 hover:bg-zinc-900 hover:text-white text-zinc-300">Cancel</AlertDialogCancel>
+          <AlertDialogAction 
+            onClick={confirmDelete}
+            disabled={isDeleting}
+            className="bg-gray-300 hover:bg-gray-100 text-black border-none"
+          >
+            {isDeleting ? "Deleting..." : "Delete"}
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
 
     </>
   )

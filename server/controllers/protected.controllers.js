@@ -181,6 +181,38 @@ export const setPinStatus = async (req, res) => {
   }
 };
 
+export const deleteThread = async (req, res) => {
+  const t = await sequelize.transaction();
+  try {
+    const { threadId } = req.params;
+    const userId = req.user.id; // User is authenticated
+
+    // 1. Verify ownership first
+    const thread = await Thread.findOne({ where: { threadId, userId }, transaction: t });
+
+    if (!thread) {
+      await t.rollback();
+      return res.status(404).json({ message: "Thread not found or unauthorized." });
+    }
+
+    // 2. Raw SQL Deletes for LangGraph tables
+    // Note: Parameterized queries to prevent SQL injection
+    await sequelize.query(`DELETE FROM checkpoints WHERE thread_id = :threadId`, { replacements: { threadId }, transaction: t });
+    await sequelize.query(`DELETE FROM checkpoint_writes WHERE thread_id = :threadId`, { replacements: { threadId }, transaction: t });
+    await sequelize.query(`DELETE FROM checkpoint_blobs WHERE thread_id = :threadId`, { replacements: { threadId }, transaction: t });
+
+    // 3. Delete the thread itself
+    await thread.destroy({ transaction: t });
+
+    await t.commit();
+    res.json({ message: "Thread and associated data deleted successfully", threadId });
+  } catch (error) {
+    await t.rollback();
+    console.error("Error deleting thread:", error.stack);
+    res.status(500).json({ message: "Internal Server Error" });
+  }
+};
+
 // Fallback: Generate a simple name from the first message
 function generateFallbackName(message) {
   // Take first 50 characters and add ellipsis if needed

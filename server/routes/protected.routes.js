@@ -3,7 +3,9 @@ import {
   loadChatThreads, 
   chatWithModel, 
   loadChatHistory,
-  setPinStatus
+
+  setPinStatus,
+  deleteThread
 } from "../controllers/protected.controllers.js";
 
 const router = express.Router();
@@ -31,5 +33,11 @@ router.post("/chat/message", chatWithModel);
  * @desc    Pin or unpin a thread
  */
 router.put("/chat/pin/:threadId/:action", setPinStatus);
+
+/**
+ * @route   DELETE /api/protected/chat/:threadId
+ * @desc    Delete a specific chat thread
+ */
+router.delete("/chat/:threadId", deleteThread);
 
 export default router;
