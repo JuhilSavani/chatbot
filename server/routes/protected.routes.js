@@ -2,7 +2,8 @@ import express from "express";
 import { 
   loadChatThreads, 
   chatWithModel, 
-  loadChatHistory 
+  loadChatHistory,
+  setPinStatus
 } from "../controllers/protected.controllers.js";
 
 const router = express.Router();
@@ -24,5 +25,11 @@ router.get("/chat/:threadId", loadChatHistory);
  * @desc    Send a message to the AI model within a specific thread
  */
 router.post("/chat/message", chatWithModel);
+
+/**
+ * @route   PUT /api/protected/chat/pin/:threadId/:action
+ * @desc    Pin or unpin a thread
+ */
+router.put("/chat/pin/:threadId/:action", setPinStatus);
 
 export default router;

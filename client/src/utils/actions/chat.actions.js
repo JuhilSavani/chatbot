@@ -55,6 +55,25 @@ export async function loadChatHistoryAction(threadId) {
   }
 }
 
+/**
+ * Syncs the pinned status of a thread with the server.
+ * Server returns: { message, threadId, isPinned }
+ */
+export async function syncPinStatusAction(threadId, isPinned) {
+  try {
+    if (!threadId) {
+      return handleAxiosError(null, "Your request failed because no thread ID was included.");
+    }
+
+    const action = isPinned ? "pin" : "unpin";
+    const response = await axios.put(`/protected/chat/pin/${threadId}/${action}`);
+    return response.data;
+  } catch (error) {
+    console.error("Sync Pin Status Error:", error);
+    return handleAxiosError(error, "Failed to update pin status.");
+  }
+}
+
 // --- Helper for cleaner error handling ---
 function handleAxiosError(error, defaultMessage) {
   if (error.response) {

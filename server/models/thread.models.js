@@ -19,6 +19,11 @@ export const Thread = sequelize.define(
       allowNull: false,
       defaultValue: "Untitled Chat",
     },
+    isPinned: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: false,
+    },
   },
   {
     tableName: "threads",

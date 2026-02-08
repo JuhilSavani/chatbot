@@ -4,8 +4,9 @@ import { useNavigate, useParams } from "react-router-dom"
 import { useAuth } from "../hooks/useAuth"
 import { loadChatThreadsAction } from "../actions/chat.actions"
 
-import { MessageSquare, Plus, Search, LogOut } from "lucide-react"
+import { MessageSquare, Plus, Search, LogOut, Pin, Trash2 } from "lucide-react"
 import useLogout from "../hooks/useLogout"
+import { usePinnedThreads } from "../hooks/usePinnedThreads"
 import {
   Sidebar,
   SidebarContent,
@@ -17,6 +18,7 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar"
 import { Button } from "@/components/ui/button"
+import { Separator } from "@/components/ui/separator"
 
 
 const SidebarActiveIcon = ({ className = "w-4 h-5" }) => (
@@ -51,6 +53,11 @@ export default function ChatSidebar({ threads = [], isLoading = false }) {
   const { threadId } = useParams()
   const [searchQuery, setSearchQuery] = useState("")
 
+  // Initialize with threads that are already pinned from server
+  const { pinned, togglePin } = usePinnedThreads(
+    threads.filter(t => t.isPinned).map(t => t.threadId)
+  );
+
   const handleNewChat = () => {
     // Navigate to base chat route - thread will be created on first message
     navigate('/chat')
@@ -61,8 +68,75 @@ export default function ChatSidebar({ threads = [], isLoading = false }) {
     navigate(`/chat/${thread.threadId}`)
   }
 
-  const filteredThreads = threads.filter(thread => 
+  // Filter first
+  const filtered = threads.filter(thread => 
     (thread.threadName || "Untitled Chat").toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  // Split into pinned and unpinned
+  const pinnedThreads = filtered.filter(t => pinned.has(t.threadId)).sort((a, b) => {
+    // Sort pinned threads by updated date (or any other criteria)
+    return new Date(b.updatedAt) - new Date(a.updatedAt);
+  });
+  
+  const otherThreads = filtered.filter(t => !pinned.has(t.threadId)).sort((a, b) => {
+    // Sort other threads by date
+    return new Date(b.updatedAt) - new Date(a.updatedAt);
+  });
+
+  const renderThreadItem = (thread) => (
+    <SidebarMenuItem key={thread.threadId}>
+      <SidebarMenuButton
+        onClick={() => handleThreadClick(thread)}
+        isActive={thread.threadId === threadId}
+        className="px-4 group/thread relative w-full hover:bg-zinc-800 active:bg-zinc-800 data-[active=true]:bg-zinc-800 text-zinc-400 hover:text-white active:text-white data-[active=true]:text-white h-auto items-start transition-colors"
+      >
+        <MessageSquare className="h-4 w-4 mt-1 shrink-0" />
+        <div className="flex flex-col gap-1 min-w-0 flex-1 relative">
+          <div className="flex items-center justify-between">
+            <span className="truncate font-medium text-sm text-zinc-300 group-data-[active=true]/thread:text-white group-hover/thread:text-white group-active/thread:text-white transition-colors pr-6">
+              {thread.threadName || "Untitled Chat"}
+            </span>
+            {pinned.has(thread.threadId) && (
+              <Pin className="h-3 w-3 text-zinc-400 rotate-45 shrink-0 block group-hover/thread:hidden" />
+            )}
+          </div>
+          <span className="text-xs text-zinc-500 truncate group-data-[active=true]/thread:text-zinc-400 group-hover/thread:text-zinc-400 group-active/thread:text-zinc-400 transition-colors">
+            {(!thread.updatedAt || isNaN(new Date(thread.updatedAt).getTime())) 
+              ? "" 
+              : new Date(thread.updatedAt).toLocaleDateString()}
+          </span>
+          
+          {/* Hover Actions */}
+          <div className="absolute right-0 top-0 h-full flex items-center gap-1 opacity-0 group-hover/thread:opacity-100 transition-opacity bg-gradient-to-l from-zinc-800 via-zinc-800 to-transparent pl-4">
+              <div 
+              role="button"
+              tabIndex={0}
+              onClick={(e) => {
+                e.stopPropagation();
+                togglePin(thread.threadId);
+              }}
+              className="p-1 hover:bg-zinc-700 rounded-md text-zinc-400 hover:text-white transition-colors"
+              title={pinned.has(thread.threadId) ? "Unpin thread" : "Pin thread"}
+            >
+              <Pin className={`h-4.5 w-4.5 ${pinned.has(thread.threadId) ? "fill-current text-white" : ""}`} />
+            </div>
+              <div 
+              role="button"
+              tabIndex={0}
+              onClick={(e) => {
+                e.stopPropagation();
+                // Delete logic here
+              }}
+              className="p-1 hover:bg-red-500/20 rounded-md text-zinc-400 hover:text-red-400 transition-colors"
+              title="Delete thread"
+            >
+              <Trash2 className="h-4.5 w-4.5" />
+            </div>
+          </div>
+        </div>
+      </SidebarMenuButton>
+    </SidebarMenuItem>
   );
 
   return (
@@ -121,27 +195,28 @@ export default function ChatSidebar({ threads = [], isLoading = false }) {
 
       <SidebarContent className="p-2 bg-zinc-950">
         <SidebarMenu>
-          {filteredThreads.map((thread) => (
-            <SidebarMenuItem key={thread.threadId}>
-              <SidebarMenuButton
-                onClick={() => handleThreadClick(thread)}
-                isActive={thread.threadId === threadId}
-                className="px-4 pt-3 my-0.5 group/thread relative w-full hover:bg-zinc-800 active:bg-zinc-800 data-[active=true]:bg-zinc-800 text-zinc-400 hover:text-white active:text-white data-[active=true]:text-white h-auto items-start transition-colors"
-              >
-                <MessageSquare className="h-4 w-4 mt-1 shrink-0" />
-                <div className="flex flex-col gap-1 min-w-0 flex-1">
-                  <span className="truncate font-medium text-sm text-zinc-300 group-data-[active=true]/thread:text-white group-hover/thread:text-white group-active/thread:text-white transition-colors">
-                    {thread.threadName || "Untitled Chat"}
-                  </span>
-                  <span className="text-xs text-zinc-500 truncate group-data-[active=true]/thread:text-zinc-400 group-hover/thread:text-zinc-400 group-active/thread:text-zinc-400 transition-colors">
-                    {(!thread.updatedAt || isNaN(new Date(thread.updatedAt).getTime())) 
-                      ? "" 
-                      : new Date(thread.updatedAt).toLocaleDateString()}
-                  </span>
-                </div>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-          ))}
+          {/* Pinned Threads Section */}
+          {pinnedThreads.length > 0 && (
+            <>
+              <div className="px-4 py-1.5 text-xs font-semibold text-zinc-500 uppercase tracking-wider">
+                Pinned
+              </div>
+              {pinnedThreads.map(renderThreadItem)}
+              
+              {/* Separator if needed */}
+              {otherThreads.length > 0 && <Separator className="my-2 bg-zinc-800" />}
+            </>
+          )}
+
+          {/* Other Threads Section */}
+          {otherThreads.length > 0 && (
+            <>
+              <div className="px-4 py-1.5 text-xs font-semibold text-zinc-500 uppercase tracking-wider">
+                Recent
+              </div>
+              {otherThreads.map(renderThreadItem)}
+            </>
+          )}
         </SidebarMenu>
 
         {threads.length === 0 && (
@@ -150,7 +225,7 @@ export default function ChatSidebar({ threads = [], isLoading = false }) {
           </div>
         )}
         
-        {threads.length > 0 && filteredThreads.length === 0 && (
+        {threads.length > 0 && pinnedThreads.length === 0 && otherThreads.length === 0 && (
            <div className="px-4 py-8 text-center text-sm text-zinc-500">
             No results found.
           </div>

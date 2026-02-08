@@ -10,15 +10,19 @@ export const loadChatThreads = async (req, res) => {
 
     const threads = await Thread.findAll({
       where: { userId },
-      order: [['updatedAt', 'DESC']],
-      attributes: ['threadId', 'title', 'updatedAt'] // Map title to threadName in frontend if needed, or stick to threadName
+      order: [
+        ['isPinned', 'DESC'], // Pinned threads first
+        ['updatedAt', 'DESC']
+      ],
+      attributes: ['threadId', 'title', 'updatedAt', 'isPinned'] // Map title to threadName in frontend if needed, or stick to threadName
     });
 
     // Map to match expected frontend format
     const formattedThreads = threads.map(t => ({
       threadId: t.threadId,
       threadName: t.title,
-      updatedAt: t.updatedAt
+      updatedAt: t.updatedAt,
+      isPinned: t.isPinned
     }));
 
     res.json({ threads: formattedThreads });
@@ -146,6 +150,36 @@ async function generateThreadName(userMessage, aiResponse) {
     return generateFallbackName(userMessage);
   }
 }
+
+export const setPinStatus = async (req, res) => {
+  try {
+    const { threadId, action } = req.params;
+    const userId = req.user.id;
+
+    if (!['pin', 'unpin'].includes(action)) {
+      return res.status(400).json({ message: "Invalid action. Use 'pin' or 'unpin'." });
+    }
+
+    const thread = await Thread.findOne({ where: { threadId, userId } });
+
+    if (!thread) {
+      return res.status(404).json({ message: "Thread not found or unauthorized." });
+    }
+
+    thread.isPinned = (action === 'pin');
+    await thread.save();
+
+    res.json({ 
+      message: `Thread ${action}ned successfully`, 
+      threadId, 
+      isPinned: thread.isPinned 
+    });
+
+  } catch (error) {
+    console.error("Error updating pin status:", error.stack);
+    res.status(500).json({ message: "Internal Server Error" });
+  }
+};
 
 // Fallback: Generate a simple name from the first message
 function generateFallbackName(message) {
