@@ -20,7 +20,7 @@ configPassport();
 
 // Middlewares
 app.use(cors({
-  origin: IS_PROD ? process.env.APP_ORIGIN : "http://localhost:3000",
+  origin: IS_PROD ? process.env.CLIENT_APP_ORIGIN_URL : "http://localhost:3000",
   methods: ["GET", "PUT", "POST", "PATCH", "DELETE"],
   credentials: true,
 }));

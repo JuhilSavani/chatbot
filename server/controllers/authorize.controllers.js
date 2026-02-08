@@ -22,7 +22,7 @@ export const register = async (req, res) => {
     const { data, error } = await supabase.auth.signUp({ 
       email, 
       password,   
-      options: { emailRedirectTo: `${process.env.APP_CLIENT_URI}/login` }
+      options: { emailRedirectTo: `${process.env.CLIENT_APP_ORIGIN_URL}/login` }
     });
 
     if (error || !data.user) 
