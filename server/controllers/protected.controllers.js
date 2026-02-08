@@ -1,6 +1,7 @@
 import { workflow, chatModel } from "../config/workflow.config.js";
 import { HumanMessage } from "@langchain/core/messages";
 import { Thread } from "../models/thread.models.js";
+import { sequelize } from "../config/sequelize.config.js";
 
 export const loadChatThreads = async (req, res) => {
   try {
@@ -212,6 +213,26 @@ export const deleteThread = async (req, res) => {
     res.status(500).json({ message: "Internal Server Error" });
   }
 };
+
+// export const deleteThread = async (req, res) => {
+//   try {
+//     const { threadId } = req.params;
+//     const userId = req.user.id; // User is authenticated
+
+//     const thread = await Thread.findOne({ where: { threadId, userId } });
+
+//     if (!thread) {
+//       return res.status(404).json({ message: "Thread not found or unauthorized." });
+//     }
+
+//     await thread.destroy();
+
+//     res.json({ message: "Thread deleted successfully", threadId });
+//   } catch (error) {
+//     console.error("Error deleting thread:", error.stack);
+//     res.status(500).json({ message: "Internal Server Error" });
+//   }
+// };
 
 // Fallback: Generate a simple name from the first message
 function generateFallbackName(message) {
