@@ -1,9 +1,9 @@
 import { useState } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom"
 import { useForm } from "react-hook-form";
-import { useAuth } from "../utils/hooks/useAuth";
-import { loginAction } from "../utils/actions/authorize.actions";
-import { useGoogleOAuth } from "../utils/hooks/useGoogleOAuth";
+import { useAuth } from "@/utils/hooks/useAuth";
+import { loginAction } from "@/utils/actions/authorize.actions";
+import { useGoogleOAuth } from "@/utils/hooks/useGoogleOAuth";
 
 function Login() {
   const [loginError, setLoginError] = useState(null);

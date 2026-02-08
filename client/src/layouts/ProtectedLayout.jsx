@@ -1,7 +1,7 @@
 import { Outlet, Link, Navigate, useLocation } from "react-router-dom";
-import { useAuth } from "../utils/hooks/useAuth";
-import Loading from "../pages/Loading";
-import useLogout from "../utils/hooks/useLogout";
+import { useAuth } from "@/utils/hooks/useAuth";
+import Loading from "@/pages/Loading";
+import useLogout from "@/utils/hooks/useLogout";
 
 // Removed
 const NavBar = ({ auth }) => {

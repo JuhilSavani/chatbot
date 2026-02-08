@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { Link } from "react-router-dom"
 import { useForm } from "react-hook-form";
-import { registerAction } from "../utils/actions/authorize.actions";
-import { useGoogleOAuth } from "../utils/hooks/useGoogleOAuth";
+import { registerAction } from "@/utils/actions/authorize.actions";
+import { useGoogleOAuth } from "@/utils/hooks/useGoogleOAuth";
 
 function Register() {
   const [registerError, setRegisterError] = useState(null);
