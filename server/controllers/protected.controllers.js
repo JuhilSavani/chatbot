@@ -90,6 +90,107 @@ export const chatWithModel = async (req, res) => {
   }
 }
 
+/**
+ * SSE Streaming endpoint using LangGraph's streamEvents
+ * Sends token-by-token updates to the client in real-time
+ */
+export const chatWithModelStream = async (req, res) => {
+  const { message, threadId } = req.body;
+  const userId = req.user.id;
+
+  // Validation
+  if (!message || !threadId) {
+    return res.status(400).json({ message: "message and threadId are required" });
+  }
+
+  // 1. Set SSE Headers
+  res.setHeader("Content-Type", "text/event-stream");
+  res.setHeader("Cache-Control", "no-cache");
+  res.setHeader("Connection", "keep-alive");
+  res.flushHeaders();
+
+  try {
+    // 2. Thread setup (same as non-streaming)
+    const config = { configurable: { thread_id: threadId } };
+    let thread = await Thread.findOne({ where: { threadId } });
+    
+    const isNewThread = !thread;
+    if (isNewThread) {
+      thread = await Thread.create({ threadId, userId });
+    }
+
+    if (!isNewThread && thread.userId !== userId) {
+      res.write(`data: ${JSON.stringify({ type: "error", val: "Forbidden: You don't have access to this thread." })}\n\n`);
+      return; // Stop here! The 'finally' block below will take care of [DONE] and res.end()
+    }
+
+    // 3. Start the stream with streamEvents v2
+    const inputs = { messages: [new HumanMessage(message)] };
+    const stream = await workflow.streamEvents(inputs, { ...config, version: "v2" });
+
+    let fullResponse = "";
+
+    // 4. Iterate and filter events
+    for await (const event of stream) {
+      // Token from the LLM
+      if (event.event === "on_chat_model_stream") {
+        const content = event.data.chunk?.content;
+        if (content) {
+          fullResponse += content;
+          res.write(`data: ${JSON.stringify({ 
+            type: "token", 
+            val: content 
+          })}\n\n`);
+        }
+      }
+      // Tool start (for future tool support)
+      else if (event.event === "on_tool_start") {
+        res.write(`data: ${JSON.stringify({ 
+          type: "status", 
+          val: `Using tool: ${event.name}` 
+        })}\n\n`);
+      }
+      // Tool end
+      else if (event.event === "on_tool_end") {
+        res.write(`data: ${JSON.stringify({ 
+          type: "status", 
+          val: "Tool finished." 
+        })}\n\n`);
+      }
+    }
+
+    // 5. Update thread name for new threads
+    try {
+      if (isNewThread && fullResponse) {
+        thread.title = await generateThreadName(message, fullResponse);
+        await thread.save();
+        // Send thread name to client
+        res.write(`data: ${JSON.stringify({ 
+          type: "threadName", 
+          val: thread.title 
+        })}\n\n`);
+      } else {
+        thread.changed('updatedAt', true);
+        await thread.save();
+      }
+    } catch (error) {
+      console.error("Failed to update thread title: ", error.stack);
+      // Optional: send error event to client
+    }
+
+  } catch (error) {
+    console.error("Stream Error:", error.stack);
+    res.write(`data: ${JSON.stringify({ 
+      type: "error", 
+      val: "An internal server error occurred during generation." 
+    })}\n\n`);
+  } finally {
+    // 6. Signal end of stream
+    res.write("data: [DONE]\n\n");
+    res.end();
+  }
+}
+
 export const loadChatHistory = async (req, res) => {
   try {
     const { threadId } = req.params;

@@ -9,6 +9,7 @@ export const chatModel = new ChatOpenAI({
   },
   apiKey: process.env.GITHUB_TOKEN,
   model: "openai/gpt-4o-mini",
+  streaming: true
 });
 
 async function callAgent(state){

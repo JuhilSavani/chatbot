@@ -41,15 +41,18 @@ export async function chatWithModelAction({ threadId, message }) {
  * Loads history for a specific thread.
  * Server returns: { messages: [{ role, content }], threadName }
  */
-export async function loadChatHistoryAction(threadId) {
+export async function loadChatHistoryAction(threadId, signal) {
   try {
     if (!threadId) {
       return handleAxiosError(null, "Your request failed because no thread ID was included.");
     }
-
-    const response = await axios.get(`/protected/chat/${threadId}`);
+    const response = await axios.get(`/protected/chat/${threadId}`, { signal });
     return response.data;
   } catch (error) {
+    // Check if this was a user cancellation,
+    // We must RE-THROW this so the useEffect knows to ignore it.
+    if (axios.isCancel(error)) throw error; 
+
     console.error("Load History Error:", error);
     return handleAxiosError(error, "Failed to load chat history!");
   }
@@ -91,6 +94,89 @@ export async function deleteThreadAction(threadId) {
     return handleAxiosError(error, "Failed to delete thread.");
   }
 }
+
+/**
+ * Streams a chat response using Server-Sent Events (SSE).
+ * Returns an object with stream (async iterable) and abort controller.
+ * 
+ * Usage:
+ *   const { stream, abort } = streamChatAction({ threadId, message });
+ *   for await (const event of stream) {
+ *     if (event.type === 'token') console.log(event.val);
+ *   }
+ */
+export function streamChatAction({ threadId, message }) {
+  const controller = new AbortController();
+
+  // 1. Define the generator function
+  async function* generateStream() {
+    try {
+      const response = await fetch("http://localhost:4000/api/protected/chat/stream", {
+        method: "POST",
+        headers: { 
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
+        body: JSON.stringify({ message, threadId }),
+        signal: controller.signal,
+      });
+
+      
+      if (!response.ok) throw new Error(`Request failed! status: ${response.status}`);
+      if (!response.body) throw new Error("No response body received");
+
+      // 2. The Transformer (SSE Parser)
+      const sseParser = () => new TransformStream({
+        transform(chunk, controller) {
+          const lines = chunk.split("\n");
+          for (const line of lines) {
+            // Handle standard SSE "data: " prefix
+            if (line.startsWith("data: ") && !line.includes("[DONE]")) {
+              try {
+                const json = JSON.parse(line.slice(6)); // Remove "data: "
+                controller.enqueue(json);
+              } catch (e) {
+                // Ignore partial/malformed chunks
+              }
+            }
+          }
+        },
+      });
+
+      // 3. The Clean Pipeline
+      // Raw Bytes -> Text -> JSON Objects
+      const stream = response.body
+        .pipeThrough(new TextDecoderStream())
+        .pipeThrough(sseParser());
+      
+      // 4. Yield parsed JSON objects directly
+      // const reader = stream.getReader();
+      // while (true) {
+      //   const { value, done } = await reader.read();
+      //   if (done) break;
+      //   yield value;
+      // }
+
+      // 4. Yields parsed JSON objects directly
+      for await (const chunk of stream) {
+        yield chunk;
+      }
+
+    } catch (error) {
+      if (error.name !== 'AbortError') {
+        // Yield error so the UI can display it
+        yield { type: 'error', val: error.message || "Network error" };
+      }
+    }
+  }
+
+  // 5. Return the simpler interface
+  return {
+    stream: generateStream(), // The UI can just "for await" this
+    abort: () => controller.abort()
+  };
+}
+
 
 // --- Helper for cleaner error handling ---
 function handleAxiosError(error, defaultMessage) {

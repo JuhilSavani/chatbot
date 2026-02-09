@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { SidebarProvider, SidebarInset, useSidebar } from "@/components/ui/sidebar"
 import { ArrowRight } from "lucide-react"
@@ -6,8 +6,7 @@ import { Button } from "@/components/ui/button"
 import ChatInput  from '@/utils/components/ChatInput'
 import ChatSidebar from '@/utils/components/ChatSidebar'
 import { useAuth } from '@/utils/hooks/useAuth'
-import { loadChatHistoryAction, loadChatThreadsAction } from '@/utils/actions/chat.actions'
-import { chatWithModelAction } from '@/utils/actions/chat.actions';
+import { loadChatHistoryAction, loadChatThreadsAction, streamChatAction } from '@/utils/actions/chat.actions'
 import MarkdownRenderer from '@/utils/components/MarkdownRenderer';
 
 const SidebarInactiveIcon = ({ className = "w-5 h-5" }) => (
@@ -82,6 +81,36 @@ export default function ChatWindow() {
   )
 }
 
+const ChatMessage = ({ message }) => {
+  if (!message.content) return null;
+  const isUser = message.role === 'user';
+  const isError = message.role === 'error';
+
+  // Base styles for the bubble container
+  const containerClasses = `mb-4 p-4 rounded-lg ${
+    isUser 
+      ? 'bg-zinc-800 ml-auto max-w-[80%] w-fit' 
+      : 'bg-zinc-100 w-full p-8'
+  }`;
+
+  // Base styles for the text content
+  const textClasses = isUser ? 'text-white' : 'text-zinc-800 w-full';
+
+  return (
+    <div className={containerClasses}>
+      <div className={textClasses}>
+        {isUser ? (
+          message.content
+        ) : isError ? (
+          <span className="text-red-500">{message.content}</span>
+        ) : (
+          <MarkdownRenderer content={message.content} />
+        )}
+      </div>
+    </div>
+  );
+};
+
 function MainContent({ setThreads }) {
   const { open, toggleSidebar } = useSidebar()
   const { threadId } = useParams()
@@ -89,115 +118,144 @@ function MainContent({ setThreads }) {
   const { auth } = useAuth()
   
   const [messages, setMessages] = useState([])
-  const [loading, setLoading] = useState(false)
+  const [loadingChat, setLoadingChat] = useState(false)
   const [loadingResponse, setLoadingResponse] = useState(false)
   const [error, setError] = useState(null)
-  const [currentThreadId, setCurrentThreadId] = useState(null)
 
-  // Generate thread_id for new chat or use existing one from URL
+  const currentChatThreadId = useRef(null);
+  const abortRef = useRef(null)
+
+  // LOAD HISTORY EFFECT
   useEffect(() => {
-    if (threadId) {
-      // If we've just created a new thread by first message, don't reload
-      if (threadId === currentThreadId) return;
-
-      // Existing chat - load history
-      setCurrentThreadId(threadId)
-      loadChatHistory(threadId)
-    } else {
-      // New chat - generate thread_id
-      if (auth.isAuthenticated && auth.user) {
-        const newThreadId = `${auth.user.id}_${Date.now()}`
-        setCurrentThreadId(newThreadId)
-        setMessages([])
-      }
+    // Case A: New Chat Page (No ID) -> Clear screen
+    if (!threadId) {
+      setMessages([])
+      return
     }
-  }, [threadId, auth.isAuthenticated, auth.user])
 
-  const loadChatHistory = async (tid) => {
-    setLoading(true)
-    try {
-      const result = await loadChatHistoryAction(tid)
-      if (result.error) {
-        setError(result.error)
-        setMessages([])
-      } else {
-        setMessages(result.messages || [])
-        setError(null)
-      }
-    } catch(error){
-      setError('Failed to load chat history!')
-      console.error('Error loading chat history:', error)
-    }finally {
-      setLoading(false)
+    // Case B: We just created this thread locally -> SKIP FETCH
+    if (currentChatThreadId.current === threadId) {
+      currentChatThreadId.current = null // Reset for next time
+      return 
     }
-  }
 
+    const controller = new AbortController();
+
+    // Load chat history
+    (async () => {
+      setLoadingChat(true)
+      try {
+        const result = await loadChatHistoryAction(threadId, controller.signal);
+        if (result.error) {
+          setError(result.error)
+          setMessages([])
+        } else {
+          setMessages(result.messages || [])
+          setError(null)
+        }
+      } catch (error) {
+        // Ignore errors caused by aborting
+        if (error.name !== 'AbortError') {
+          setError('Failed to load chat history!')
+          console.error('Error loading chat history:', error)
+        }
+      } finally {
+        // Only turn off loading if THIS request finished naturally.
+        // If it was aborted, it means a NEW request has likely already started 
+        // and turned loading back on. We don't want to turn it off.
+        if (!controller.signal.aborted) {
+          setLoadingChat(false)
+        }
+      }
+    })();
+
+    return () => controller.abort();
+  }, [threadId])
+
+
+  // SEND MESSAGE HANDLER
   const handleMessageSent = async (newMessage) => {
-    // Add user message to UI
-    setMessages(prev => [...prev, newMessage])
+    // Optimistic UI Update
+    setMessages(prev => [
+      ...prev, 
+      { role: 'user', content: newMessage },
+      { role: 'assistant', content: '' } // Placeholder for stream
+    ]);
     
-    // If this is a new chat (no threadId in URL), navigate to the thread URL
-    if (!threadId && currentThreadId) {
-      navigate(`/chat/${currentThreadId}`, { replace: true })
+    const activeThreadId = threadId || `${auth.user.id}_${Date.now()}`;
+    const isNewThread = !threadId;
+
+    if (isNewThread) {
+      currentChatThreadId.current = activeThreadId;
+      navigate(`/chat/${activeThreadId}`, { replace: true });
       setThreads((prev) => [{ 
-        threadId: currentThreadId, 
+        threadId: activeThreadId, 
         threadName: 'Untitled Chat',
         updatedAt: new Date().toISOString()
       }, ...prev])
     }
 
-    // Set loading state for AI response
-    setLoadingResponse(true)
-    
+    // Start streaming
+    setLoadingResponse(true)    
     try {
-      // Send message to backend and get AI response
-      const result = await chatWithModelAction({
-        threadId: currentThreadId,
-        message: newMessage.content
+      const { stream, abort } = streamChatAction({
+        threadId: activeThreadId,
+        message: newMessage
       })
-
-      if (result.error){
-        // ADDED: Append error as a message instead of global state
-        setMessages(prev => [...prev, {
-          role: 'error',
-          content: result.error || 'Failed to get response'
-        }])
-        console.error('Error getting AI response:', result.error)
-      } else {
-        // Add AI response to messages
-        setMessages(prev => [...prev, {
-          role: 'assistant',
-          content: result.response || 'No response received'
-        }])
-
-        setThreads(prevThreads => prevThreads.map(thread => 
-          thread.threadId === currentThreadId
-            ? { 
-                threadId: currentThreadId,
-                threadName: result.threadName || thread.threadName, 
-                updatedAt: new Date().toISOString() 
-              } 
-            : thread
-        ))
-        setError(null)
+    
+      // Store abort function for stop button
+      abortRef.current = abort
+      
+      for await (const event of stream) {
+        if (event.type === 'token') {
+          // Update the assistant's placeholder message
+          setMessages(prev => {
+            const lastMsg = prev[prev.length - 1];
+            // Safety: ensure we are modifying the assistant's message
+            if (lastMsg.role !== 'assistant') return prev;
+            return [
+              ...prev.slice(0, -1), 
+              { ...lastMsg, content: lastMsg.content + event.val }
+            ];
+          });
+        } else if (event.type === 'error') {
+          setMessages(prev => {
+            return [
+              ...prev,
+              { role: 'error', content: event.val || "Stream failed." }
+            ];
+          });
+          console.error("Stream Error Event:", event.val);
+        } else if (event.type === 'threadName') {
+          // Update Sidebar Name
+          setThreads(prev => prev.map(t => 
+            t.threadId === activeThreadId ? { ...t, threadName: event.val } : t
+          ));
+        } 
       }
     } catch (err) {
-      // ADDED: Append error as a message instead of global state
-      setMessages(prev => [...prev, {
-        role: 'error',
-        content: 'Failed to get response'
-      }])
-      console.error('Error getting AI response:', err)
+      console.error("Stream failed", err);
+      // Optional: Add visual error state to message
     } finally {
-      setLoadingResponse(false)
+      setLoadingResponse(false);
+      abortRef.current = null;
     }
-  }
+  };
+
+  const handleStop = () => {
+    if (abortRef.current) {
+      abortRef.current();
+      abortRef.current = null;
+      setLoadingResponse(false);
+    }
+  };
 
   // Auto-scroll to bottom when messages change
-  const messagesEndRef = React.useRef(null)
+  const messagesEndRef = useRef(null)
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
   }, [messages, loadingResponse])
+
 
   const contentStateClasses = open 
     ? "bg-white my-2 mr-2 rounded-md border border-zinc-200 shadow-xl overflow-hidden" 
@@ -231,7 +289,7 @@ function MainContent({ setThreads }) {
       </header>
       
       {/* Loading Bar */}
-      {loading && (
+      {loadingChat && (
         <div className="relative h-[2px] w-full overflow-hidden shrink-0">
            <div className="meteor-effect" /> 
         </div>
@@ -239,7 +297,7 @@ function MainContent({ setThreads }) {
 
       {/* BODY - SCROLLABLE AREA */}
       <div className="flex-1 overflow-y-auto p-8 w-full">
-        {loading && (
+        {loadingChat && (
           <div className="flex h-full items-center justify-center invisible">
             <div className="text-zinc-500">Loading chat history...</div>
           </div>
@@ -251,7 +309,7 @@ function MainContent({ setThreads }) {
           </div>
         )}
 
-        {!loading && !error && isNewChat && (
+        {!loadingChat && !error && isNewChat && (
           <div className="flex h-full flex-col items-center justify-center">
             <div className="w-12 h-12 bg-zinc-50 rounded-md flex items-center justify-center mb-4 border border-zinc-200 shadow-md">
               <div className="w-3 h-3 bg-zinc-900 rounded-full animate-pulse" />
@@ -267,32 +325,14 @@ function MainContent({ setThreads }) {
           </div>
         )}
 
-        {!loading && !error && !isNewChat && messages.length > 0 && (
+        {!loadingChat && !error && !isNewChat && messages.length > 0 && (
           <div className="flex flex-col gap-4 max-w-3xl mx-auto w-full">
             {messages.map((message, index) => (
-              <div 
-                key={index} 
-                className={`mb-4 p-4 rounded-lg ${
-                  message.role === 'user' 
-                    ? 'bg-zinc-800 ml-auto max-w-[80%] w-fit' 
-                    : 'bg-zinc-100 w-full p-8'
-                }`}
-              >
-                <div className={`${
-                  message.role === 'user' ? 'text-white' :  'text-zinc-800 w-full'
-                }`}>
-                  {message.role === 'user' 
-                    ? message.content 
-                    : message.role === 'error'
-                      ? <span className="text-red-500">{message.content}</span>
-                      : <MarkdownRenderer content={message.content} />
-                  }
-                </div>
-              </div>
+              <ChatMessage key={index} message={message} />
             ))}
             
             {/* Loading indicator for AI response */}
-            {loadingResponse && (
+            {loadingResponse && messages.length > 0 && !messages[messages.length - 1].content && (
               <div className="mb-4 p-4 rounded-lg w-full flex items-center gap-2">
                  <div className="w-5 h-5 border-2 border-zinc-300 border-t-zinc-900 rounded-full animate-spin"></div>
                 <span className="text-zinc-900 text-sm font-medium ml-1">Thinking...</span>
@@ -307,10 +347,10 @@ function MainContent({ setThreads }) {
       <div className="shrink-0 w-full p-4 bg-white border-t border-zinc-200">
         <div className="max-w-2xl mx-auto">
           <ChatInput 
-            threadId={currentThreadId}
+            threadId={currentChatThreadId}
             onMessageSent={handleMessageSent}
             loading={loadingResponse}
-            onStop={() => {}} 
+            onStop={handleStop} 
           />
         </div>
       </div>

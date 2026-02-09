@@ -2,6 +2,7 @@ import express from "express";
 import { 
   loadChatThreads, 
   chatWithModel, 
+  chatWithModelStream,
   loadChatHistory,
 
   setPinStatus,
@@ -27,6 +28,12 @@ router.get("/chat/:threadId", loadChatHistory);
  * @desc    Send a message to the AI model within a specific thread
  */
 router.post("/chat/message", chatWithModel);
+
+/**
+ * @route   POST /api/protected/chat/stream
+ * @desc    Stream a response from the AI model token-by-token via SSE
+ */
+router.post("/chat/stream", chatWithModelStream);
 
 /**
  * @route   PUT /api/protected/chat/pin/:threadId/:action
