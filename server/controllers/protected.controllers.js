@@ -2,6 +2,7 @@ import { workflow, chatModel } from "../config/workflow.config.js";
 import { HumanMessage } from "@langchain/core/messages";
 import { Thread } from "../models/thread.models.js";
 import { sequelize } from "../config/sequelize.config.js";
+import { QueryTypes } from 'sequelize';
 
 export const loadChatThreads = async (req, res) => {
   try {
@@ -225,34 +226,6 @@ export const loadChatHistory = async (req, res) => {
   }
 }
 
-// Helper function to generate a thread name based on the first message
-async function generateThreadName(userMessage, aiResponse) {
-  try {
-    // Option 1: Use a simple LLM call to generate a concise title
-    const titlePrompt = `
-      Based on this conversation, generate a short, descriptive title (max 6 words):
-
-      User: ${userMessage}
-      Assistant: ${aiResponse}
-
-      Generate only the title, nothing else.
-    `;
-
-    const titleResult = await chatModel.invoke([ new HumanMessage(titlePrompt) ]);
-
-    const title = titleResult.content
-      .trim()
-      .replace(/^["']|["']$/g, '') // Remove quotes if present
-      .substring(0, 60); // Max 60 characters
-    
-    return title || generateFallbackName(userMessage);
-    
-  } catch (error) {
-    console.error("Error generating thread name:", error);
-    return generateFallbackName(userMessage);
-  }
-}
-
 export const setPinStatus = async (req, res) => {
   try {
     const { threadId, action } = req.params;
@@ -283,57 +256,88 @@ export const setPinStatus = async (req, res) => {
   }
 };
 
+
+/**
+ * Deletes a chat thread and all associated LangGraph checkpoints.
+ * Tables: checkpoints, checkpoint_writes, checkpoint_blobs.
+ */
 export const deleteThread = async (req, res) => {
   const t = await sequelize.transaction();
+
   try {
     const { threadId } = req.params;
-    const userId = req.user.id; // User is authenticated
+    const userId = req.user.id;
 
-    // 1. Verify ownership first
-    const thread = await Thread.findOne({ where: { threadId, userId }, transaction: t });
+    // 1. Verify ownership before any destructive action
+    const thread = await Thread.findOne({ 
+      where: { threadId, userId }, 
+      transaction: t 
+    });
 
     if (!thread) {
       await t.rollback();
       return res.status(404).json({ message: "Thread not found or unauthorized." });
     }
 
-    // 2. Raw SQL Deletes for LangGraph tables
-    // Note: Parameterized queries to prevent SQL injection
-    await sequelize.query(`DELETE FROM checkpoints WHERE thread_id = :threadId`, { replacements: { threadId }, transaction: t });
-    await sequelize.query(`DELETE FROM checkpoint_writes WHERE thread_id = :threadId`, { replacements: { threadId }, transaction: t });
-    await sequelize.query(`DELETE FROM checkpoint_blobs WHERE thread_id = :threadId`, { replacements: { threadId }, transaction: t });
+    // 2. Clear LangGraph history tables
+    const langGraphTables = ['checkpoints', 'checkpoint_writes', 'checkpoint_blobs'];
+    
+    for (const table of langGraphTables) {
+      await sequelize.query(
+        `DELETE FROM "public"."${table}" WHERE thread_id = :threadId`,
+        { 
+          replacements: { threadId }, 
+          transaction: t, 
+          type: QueryTypes.DELETE 
+        }
+      );
+    }
 
-    // 3. Delete the thread itself
+    // 3. Delete the thread entry itself
     await thread.destroy({ transaction: t });
 
     await t.commit();
-    res.json({ message: "Thread and associated data deleted successfully", threadId });
+    
+    res.json({ 
+      message: "Thread and associated data deleted successfully", 
+      threadId 
+    });
+
   } catch (error) {
-    await t.rollback();
+    if (t) await t.rollback();
     console.error("Error deleting thread:", error.stack);
     res.status(500).json({ message: "Internal Server Error" });
   }
 };
 
-// export const deleteThread = async (req, res) => {
-//   try {
-//     const { threadId } = req.params;
-//     const userId = req.user.id; // User is authenticated
 
-//     const thread = await Thread.findOne({ where: { threadId, userId } });
+// Helper function to generate a thread name based on the first message
+async function generateThreadName(userMessage, aiResponse) {
+  try {
+    // Option 1: Use a simple LLM call to generate a concise title
+    const titlePrompt = `
+      Based on this conversation, generate a short, descriptive title (max 6 words):
 
-//     if (!thread) {
-//       return res.status(404).json({ message: "Thread not found or unauthorized." });
-//     }
+      User: ${userMessage}
+      Assistant: ${aiResponse}
 
-//     await thread.destroy();
+      Generate only the title, nothing else.
+    `;
 
-//     res.json({ message: "Thread deleted successfully", threadId });
-//   } catch (error) {
-//     console.error("Error deleting thread:", error.stack);
-//     res.status(500).json({ message: "Internal Server Error" });
-//   }
-// };
+    const titleResult = await chatModel.invoke([ new HumanMessage(titlePrompt) ]);
+
+    const title = titleResult.content
+      .trim()
+      .replace(/^["']|["']$/g, '') // Remove quotes if present
+      .substring(0, 60); // Max 60 characters
+    
+    return title || generateFallbackName(userMessage);
+    
+  } catch (error) {
+    console.error("Error generating thread name:", error);
+    return generateFallbackName(userMessage);
+  }
+}
 
 // Fallback: Generate a simple name from the first message
 function generateFallbackName(message) {
