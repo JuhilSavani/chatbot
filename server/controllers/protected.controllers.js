@@ -109,10 +109,17 @@ export const chatWithModelStream = async (req, res) => {
   res.setHeader("Cache-Control", "no-cache");
   res.setHeader("Connection", "keep-alive");
   res.flushHeaders();
+  
+  // Create controller and listen for client disconnect
+  const controller = new AbortController();
+  
+  // If the user closes the tab or cancels the request, abort the graph
+  res.on('close', () => {
+    controller.abort();
+  });
 
   try {
     // 2. Thread setup (same as non-streaming)
-    const config = { configurable: { thread_id: threadId } };
     let thread = await Thread.findOne({ where: { threadId } });
     
     const isNewThread = !thread;
@@ -127,7 +134,11 @@ export const chatWithModelStream = async (req, res) => {
 
     // 3. Start the stream with streamEvents v2
     const inputs = { messages: [new HumanMessage(message)] };
-    const stream = await workflow.streamEvents(inputs, { ...config, version: "v2" });
+    const stream = await workflow.streamEvents(inputs, { 
+      configurable: { thread_id: threadId, signal: controller.signal },
+      version: "v2",
+      // signal: controller.signal 
+    });
 
     let fullResponse = "";
 
@@ -180,6 +191,10 @@ export const chatWithModelStream = async (req, res) => {
     }
 
   } catch (error) {
+    if (error.message === 'Abort') {
+      console.log('🚫 Stream aborted by client');
+      return; // Exit cleanly
+    }
     console.error("Stream Error:", error.stack);
     res.write(`data: ${JSON.stringify({ 
       type: "error", 
