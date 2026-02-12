@@ -158,14 +158,14 @@ export const chatWithModelStream = async (req, res) => {
       // Tool start (for future tool support)
       else if (event.event === "on_tool_start") {
         res.write(`data: ${JSON.stringify({ 
-          type: "status", 
+          type: "tool_call", 
           val: `Using tool: ${event.name}` 
         })}\n\n`);
       }
       // Tool end
       else if (event.event === "on_tool_end") {
         res.write(`data: ${JSON.stringify({ 
-          type: "status", 
+          type: "tool_call", 
           val: "Tool finished." 
         })}\n\n`);
       }
@@ -225,13 +225,18 @@ export const loadChatHistory = async (req, res) => {
       return res.json({ messages: [], threadName: thread.title });
 
     // Format messages for the client
-    const history = state.values.messages.map((msg) => {
-      const type = msg._getType();
-      return {
-        role: type === 'human' ? 'user' : 'assistant',
-        content: msg.content,
-      };
-    });
+    const history = state.values.messages
+      .filter((msg) => {
+        const type = msg._getType();
+        return type === 'human' || type === 'ai';
+      })
+      .map((msg) => {
+        const type = msg._getType();
+        return {
+          role: type === 'human' ? 'user' : 'assistant',
+          content: msg.content,
+        };
+      });
 
     res.json({ messages: history, threadName: thread.title });
 

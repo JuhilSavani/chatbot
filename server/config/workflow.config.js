@@ -2,7 +2,16 @@ import { checkpointer } from './sequelize.config.js';
 import { ChatOpenAI } from "@langchain/openai"
 import { HumanMessage } from "@langchain/core/messages";
 import { StateGraph, MessagesAnnotation } from "@langchain/langgraph";
+import { ToolNode, toolsCondition } from "@langchain/langgraph/prebuilt";
+import { searchTool } from '../tools/search.tools.js';
 
+// 1. Define your tools
+const tools = [searchTool];
+
+// 2. Create the ToolNode
+const toolNode = new ToolNode(tools);
+
+// 3. Bind tools to the model
 export const chatModel = new ChatOpenAI({
   configuration: {
     baseURL: "https://models.github.ai/inference",
@@ -12,14 +21,25 @@ export const chatModel = new ChatOpenAI({
   streaming: true
 });
 
+const chatModelWithTools = chatModel.bindTools(tools)
+
 async function callAgent(state, config){
-  let fullMessage = null; 
-  
   const signal = config.configurable.signal || config.signal;
-  
+
+  // Define the behavior instructions
+  const systemInstructions = {
+    role: "system",
+    content: `You are a helpful AI assistant with access to a real-time web search tool. 
+      Today's date is ${new Date().toDateString()}.
+      If a user asks about current events, specific data you don't know, or 
+      information from 2025-2026, use the search tool to provide accurate info.
+      Always cite your sources if the search tool provides links.`
+  };
+  const messagesWithSystem = [systemInstructions, ...state.messages];
+
+  let fullMessage = null; 
   try {
-    const stream = await chatModel.stream(state.messages, { signal });
-    
+    const stream = await chatModelWithTools.stream(messagesWithSystem, { signal });
     for await (const chunk of stream) {
       fullMessage = !fullMessage ? chunk : fullMessage.concat(chunk);
     }
@@ -36,11 +56,14 @@ async function callAgent(state, config){
   return { messages: [fullMessage] }; 
 };
 
+// 4. Build the Graph
 const graph = new StateGraph(MessagesAnnotation);
 
 graph.addNode("chatAgent", callAgent);
+graph.addNode("tools", toolNode)
 
 graph.addEdge("__start__", "chatAgent");
-graph.addEdge("chatAgent", "__end__");
+graph.addConditionalEdges("chatAgent", toolsCondition)
+graph.addEdge("tools", "chatAgent");
 
 export const workflow = graph.compile({ checkpointer });
