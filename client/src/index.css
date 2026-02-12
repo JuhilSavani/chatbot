@@ -87,16 +87,16 @@
     @apply m-0 p-0 box-border;
   }
 
-  h1 {
+  h1:not(.markdown-body *) {
     @apply text-4xl font-bold mb-4; 
   }
 
-  a {
+  a:not(.markdown-body *) {
     @apply transition-all text-blue-800;
     text-decoration: none;
   }
 
-  a:hover {
+  a:not(.markdown-body *):hover {
     @apply underline decoration-blue-800;
   }
 

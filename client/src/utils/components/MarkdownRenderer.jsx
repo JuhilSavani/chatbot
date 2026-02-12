@@ -7,14 +7,35 @@ import { Copy, Check } from 'lucide-react';
 
 export default function MarkdownRenderer({ content }) {
   return (
-    <div className="prose prose-zinc dark:prose-invert max-w-none w-full break-words">
+    <div className="markdown-body max-w-none w-full break-words">
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
-        modules={['md-code-block']}
+        // modules={['md-code-block']}
         components={{
+          // Headings
+          h1({ children }) {
+            return <h1 className="text-3xl font-extrabold mt-8 mb-4">{children}</h1>;
+          },
+          h2({ children }) {
+            return <h2 className="text-2xl font-extrabold mt-6 mb-3">{children}</h2>;
+          },
+          h3({ children }) {
+            return <h3 className="text-xl font-extrabold mt-5 mb-2">{children}</h3>;
+          },
+          h4({ children }) {
+            return <h4 className="text-lg font-extrabold mt-4 mb-2">{children}</h4>;
+          },
+          h5({ children }) {
+            return <h5 className="text-base font-extrabold mt-3 mb-1">{children}</h5>;
+          },
+          h6({ children }) {
+            return <h6 className="text-sm font-semibold mt-3 mb-1 text-zinc-500">{children}</h6>;
+          },
+          // Paragraphs
           p({ children }) {
              return <p className="mb-6 leading-7 last:mb-0">{children}</p>;
           },
+          // Lists
           ul({ children }) {
             return <ul className="list-disc list-outside pl-6 mb-4 space-y-2">{children}</ul>;
           },
@@ -24,6 +45,36 @@ export default function MarkdownRenderer({ content }) {
           li({ children }) {
             return <li className="mb-1">{children}</li>;
           },
+          // Blockquote
+          blockquote({ children }) {
+            return (
+              <blockquote className="border-l-4 border-zinc-300 dark:border-zinc-600 pl-4 my-4 italic text-zinc-600 dark:text-zinc-400">
+                {children}
+              </blockquote>
+            );
+          },
+          // Horizontal Rule
+          hr() {
+            return <hr className="my-8 border-zinc-300 dark:border-zinc-700" />;
+          },
+          // Images
+          img({ src, alt }) {
+            return <img src={src} alt={alt} className="max-w-full h-auto rounded my-4" />;
+          },
+          // Links
+          a({ href, children }) {
+            return (
+              <a
+                href={href}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-blue-600 dark:text-blue-400 underline decoration-blue-600/30 hover:decoration-blue-600 transition-colors"
+              >
+                {children}
+              </a>
+            );
+          },
+          // Code
           code({ node, inline, className, children, ...props }) {
             const match = /language-(\w+)/.exec(className || '');
             const codeString = String(children).replace(/\n$/, '');
@@ -43,6 +94,15 @@ export default function MarkdownRenderer({ content }) {
               </code>
             );
           },
+          // Pre (for non-language code blocks)
+          pre({ children }) {
+            return (
+              <pre className="my-4 p-4 rounded-lg overflow-x-auto bg-zinc-100 dark:bg-zinc-800 text-sm font-mono">
+                {children}
+              </pre>
+            );
+          },
+          // Tables
           table({ children }) {
             return (
               <div className="overflow-x-auto my-6 border rounded-md border-zinc-300 dark:border-zinc-700">
