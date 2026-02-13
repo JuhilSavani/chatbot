@@ -18,7 +18,7 @@ const WebSearchOutput = ({ output }) => {
             href={item.url}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center gap-2 text-blue-400 hover:text-blue-300 hover:underline font-medium text-xs truncate mb-1"
+            className="flex items-center gap-2 text-blue-400 hover:text-blue-300 underline decoration-transparent hover:decoration-blue-300 font-medium text-xs mb-1 transition-all duration-200"
           >
             <ExternalLink size={10} />
             <span className="truncate">{item.title || item.url}</span>
