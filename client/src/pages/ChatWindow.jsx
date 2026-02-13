@@ -64,7 +64,7 @@ const ChatMessage = React.memo(({ message }) => {
 
   // 2. Handle Tool Calls
   if (message.role === 'tool_call') {
-    return <ToolCall {...message.content} />;
+    return <ToolCall {...message.content} />; // content: { tool, input, output, status }
   }
 
   // 3. Handle Standard Messages
@@ -181,25 +181,25 @@ function MainContent({ setThreads }) {
 
         } else if (event.type === 'tool_start') {
           setMessages(prev => [...prev, {
+            id: event.runId,
             role: 'tool_call',
-            content: { toolName: event.tool, input: event.input, status: 'loading' }
+            content: { tool: event.tool, input: event.input, status: 'loading' }
           }]);
 
         } else if (event.type === 'tool_end') {
-          const cleanOutput = cleanToolOutput(event.output);
-
           // This code block is responsible for finding the specific "loading" tool bubble in chat history 
           // and updating it with the final results (the blue links).
           setMessages(prev => {
             // 1. Find the index
-            const index = prev.findLastIndex(msg => 
+            const index = prev.findIndex(msg => 
               msg.role === 'tool_call' && 
-              msg.content.toolName === event.tool && 
-              msg.content.status === 'loading'
+              msg.id === event.runId
             );
 
             // 2. Safety Check: If not found, return original state (No re-render)
             if (index === -1) return prev;
+            
+            const { result, status } = event.output;
 
             // 3. Update: Clone array and replace only the specific item
             const newMsgs = [...prev];
@@ -207,8 +207,8 @@ function MainContent({ setThreads }) {
               ...newMsgs[index],
               content: { 
                 ...newMsgs[index].content, 
-                output: cleanOutput, 
-                status: 'success' 
+                output: result,
+                status: status,
               }
             };
           
@@ -305,50 +305,3 @@ function MainContent({ setThreads }) {
     </SidebarInset>
   )
 }
-
-const cleanToolOutput = (output) => {
-  if (!output) return null;
-
-  let cleanOutput = output;
-
-  // 1. If it's a string, try to parse it (removing markdown)
-  if (typeof cleanOutput === 'string') {
-    try {
-      const raw = cleanOutput
-        .replace(/^```json\s*/, '')  // Remove start ```json
-        .replace(/^```\s*/, '')      // Remove start ```
-        .replace(/\s*```$/, '')      // Remove end ```
-        .trim();
-      cleanOutput = JSON.parse(raw);
-    } catch (e) {
-      // If parsing fails, keep strictly as string (might be plain text)
-    }
-  }
-
-  // 2. Unwrap LangChain "lc: 1" structure
-  if (
-    cleanOutput &&
-    typeof cleanOutput === 'object' &&
-    cleanOutput.lc === 1 &&
-    cleanOutput.kwargs &&
-    cleanOutput.kwargs.content
-  ) {
-    cleanOutput = cleanOutput.kwargs.content;
-
-    // 3. Parse inner content if it's a string (Recursive clean)
-    if (typeof cleanOutput === 'string') {
-      try {
-        const rawInner = cleanOutput
-          .replace(/^```json\s*/, '')
-          .replace(/^```\s*/, '')
-          .replace(/\s*```$/, '')
-          .trim();
-        cleanOutput = JSON.parse(rawInner);
-      } catch (e) {
-        // Keep as string if inner parse fails
-      }
-    }
-  }
-
-  return cleanOutput;
-};

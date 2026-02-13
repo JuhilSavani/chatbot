@@ -155,20 +155,22 @@ export const chatWithModelStream = async (req, res) => {
           })}\n\n`);
         }
       }
-      // Tool start (for future tool support)
+      // Tool start
       else if (event.event === "on_tool_start") {
         res.write(`data: ${JSON.stringify({ 
           type: "tool_start", 
+          runId: event.run_id,
           tool: event.name,
-          input: event.data.input
+          input: JSON.parse(event.data.input.input)
         })}\n\n`);
       }
       // Tool end
       else if (event.event === "on_tool_end") {
         res.write(`data: ${JSON.stringify({ 
           type: "tool_end", 
+          runId: event.run_id,
           tool: event.name,
-          output: event.data.output
+          output: parseToolOutput(event.data.output)
         })}\n\n`);
       }
     }
@@ -234,7 +236,10 @@ export const loadChatHistory = async (req, res) => {
     const toolOutputs = new Map(
       messages
         .filter(m => m._getType() === 'tool')
-        .map(m => [m.tool_call_id, m.content])
+        .map(m => {
+          const { tool_call_id, status, name, content } = m;
+          return [tool_call_id, { tool_call_id, status, name, content }];
+        })
     );
 
     for (const msg of messages) {
@@ -251,14 +256,14 @@ export const loadChatHistory = async (req, res) => {
         if (msg.tool_calls?.length > 0) {
           for (const toolCall of msg.tool_calls) {
             // Find the corresponding ToolMessage for this call
-            const output = toolOutputs.get(toolCall.id);
+            const rawOutput = toolOutputs.get(toolCall.id);
+            const parsedOutput = rawOutput ? parseToolOutput(rawOutput) : null;
             history.push({
               role: 'tool_call',
               content: {
-                toolName: toolCall.name,
-                input: toolCall.args,
-                output: output ?? null,
-                status: output ? 'success' : 'loading'
+                ...parsedOutput,
+                input: toolCall.args, 
+                output: parsedOutput.result,
               }
             });
           }
@@ -400,3 +405,72 @@ function generateFallbackName(message) {
     ? `${cleanMessage}...` 
     : cleanMessage;
 }
+
+
+/* LANGCHAIN TOOL OUTPUT SCHEMA (SERIALIZED TOOLMESSAGE)
+  {
+    // 1. METADATA: Internal LangChain serialization markers.
+    "lc": 1, 
+    "type": "constructor",
+    "id": ["langchain_core", "messages", "ToolMessage"],
+
+    // 2. KWARGS: This is the payload you actually care about.
+    "kwargs": {
+      "status": "success", // Can also be "error"
+
+      "content": "<json_string>", 
+
+      "tool_call_id": "call_eKJq...", // Links this output to a specific tool request
+      "name": "<name_of_the_tool",
+      
+      "metadata": {},
+      "additional_kwargs": {},
+      "response_metadata": {}
+  } 
+*/
+
+const parseToolOutput = (output) => {
+  const { tool_call_id, status, name, content } = output;
+
+  // While JSON strings are the most common (because they are easy for models to "read" back), 
+  // the content field in a ToolMessage can absolutely hold other formats.
+  // In LangChain, the content of a message is technically defined as string | list[string | dict]. 
+
+  let finalParsedResult;
+
+  // 1. Handle Array (Multi-modal content)
+  if (Array.isArray(content)) {
+    finalParsedResult = content; 
+  } 
+  // 2. Handle String
+  else if (typeof content === 'string') {
+    try {
+      // Try to see if it's stringified JSON
+      const parsed = JSON.parse(content);
+      if (name === 'web_search' && parsed.results) {
+        finalParsedResult = {
+          query: parsed.query,
+          items: parsed.results.map(item => ({
+            title: item.title,
+            url: item.url,
+            snippet: item.content // Rename to avoid confusion with message content
+            // fullText: item.raw_content,   // The full page text (only if enabled)
+          })),
+          count: parsed.results.length
+        };
+      } else {
+        finalParsedResult = parsed;
+      }
+    } catch {
+      // It's just a regular plain-text string
+      finalParsedResult = content;
+    }
+  }
+
+  return {
+    id: tool_call_id,
+    tool: name,
+    result: finalParsedResult, 
+    status: status, // "success" or "error"
+  };
+};
