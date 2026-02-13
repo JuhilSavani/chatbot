@@ -70,6 +70,7 @@ export default function ChatSidebar({ threads = [], isLoading = false, setThread
   );
 
   const [threadToDelete, setThreadToDelete] = useState(null)
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
 
   const confirmDelete = async () => {
@@ -93,7 +94,9 @@ export default function ChatSidebar({ threads = [], isLoading = false, setThread
       console.error("Failed to delete", error)
     } finally {
       setIsDeleting(false)
-      setThreadToDelete(null)
+      setIsDeleteDialogOpen(false)
+      // Allow animation to finish before clearing data, or just leave it
+      setTimeout(() => setThreadToDelete(null), 300) 
     }
   }
 
@@ -147,30 +150,31 @@ export default function ChatSidebar({ threads = [], isLoading = false, setThread
           </span>
           
           {/* Hover Actions */}
-          <div className="absolute right-0 top-0 h-full flex items-center gap-1 opacity-0 group-hover/thread:opacity-100 transition-opacity bg-gradient-to-l from-zinc-800 via-zinc-800 to-transparent pl-4">
-              <div 
+          <div className="absolute right-0 top-0 h-full flex items-center gap-1 pl-8 bg-gradient-to-l from-zinc-800 via-zinc-800 to-transparent opacity-0 translate-x-2 group-hover/thread:opacity-100 group-hover/thread:translate-x-0 transition-all duration-200 ease-out">
+            <div 
               role="button"
               tabIndex={0}
               onClick={(e) => {
                 e.stopPropagation();
                 togglePin(thread.threadId);
               }}
-              className="p-1 hover:bg-zinc-700 rounded-md text-zinc-400 hover:text-white transition-colors"
+              className="p-1.5 hover:bg-white/10 rounded-md text-[#a1a1aa] hover:text-[#fafafa] transition-colors"
               title={pinned.has(thread.threadId) ? "Unpin thread" : "Pin thread"}
             >
-              <Pin className={`h-4.5 w-4.5 ${pinned.has(thread.threadId) ? "fill-current text-white" : ""}`} />
+              <Pin className={`h-3.5 w-3.5 ${pinned.has(thread.threadId) ? "fill-current text-[#fafafa]" : ""}`} />
             </div>
-              <div 
+            <div 
               role="button"
               tabIndex={0}
               onClick={(e) => {
                 e.stopPropagation();
                 setThreadToDelete(thread);
+                setIsDeleteDialogOpen(true);
               }}
-              className="p-1 hover:bg-red-500/20 rounded-md text-zinc-400 hover:text-red-400 transition-colors"
+              className="p-1.5 hover:bg-red-500/20 rounded-md text-[#a1a1aa] hover:text-red-400 transition-colors"
               title="Delete thread"
             >
-              <Trash2 className="h-4.5 w-4.5" />
+              <Trash2 className="h-3.5 w-3.5" />
             </div>
           </div>
         </div>
@@ -184,14 +188,14 @@ export default function ChatSidebar({ threads = [], isLoading = false, setThread
       variant="sidebar" 
       side="left" 
       collapsible="offcanvas" 
-      className="border-none bg-zinc-950 text-white [&>[data-slot=sidebar-gap]]:hidden [&>[data-slot=sidebar-container]]:!z-50 [&>[data-slot=sidebar-container]]:shadow-2xl"
+      className="border-none bg-[#09090b] text-[#fafafa] [&>[data-slot=sidebar-gap]]:hidden [&>[data-slot=sidebar-container]]:!z-50 [&>[data-slot=sidebar-container]]:shadow-2xl"
     >
-      <SidebarHeader className="pt-6 pb-0 bg-zinc-950">
-        <div className="px-4 flex items-center justify-between mb-2">
+      <SidebarHeader className="pt-6 pb-0 bg-[#09090b]">
+        <div className="px-4 flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
-            <div className="flex items-center gap-4 font-bold text-[1.1rem] tracking-tight">
-              <div className="w-5.5 h-5.5 rounded-md bg-linear-to-br from-white to-gray-300 shadow-[0_0_15px_rgba(255,255,255,0.5)]"></div>
-              Sidekick
+            <div className="flex items-center gap-3 font-bold text-[1.1rem] tracking-tight text-[#fafafa]">
+              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-white to-zinc-400 shadow-[0_0_15px_rgba(255,255,255,0.6)]"></div>
+               <span className="font-semibold text-2xl tracking-tight">Sidekick</span>
             </div>
           </div>
           
@@ -199,58 +203,60 @@ export default function ChatSidebar({ threads = [], isLoading = false, setThread
             variant="ghost" 
             size="icon" 
             onClick={toggleSidebar} 
-            className="h-7 w-7 text-zinc-400 hover:text-white hover:bg-zinc-800"
+            className="h-8 w-8 text-[#a1a1aa] hover:text-[#fafafa] hover:bg-white/5"
           >
             <SidebarActiveIcon/>
           </Button>
         </div>
        
-        <Button 
-          onClick={handleNewChat}
-          disabled={!auth.isAuthenticated}
-          className="w-full justify-start gap-2 bg-zinc-800 text-zinc-100 hover:bg-zinc-700 hover:text-white border border-zinc-700 shadow-none p-6" 
-          size="sm"
-        >
-          <Plus className="h-4 w-4" />
-          New Chat
-        </Button>
+        <div className="px-2">
+          <Button 
+            onClick={handleNewChat}
+            disabled={!auth.isAuthenticated}
+            className="w-full justify-start gap-3 bg-[#18181b]/50 text-[#fafafa] hover:bg-white/5 border border-white/5 shadow-none h-10 px-4 transition-all hover:border-white/10" 
+            size="sm"
+          >
+            <Plus className="h-4 w-4 text-[#a1a1aa]" />
+            <span className="font-medium">New Chat</span>
+          </Button>
+        </div>
 
-        <div className="flex flex-col w-full">
-          <div className="relative group">
-            <Search className="absolute left-1.5 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-500 group-focus-within:text-zinc-300 transition-colors" />
+        <div className="flex flex-col w-full px-2 mt-4">
+          <div className="relative group px-2">
             <input
               type="text"
               placeholder="Search chats..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="p-3 w-full text-zinc-300 pl-8 text-sm border-b border-zinc-800 focus:border-zinc-300 focus:outline-none transition-all placeholder:text-zinc-600"
+              className="w-full bg-transparent text-[#fafafa] pl-8 py-2 text-sm border-b border-white/5 focus:border-white/40 focus:outline-none transition-all placeholder-[#52525b] peer"
             />
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-[#52525b] peer-focus:text-[#cacaca] transition-colors pointer-events-none" />
           </div>
-          <div className="relative h-[4px] w-full overflow-hidden">
+          <div className="relative h-[2px] w-full overflow-hidden">
             {isLoading && <div className="meteor-effect" />}
           </div>
         </div>
       </SidebarHeader>
 
-      <SidebarContent className="p-2 bg-zinc-950">
+      <SidebarContent className="px-2 py-2 bg-[#09090b]">
         <SidebarMenu>
           {/* Pinned Threads Section */}
           {pinnedThreads.length > 0 && (
             <>
-              <div className="px-4 py-1.5 text-xs font-semibold text-zinc-500 uppercase tracking-wider">
+              <div className="px-4 py-2 text-xs font-semibold text-[#52525b] uppercase tracking-wider">
                 Pinned
               </div>
               {pinnedThreads.map(renderThreadItem)}
               
-              {/* Separator if needed */}
-              {otherThreads.length > 0 && <Separator className="my-2 bg-zinc-800" />}
+              {/* Separator */}
+              {otherThreads.length > 0 && <div className="mx-4 my-2 h-px bg-white/5" />}
             </>
           )}
 
           {/* Other Threads Section */}
           {otherThreads.length > 0 && (
             <>
-              <div className="px-4 py-1.5 text-xs font-semibold text-zinc-500 uppercase tracking-wider">
+              <div className="px-4 py-2 text-xs font-semibold text-[#52525b] uppercase tracking-wider">
                 Recent
               </div>
               {otherThreads.map(renderThreadItem)}
@@ -259,32 +265,32 @@ export default function ChatSidebar({ threads = [], isLoading = false, setThread
         </SidebarMenu>
 
         {threads.length === 0 && (
-          <div className="px-4 py-8 text-center text-sm text-zinc-500">
-            No chat threads yet. Start a new chat!
+          <div className="px-4 py-12 text-center text-sm text-[#52525b]">
+            No chat threads yet.<br/>Start a new chat!
           </div>
         )}
         
         {threads.length > 0 && pinnedThreads.length === 0 && otherThreads.length === 0 && (
-           <div className="px-4 py-8 text-center text-sm text-zinc-500">
+           <div className="px-4 py-12 text-center text-sm text-[#52525b]">
             No results found.
           </div>
         )}
       </SidebarContent>
 
-      <SidebarFooter className="p-2 bg-zinc-950">
-          <div className="flex items-center justify-between m-2 border-t border-zinc-800 p-4 pb-0">
-            <div>
-              <div className="w-10 h-10 rounded-full bg-zinc-800 flex items-center justify-center shrink-0 inline-flex mr-4">
+      <SidebarFooter className="p-2 bg-[#09090b]">
+          <div className="flex items-center justify-between mx-2 mb-2 border-t border-white/5 pt-4 px-2">
+            <div className="flex items-center gap-3 overflow-hidden">
+              <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center shrink-0 border border-white/5 text-[#fafafa] font-medium text-sm">
                 {auth.user.username?.[0]?.toUpperCase()}
               </div>
-              <span className="truncate">{auth.user.username}</span>
+              <span className="truncate text-sm font-medium text-[#fafafa]">{auth.user.username}</span>
             </div>
             <Button
               variant="ghost"
               size="icon"
               onClick={logout}
               disabled={logoutLoading}
-              className="h-8 w-8 text-zinc-400 hover:text-red-400 hover:bg-zinc-800"
+              className="h-8 w-8 text-[#a1a1aa] hover:text-red-400 hover:bg-white/5"
               title="Logout"
             >
               <LogOut className="h-4 w-4" />
@@ -294,22 +300,22 @@ export default function ChatSidebar({ threads = [], isLoading = false, setThread
       </SidebarFooter>
     </Sidebar>
 
-    <AlertDialog open={!!threadToDelete} onOpenChange={(open) => !open && setThreadToDelete(null)}>
-      <AlertDialogContent className="bg-zinc-950 border-zinc-800 text-zinc-100">
+    <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+      <AlertDialogContent className="bg-[#09090b] border-white/10 text-[#fafafa] sm:rounded-2xl shadow-2xl">
         <AlertDialogHeader>
-          <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-          <AlertDialogDescription className="text-zinc-400">
+          <AlertDialogTitle>Delete conversation?</AlertDialogTitle>
+          <AlertDialogDescription className="text-[#a1a1aa]">
             This action cannot be undone. This will permanently delete the chat thread
-            <span className="font-semibold text-zinc-200"> "{threadToDelete?.threadName || 'Untitled Chat'}" </span>
+            <span className="font-semibold text-[#fafafa]"> "{threadToDelete?.threadName || 'Untitled Chat'}" </span>
             and remove all associated messages.
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel className="bg-transparent border-zinc-700 hover:bg-zinc-900 hover:text-white text-zinc-300">Cancel</AlertDialogCancel>
+          <AlertDialogCancel className="bg-transparent border-white/10 hover:bg-white/5 hover:text-[#fafafa] text-[#fafafa]">Cancel</AlertDialogCancel>
           <AlertDialogAction 
             onClick={confirmDelete}
             disabled={isDeleting}
-            className="bg-gray-300 hover:bg-gray-100 text-black border-none"
+            className="bg-gray-300 hover:bg-gray-200 text-zinc-800 border-none"
           >
             {isDeleting ? "Deleting..." : "Delete"}
           </AlertDialogAction>

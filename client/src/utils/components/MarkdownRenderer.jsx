@@ -7,40 +7,39 @@ import { Copy, Check } from 'lucide-react';
 
 export default function MarkdownRenderer({ content }) {
   return (
-    <div className="markdown-body max-w-none w-full break-words">
+    <div className="markdown-body max-w-none w-full break-words text-[#fafafa] font-sans">
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
-        // modules={['md-code-block']}
         components={{
           // Headings
           h1({ children }) {
-            return <h1 className="text-3xl font-extrabold mt-8 mb-4">{children}</h1>;
+            return <h1 className="text-3xl font-extrabold mt-8 mb-4 text-[#fafafa] tracking-tight">{children}</h1>;
           },
           h2({ children }) {
-            return <h2 className="text-2xl font-extrabold mt-6 mb-3">{children}</h2>;
+            return <h2 className="text-2xl font-bold mt-6 mb-3 text-[#fafafa] tracking-tight">{children}</h2>;
           },
           h3({ children }) {
-            return <h3 className="text-xl font-extrabold mt-5 mb-2">{children}</h3>;
+            return <h3 className="text-xl font-bold mt-5 mb-2 text-[#fafafa]">{children}</h3>;
           },
           h4({ children }) {
-            return <h4 className="text-lg font-extrabold mt-4 mb-2">{children}</h4>;
+            return <h4 className="text-lg font-bold mt-4 mb-2 text-[#fafafa]">{children}</h4>;
           },
           h5({ children }) {
-            return <h5 className="text-base font-extrabold mt-3 mb-1">{children}</h5>;
+            return <h5 className="text-base font-bold mt-3 mb-1 text-[#fafafa]">{children}</h5>;
           },
           h6({ children }) {
-            return <h6 className="text-sm font-semibold mt-3 mb-1 text-zinc-500">{children}</h6>;
+            return <h6 className="text-sm font-semibold mt-3 mb-1 text-[#a1a1aa]">{children}</h6>;
           },
           // Paragraphs
           p({ children }) {
-             return <p className="mb-6 leading-7 last:mb-0">{children}</p>;
+             return <p className="mb-6 leading-7 last:mb-0 text-[#d4d4d8]">{children}</p>;
           },
           // Lists
           ul({ children }) {
-            return <ul className="list-disc list-outside pl-6 mb-4 space-y-2">{children}</ul>;
+            return <ul className="list-disc list-outside pl-6 mb-4 space-y-2 text-[#d4d4d8]">{children}</ul>;
           },
           ol({ children }) {
-            return <ol className="list-decimal list-outside pl-10 mb-4 space-y-2">{children}</ol>;
+            return <ol className="list-decimal list-outside pl-10 mb-4 space-y-2 text-[#d4d4d8]">{children}</ol>;
           },
           li({ children }) {
             return <li className="mb-1">{children}</li>;
@@ -48,18 +47,18 @@ export default function MarkdownRenderer({ content }) {
           // Blockquote
           blockquote({ children }) {
             return (
-              <blockquote className="border-l-4 border-zinc-300 dark:border-zinc-600 pl-4 my-4 italic text-zinc-600 dark:text-zinc-400">
+              <blockquote className="border-l-4 border-white/20 pl-4 my-6 italic text-[#a1a1aa]">
                 {children}
               </blockquote>
             );
           },
           // Horizontal Rule
           hr() {
-            return <hr className="my-8 border-zinc-300 dark:border-zinc-700" />;
+            return <hr className="my-8 border-white/10" />;
           },
           // Images
           img({ src, alt }) {
-            return <img src={src} alt={alt} className="max-w-full h-auto rounded my-4" />;
+            return <img src={src} alt={alt} className="max-w-full h-auto rounded-lg my-4 border border-white/10" />;
           },
           // Links
           a({ href, children }) {
@@ -68,7 +67,7 @@ export default function MarkdownRenderer({ content }) {
                 href={href}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-blue-600 dark:text-blue-400 underline decoration-blue-600/30 hover:decoration-blue-600 transition-colors"
+                className="text-blue-400 hover:text-blue-300 underline decoration-blue-400/30 hover:decoration-blue-400 transition-all duration-100"
               >
                 {children}
               </a>
@@ -89,35 +88,35 @@ export default function MarkdownRenderer({ content }) {
               );
             }
             return (
-              <code className={`${className} bg-zinc-200 dark:bg-zinc-800 px-1 py-0.5 rounded text-sm font-mono`} {...props}>
+              <code className={`${className} bg-white/10 text-[#fafafa] px-1.5 py-0.5 rounded text-sm font-mono border border-white/5`} {...props}>
                 {children}
               </code>
             );
           },
           // Pre (for non-language code blocks)
-          pre({ children }) {
-            return (
-              <pre className="my-4 p-4 rounded-lg overflow-x-auto bg-zinc-100 dark:bg-zinc-800 text-sm font-mono">
-                {children}
-              </pre>
-            );
-          },
+          // pre({ children }) {
+          //   return (
+          //     <pre className="my-4 p-4 rounded-xl overflow-x-auto bg-[#18181b] border border-white/10 text-sm font-mono text-[#fafafa] shadow-inner">
+          //       {children}
+          //     </pre>
+          //   );
+          // },
           // Tables
           table({ children }) {
             return (
-              <div className="overflow-x-auto my-6 border rounded-md border-zinc-300 dark:border-zinc-700">
+              <div className="overflow-x-auto my-6 border rounded-xl border-white/10 shadow-sm">
                 <table className="w-full text-sm text-left">{children}</table>
               </div>
             );
           },
           thead({ children }) {
-            return <thead className="bg-zinc-100 dark:bg-zinc-800 border-b border-zinc-200 dark:border-zinc-700">{children}</thead>;
+            return <thead className="bg-white/5 border-b border-white/10 text-[#fafafa]">{children}</thead>;
           },
           th({ children }) {
-            return <th className="px-4 py-3 font-semibold text-zinc-900 dark:text-zinc-100">{children}</th>;
+            return <th className="px-4 py-3 font-semibold text-[#fafafa]">{children}</th>;
           },
           td({ children }) {
-            return <td className="px-4 py-3 border-t border-zinc-200 dark:border-zinc-700">{children}</td>;
+            return <td className="px-4 py-3 border-t border-white/5 text-[#d4d4d8]">{children}</td>;
           }
         }}
       >
@@ -137,14 +136,14 @@ function CodeBlock({ language, value }) {
   };
 
   return (
-    <div className="relative group my-4 rounded-lg overflow-hidden border border-zinc-700/50 bg-[#1e1e1e]">
-      <div className="flex items-center justify-between px-4 py-2 bg-[#2d2d2d] border-b border-zinc-700 text-xs text-zinc-400">
-        <span className="font-mono">{language}</span>
+    <div className="relative group my-6 rounded-xl overflow-hidden border border-white/10 bg-[#09090b] shadow-lg">
+      <div className="flex items-center justify-between px-4 py-2.5 bg-white/5 border-b border-white/5 text-xs text-[#a1a1aa]">
+        <span className="font-mono font-medium text-[#fafafa]">{language}</span>
         <button
           onClick={handleCopy}
-          className="flex items-center gap-1.5 hover:text-white transition-colors"
+          className="flex items-center gap-1.5 hover:text-white transition-colors bg-white/5 hover:bg-white/10 px-2 py-1 rounded"
         >
-          {copied ? <Check size={14} className="text-green-500" /> : <Copy size={14} />}
+          {copied ? <Check size={14} className="text-green-400" /> : <Copy size={14} />}
           <span>{copied ? 'Copied!' : 'Copy'}</span>
         </button>
       </div>
@@ -153,10 +152,10 @@ function CodeBlock({ language, value }) {
         style={vscDarkPlus}
         customStyle={{
           margin: 0,
-          padding: '1rem',
+          padding: '1.25rem',
           fontSize: '0.875rem',
-          lineHeight: '1.5',
-          background: 'transparent'
+          lineHeight: '1.6',
+          background: '#09090b', // Match parent
         }}
         wrapLines={true}
       >

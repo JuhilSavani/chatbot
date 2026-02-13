@@ -43,7 +43,7 @@ export default function ChatWindow() {
   }, [auth.isAuthenticated])
 
   return (
-    <SidebarProvider style={{"--sidebar-width": "18rem"}} className="bg-zinc-950 overflow-hidden">
+    <SidebarProvider style={{"--sidebar-width": "18rem"}} className="bg-[#09090b] text-[#fafafa] overflow-hidden">
       <ChatSidebar threads={threads} isLoading={threadsLoading} setThreads={setThreads} />
       <MainContent setThreads={setThreads} />
     </SidebarProvider>
@@ -54,9 +54,9 @@ const ChatMessage = React.memo(({ message }) => {
   // 1. Handle "Thinking" State
   if (message.isThinking) {
     return (
-      <div className="mb-4 p-4 rounded-lg bg-zinc-100 w-full">
-        <div className="flex items-center gap-2 text-zinc-700 text-sm">
-          <div className="w-4 h-4 border-2 border-zinc-700 border-t-transparent rounded-full animate-spin" />
+      <div className="mb-6 p-4 rounded-2xl bg-white/5 w-full border border-white/5 animate-pulse">
+        <div className="flex items-center gap-3 text-[#a1a1aa] text-sm">
+          <div className="w-4 h-4 border-2 border-[#a1a1aa] border-t-transparent rounded-full animate-spin" />
           <span>Thinking...</span>
         </div>
       </div>
@@ -79,9 +79,9 @@ const ChatMessage = React.memo(({ message }) => {
   const isError = message.role === 'error';
 
   return (
-    <div className={`mb-4 p-4 rounded-lg ${isUser ? 'bg-zinc-800 ml-auto max-w-[80%] w-fit' : 'bg-zinc-100 w-full p-8'}`}>
-      <div className={isUser ? 'text-white' : 'text-zinc-800 w-full'}>
-        {isUser ? message.content : isError ? <span className="text-red-500">{message.content}</span> : <MarkdownRenderer content={message.content} />}
+    <div className={`mb-6 p-4 rounded-2xl ${isUser ? 'bg-white/10 ml-auto max-w-[80%] w-fit border border-white/5 text-[#fafafa]' : 'bg-transparent w-full px-2'}`}>
+      <div className={isUser ? 'text-[#fafafa]' : 'text-[#fafafa] w-full'}>
+        {isUser ? message.content : isError ? <span className="text-red-400">{message.content}</span> : <MarkdownRenderer content={message.content} />}
       </div>
     </div>
   );
@@ -247,41 +247,42 @@ function MainContent({ setThreads }) {
   }, [messages, loadingResponse])
 
   const contentStateClasses = open 
-    ? "bg-white my-2 mr-2 rounded-md border border-zinc-200 shadow-xl overflow-hidden" 
-    : "bg-white m-0 rounded-none border-none";
+    ? "bg-[#09090b] my-2 mr-2 rounded-2xl border-white/5 shadow-2xl" 
+    : "bg-[#09090b] m-0 rounded-none border-transparent";
 
   const isNewChat = messages.length === 0 && !loadingChat;
 
   return (
-    <SidebarInset className={`transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] flex flex-col overflow-hidden ${contentStateClasses} ${open ? 'h-[calc(100vh-1rem)]' : 'h-screen'}`}>
-      <header className="flex h-14 shrink-0 items-center gap-2 border-b border-zinc-300 px-4 bg-white/50 backdrop-blur-sm sticky top-0 z-10 w-full">
+    <SidebarInset className={`transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] flex flex-col overflow-hidden border ${contentStateClasses} ${open ? 'h-[calc(100vh-1rem)]' : 'h-screen'}`}>
+      <header className="flex h-16 shrink-0 items-center gap-2 border-b border-white/5 px-6 bg-[#09090b]/80 backdrop-blur-md sticky top-0 z-10 w-full">
         <div className={`transition-all duration-300 ${open ? 'w-0 overflow-hidden opacity-0' : 'w-auto opacity-100'}`}>
-          <Button variant="ghost" size="icon" onClick={toggleSidebar} className="-ml-2 h-8 w-8 text-zinc-500 hover:text-zinc-900">
+          <Button variant="ghost" size="icon" onClick={toggleSidebar} className="-ml-2 h-8 w-8 text-[#a1a1aa] hover:text-[#fafafa] hover:bg-white/5">
             <SidebarInactiveIcon />
           </Button>
         </div>
-        <div className="flex items-center gap-2">
-          {!open && <span className="h-4 w-px bg-zinc-400 mr-2" />}
-          <span className="text-sm font-medium text-zinc-900">{isNewChat ? "New Conversation" : "Chat"}</span>
+        <div className="flex items-center gap-4">
+          {!open && <span className="h-4 w-px bg-white/10 mr-2" />}
+          <span className="text-sm font-medium text-[#fafafa]">{isNewChat ? "New Conversation" : "Chat"}</span>
         </div>
       </header>
 
       {loadingChat && <div className="relative h-[2px] w-full overflow-hidden shrink-0"><div className="meteor-effect" /></div>}
 
       <div className="flex-1 overflow-y-auto p-4 md:p-8 w-full scroll-smooth">
-        {error && <div className="text-red-500 text-center mt-10">{error}</div>}
+        {error && <div className="text-red-400 text-center mt-10 p-4 border border-red-500/20 bg-red-500/5 rounded-lg">{error}</div>}
 
         {isNewChat && !error && (
            <div className="flex h-full flex-col items-center justify-center animate-in fade-in duration-500">
-             <div className="w-12 h-12 bg-zinc-50 rounded-md flex items-center justify-center mb-4 border border-zinc-200 shadow-sm">
-               <div className="w-3 h-3 bg-zinc-900 rounded-full animate-pulse" />
+             <div className="w-16 h-16 bg-white/5 rounded-2xl flex items-center justify-center mb-6 border border-white/10 shadow-[0_0_15px_rgba(255,255,255,0.05)]">
+               <div className="w-2 h-2 bg-[#fafafa] rounded-full animate-pulse shadow-[0_0_10px_rgba(255,255,255,0.5)]" />
              </div>
-             <h2 className="text-2xl font-medium text-zinc-900">How can I help you?</h2>
+             <h2 className="text-3xl font-bold text-[#fafafa] tracking-tight mb-2">How can I help you?</h2>
+             <p className="text-[#a1a1aa] text-center max-w-sm">Start a new conversation or select an existing one from the sidebar.</p>
            </div>
         )}
 
         {messages.length > 0 && (
-          <div className="flex flex-col gap-4 max-w-3xl mx-auto w-full pb-4">
+          <div className="flex flex-col gap-2 max-w-4xl mx-auto w-full pb-8">
             
             {messages.map((message, index) => (
               <ChatMessage key={index} message={message} />
@@ -290,13 +291,13 @@ function MainContent({ setThreads }) {
             {loadingResponse && messages[messages.length - 1]?.role !== 'assistant' && (
               <ChatMessage message={{ isThinking: true }} />
             )}
-            <div ref={messagesEndRef} className="h-px w-full" />
+            <div ref={messagesEndRef} className="h-4 w-full" />
           </div>
         )}
       </div>
 
-      <div className="shrink-0 w-full p-4 bg-white border-t border-zinc-200">
-        <div className="max-w-2xl mx-auto">
+      <div className="shrink-0 w-full p-4 bg-[#09090b] border-t border-white/5">
+        <div className="max-w-4xl mx-auto">
           <ChatInput 
             threadId={currentChatThreadId} 
             onMessageSent={handleMessageSent} 

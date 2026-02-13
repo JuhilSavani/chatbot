@@ -1,8 +1,7 @@
 import React, { useState } from 'react';
-import { ChevronDown, Terminal, CheckCircle2, Loader2, XCircle, ExternalLink, Code } from 'lucide-react';
+import { ChevronDown,Wrench, CheckCircle2, Loader2, XCircle, ExternalLink, Code } from 'lucide-react';
 
 // --- HELPER: Tool Renderers ---
-// 1. Web Search Renderer
 const WebSearchOutput = ({ output }) => {
   const items = output?.items || (Array.isArray(output) ? output : null);
 
@@ -13,42 +12,38 @@ const WebSearchOutput = ({ output }) => {
   return (
     <div className="flex flex-col gap-2 mt-2">
       {items.map((item, idx) => (
-        <div key={idx} className="bg-black/20 p-2.5 rounded border border-zinc-800/50 hover:border-zinc-700/50 transition-colors">
-          <a
-            href={item.url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center gap-2 text-blue-400 hover:text-blue-300 underline decoration-transparent hover:decoration-blue-300 font-medium text-xs mb-1 transition-all duration-200"
-          >
-            <ExternalLink size={10} />
+        <a
+          key={idx}
+          href={item.url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="group block bg-[#18181b] p-3 rounded-lg border border-white/5 hover:border-white/10 transition-all duration-200"
+        >
+          <div className="flex items-center gap-2 text-blue-400 group-hover:text-blue-300 underline decoration-blue-400/30 group-hover:decoration-blue-400 font-medium text-xs mb-1 transition-all duration-100">
             <span className="truncate">{item.title || item.url}</span>
-          </a>
-          <p className="text-zinc-400 text-[10px] leading-relaxed line-clamp-2">
+          </div>
+          <p className="text-[#a1a1aa] text-[11px] leading-relaxed line-clamp-2 group-hover:text-[#d4d4d8] transition-colors">
             {item.content || item.snippet || "No description available."}
           </p>
-        </div>
+        </a>
       ))}
     </div>
   );
 };
 
-
 // 2. Default Fallback Renderer
 const DefaultOutput = ({ output }) => {
   return (
-    <pre className="text-green-400/90 whitespace-pre-wrap text-[10px] font-mono leading-tight">
+    <pre className="text-green-400/90 whitespace-pre-wrap text-[11px] font-mono leading-relaxed bg-[#18181b] p-3 rounded-lg border border-white/5">
       {typeof output === 'string' ? output : JSON.stringify(output, null, 2)}
     </pre>
   );
 };
 
-// --- CONFIGURATION MAP ---
 const TOOL_RENDERERS = {
   'web_search': WebSearchOutput,
 };
 
-// --- HELPER: Tool Input Summary ---
-// Extracts a short summary string from the input object for the header
 const getToolInputSummary = (tool, input) => {
   if (!input) return null;
   
@@ -56,20 +51,17 @@ const getToolInputSummary = (tool, input) => {
     return input.query;
   }
   
-  // Default: Try to verify if it's a simple string or single key object
   if (typeof input === 'string') return input;
   
   if (typeof input === 'object' && !Array.isArray(input)) {
-    // Format as "key: value, key2: value2"
     return Object.entries(input)
       .map(([k, v]) => `${k}: ${typeof v === 'object' ? '...' : v}`)
       .join(', ');
   }
   
-  return JSON.stringify(input); // Fallback
+  return JSON.stringify(input); 
 }
 
-// --- MAIN COMPONENT ---
 export default function ToolCall({ 
   tool, 
   input, 
@@ -77,86 +69,87 @@ export default function ToolCall({
   status = 'loading' 
 }) {
   const [isOpen, setIsOpen] = useState(false);
-
-  // Determine Input Display for Header
   const inputSummary = getToolInputSummary(tool, input);
-
-  // Determine Output Renderer
   const OutputComponent = TOOL_RENDERERS[tool] || DefaultOutput;
 
   return (
-    <div className="w-full max-w-[85%] my-2 font-sans">
+    <div className="w-full max-w-[85%] my-4 font-sans text-sm">
       {/* Header Bar */}
       <div
         className={`
-          flex items-center justify-between p-3 rounded-md border cursor-pointer transition-all select-none
+          flex items-center justify-between p-3 rounded-xl border cursor-pointer transition-all select-none
           ${status === 'loading'
-            ? 'bg-zinc-50 border-zinc-200 text-zinc-600'
+            ? 'bg-white/5 border-white/5 text-[#a1a1aa]'
             : status === 'error'
-            ? 'bg-red-50/50 border-red-200 text-red-700'
-            : 'bg-zinc-100 border-zinc-200 hover:bg-zinc-200 text-zinc-900 shadow-sm'
+            ? 'bg-red-500/10 border-red-500/20 text-red-400'
+            : 'bg-white/5 border-white/5 hover:bg-white/8 text-[#fafafa] shadow-sm hover:border-white/10'
           }
         `}
         onClick={() => setIsOpen(!isOpen)}
       >
-        <div className="flex items-center gap-2.5 text-sm font-medium">
-          <Terminal size={15} className={status === 'loading' ? 'animate-pulse text-blue-500' : 'text-zinc-500'} />
+        <div className="flex items-center gap-3 font-medium">
+          <div className={`p-1.5 rounded-md border border-white/5 bg-blue-500/10 text-blue-400`}>
+            <Wrench size={14} className={status === 'loading' ? 'animate-pulse' : ''} />
+          </div>
           <div className="flex items-center gap-2 flex-wrap">
-            <span>Using tool: <span className="font-mono bg-black/5 px-1.5 py-0.5 rounded text-xs border border-black/5">{tool}</span></span>
+            <span className="text-[#a1a1aa]">Using tool: <span className="font-mono text-[#fafafa] bg-white/5 px-1.5 py-0.5 rounded text-xs border border-white/5">{tool}</span></span>
             {inputSummary && (
-              <span className="text-xs text-zinc-500 font-normal truncate max-w-[200px] hidden sm:inline-block">
-                — "{inputSummary}"
+              <span className="text-xs text-[#52525b] font-normal truncate max-w-[200px] hidden sm:inline-block border-l border-white/10 pl-2">
+                "{inputSummary}"
               </span>
             )}
           </div>
         </div>
 
-        <div className="flex items-center gap-2 pl-2">
-          {status === 'loading' && <Loader2 size={16} className="animate-spin text-zinc-400" />}
-          {status === 'success' && <CheckCircle2 size={16} className="text-green-600" />}
-          {status === 'error' && <XCircle size={16} className="text-red-600" />}
+        <div className="flex items-center gap-3 pl-2">
+          {status === 'loading' && <Loader2 size={16} className="animate-spin text-blue-400" />}
+          {status === 'success' && <CheckCircle2 size={16} className="text-green-400" />}
+          {status === 'error' && <XCircle size={16} className="text-red-400" />}
           
-          <div className={`transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`}>
-             <ChevronDown size={16} className="text-zinc-400" />
+          <div className={`p-1 hover:bg-white/5 rounded-md transition-all duration-200 ${isOpen ? 'rotate-180' : ''}`}>
+             <ChevronDown size={14} className="text-[#a1a1aa]" />
           </div>
         </div>
       </div>
 
-      {/* Expandable Content */}
-      <div
-        className={`
-          overflow-hidden transition-all duration-300 ease-in-out
-          ${isOpen ? 'max-h-[800px] opacity-100 mt-2' : 'max-h-0 opacity-0 mt-0'}
-        `}
+      {/* Expandable Content with smooth grid animation */}
+      <div 
+        className={`grid transition-all duration-300 ease-in-out ${isOpen ? 'grid-rows-[1fr] opacity-100 mt-2' : 'grid-rows-[0fr] opacity-0 mt-0'}`}
       >
-        <div className="bg-zinc-900 rounded-md p-3 text-xs text-zinc-300 overflow-x-auto border border-zinc-800 shadow-inner">
-          {/* Input Section (Standardized Dump) */}
-          {input && (
-            <div className="mb-3">
-              <span className="text-zinc-500 uppercase tracking-wider text-[9px] font-bold mb-1 block">Input</span>
-              <pre className="whitespace-pre-wrap font-mono text-zinc-400">
-                {typeof input === 'string' ? input : JSON.stringify(input, null, 2)}
-              </pre>
-            </div>
-          )}
-
-          {/* Output Section */}
-          {(output || status === 'error') && (
-            <div className={`pt-3 border-t border-zinc-800`}>
-              <span className="text-zinc-500 uppercase tracking-wider text-[9px] font-bold mb-1 block">
-                {status === 'error' ? 'Error' : 'Results'}
-              </span>
-              <div className="mt-1">
-                {status === 'error' ? (
-                  <span className="text-red-400 font-mono text-xs break-all">
-                    {typeof output === 'string' ? output : JSON.stringify(output)}
-                  </span>
-                ) : (
-                  <OutputComponent output={output} />
-                )}
+        <div className="overflow-hidden">
+          <div className="bg-[#09090b] rounded-xl p-4 text-xs text-[#d4d4d8] border border-white/5 shadow-inner">
+            {/* Input Section */}
+            {input && (
+              <div className="mb-4">
+                <span className="text-[#52525b] uppercase tracking-wider text-[10px] font-bold mb-2 block flex items-center gap-2">
+                  <div className="w-1 h-1 bg-[#52525b] rounded-full"></div> 
+                  Input
+                </span>
+                <pre className="whitespace-pre-wrap font-mono text-[#a1a1aa] bg-[#18181b] p-3 rounded-lg border border-white/5">
+                  {typeof input === 'string' ? input : JSON.stringify(input, null, 2)}
+                </pre>
               </div>
-            </div>
-          )}
+            )}
+
+            {/* Output Section */}
+            {(output || status === 'error') && (
+              <div className={`pt-4 border-t border-white/5`}>
+                <span className="text-[#52525b] uppercase tracking-wider text-[10px] font-bold mb-2 block flex items-center gap-2">
+                  <div className="w-1 h-1 bg-[#52525b] rounded-full"></div>
+                  {status === 'error' ? 'Error Details' : 'Results'}
+                </span>
+                <div className="mt-1">
+                  {status === 'error' ? (
+                    <span className="text-red-400 font-mono text-xs break-all bg-red-500/5 p-3 rounded-lg border border-red-500/10 block">
+                      {typeof output === 'string' ? output : JSON.stringify(output)}
+                    </span>
+                  ) : (
+                    <OutputComponent output={output} />
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>

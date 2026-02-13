@@ -35,20 +35,20 @@ const ChatInput = ({ threadId, onMessageSent, loading, onStop }) => {
   return (
     <>
       {error && (
-        <div className="mb-2 p-3 bg-red-50 border border-red-200 rounded-lg text-red-600 text-sm">
+        <div className="mb-2 p-3 bg-red-500/10 border border-red-500/20 rounded-lg text-red-400 text-sm">
           {error}
         </div>
       )}
       
       {/* Main Input Container */}
-      <div className="w-full max-w-2xl bg-white/40 backdrop-blur-xxl rounded-lg p-4 shadow-[0_0_0_8px_rgba(0,0,0,0.1)] border border-white/20 relative flex flex-col min-h-40 transition-all duration-300 z-10 hover:border-white/25">
+      <div className="w-full max-w-4xl bg-[#18181b]/50 backdrop-blur-xl rounded-2xl p-4 border border-white/5 relative flex flex-col min-h-32 transition-all duration-200 z-10 group focus-within:shadow-[0_0_0_4px_rgba(255,255,255,0.8)]">
         
         {/* Text Input Area */}
         <div className="grow mb-2">
           <textarea
             ref={textareaRef}
-            className="w-full bg-transparent text-black text-[16px] leading-relaxed placeholder-[#7A7A7E] resize-none outline-none overflow-hidden min-h-20 px-2 py-1 font-normal"
-            placeholder="Send a message to Kimi"
+            className="w-full bg-transparent text-[#fafafa] text-[16px] leading-relaxed placeholder-[#52525b] resize-none outline-none overflow-hidden min-h-14 px-2 py-1 font-normal font-sans"
+            placeholder="Send a message to Sidekick..."
             value={message}
             onChange={(e) => setMessage(e.target.value)}
             onKeyDown={handleKeyDown}
@@ -59,7 +59,7 @@ const ChatInput = ({ threadId, onMessageSent, loading, onStop }) => {
         </div>
 
         {/* Bottom Controls Row */}
-        <div className="flex items-end justify-between pt-1 px-1">
+        <div className="flex items-end justify-between pt-2 px-1 border-t border-white/5 mt-2">
           
           {/* Left Side: Model Selector, Search, Attachment */}
           <div className="flex items-center gap-2">
@@ -70,23 +70,26 @@ const ChatInput = ({ threadId, onMessageSent, loading, onStop }) => {
             <button 
               onClick={() => setIsSearchEnabled(!isSearchEnabled)}
               disabled={loading}
-              className={`bg-zinc-900 flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200
-                ${isSearchEnabled ? 'text-blue-400' : 'text-white'}
-                ${loading ? 'opacity-50 cursor-not-allowed' : 'hover:bg-zinc-800'}`}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-200 border border-transparent
+                ${isSearchEnabled 
+                  ? 'bg-blue-500/10 text-blue-400 border-blue-500/20' 
+                  : 'bg-white/5 text-[#a1a1aa] hover:bg-white/10 hover:text-[#fafafa]'
+                }
+                ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
             >
               <Globe className="w-3.5 h-3.5" /> 
               <span>Search</span>
             </button>
             
             {/* Divider */}
-            <div className="h-6 w-0.5 bg-black/60 mx-1"></div>
+            <div className="h-6 w-0.25 bg-white/40 mx-1"></div>
 
             {/* Attachment Button */}
             <button 
               disabled={loading}
-              className="p-2 text-[#58585A] bg-zinc-900 transition-all duration-200 hover:text-white rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
+              className="p-1.5 text-[#52525b] hover:text-[#fafafa] transition-colors rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              <Paperclip className="w-5 h-5" strokeWidth={2} />
+              <Paperclip className="w-4 h-4" strokeWidth={2} />
             </button>
           </div>
 
@@ -94,16 +97,16 @@ const ChatInput = ({ threadId, onMessageSent, loading, onStop }) => {
           <button 
             onClick={loading ? onStop : handleSendMessage}
             disabled={!loading && !message.trim()}
-            className={`w-9 h-9 bg-zinc-900 rounded-lg transition-all duration-200 hover:shadow-[0_0_0_4px_rgba(0,0,0,0.2)] flex items-center justify-center mb-0.5
+            className={`w-8 h-8 rounded-lg transition-all duration-200 flex items-center justify-center
               ${(loading || message.trim())
-                ? 'text-white cursor-pointer' 
-                : 'text-[#58585A] cursor-not-allowed'
+                ? 'bg-[#fafafa] text-[#18181b] hover:bg-white hover:shadow-[0_0_10px_rgba(255,255,255,0.2)]' 
+                : 'bg-white/10 text-[#52525b] cursor-not-allowed'
               }`}
           >
             {loading ? (
-              <Square className="w-3.5 h-3.5 fill-current" />
+              <Square className="w-3 h-3 fill-current" />
             ) : (
-              <ArrowUp className="w-5 h-5" strokeWidth={2.5} />
+              <ArrowUp className="w-4 h-4" strokeWidth={3} />
             )}
           </button>
 

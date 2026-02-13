@@ -42,7 +42,7 @@ export default function LandingPage() {
       <nav className="glass-nav fixed w-full z-50 top-0">
         <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-6 h-6 rounded-lg bg-linear-to-br from-white to-gray-300 shadow-[0_0_20px_rgba(255,255,255,0.8)]"></div>
+            <div className="w-8 h-8 rounded-lg bg-linear-to-br from-white to-zinc-400 shadow-[0_0_15px_rgba(255,255,255,0.6)]"></div>
             <span className="font-semibold text-2xl tracking-tight">Sidekick</span>
           </div>
           <div className="hidden md:flex items-center gap-8 text-sm font-medium text-[#a1a1aa]">
