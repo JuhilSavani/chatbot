@@ -1,9 +1,7 @@
 function Loading() {
   return (
-    <div className="loading page">
-      <div className="container">
-        <h1>Loading Page</h1>
-      </div>
+    <div className="min-h-screen bg-[#09090b] relative overflow-hidden">
+      <div className="meteor-effect" />
     </div>
   )
 }

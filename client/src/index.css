@@ -91,160 +91,9 @@
     @apply text-4xl font-bold mb-4; 
   }
 
-  a:not(.markdown-body *) {
-    @apply transition-all text-blue-800;
-    text-decoration: none;
-  }
-
-  a:not(.markdown-body *):hover {
-    @apply underline decoration-blue-800;
-  }
-
   ul {
     @apply list-none;
   }
-}
-
-body{
-  background-color: #19191E;
-}
-
-.page{
-  display: grid;
-  place-items: center;
-  height: 100vh; 
-  padding: 3rem;
-  h1{
-    text-align: center;
-  }
-}
-
-.container{
-  background-color: #E6E6D6;
-  padding: 4rem 0;
-  border-radius: 0.6rem;
-  width: 500px;
-}
-
-nav{
-  display: flex;
-  position: fixed;
-  gap: 1rem;
-  width: 100%;
-  padding: 1rem;
-  justify-content: center;
-  a {
-    display: inline-block;
-    padding: 0.6rem 1.2rem;
-    border-radius: 0.4rem;
-    background-color: #FFFDF0;
-  }
-}
-
-.login .container, .register .container{
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-
-  h1{
-    margin-bottom: 1rem;
-  }
-
-  form{
-    width: 80%;
-    padding: 1rem 0;
-  }
-
-  li{
-    margin-top: 1rem;
-  }
-
-  input{
-    width: 100%;
-    padding: 0.6rem 1rem;
-    border: none;
-    border-radius: 0.4rem;
-    background-color: #FFFDF0;
-    font-size: 1rem;
-    &:focus{
-      outline: none;
-      border: none;
-      box-shadow: 0 0 0 4px #19191E;
-    }
-    transition: 0.2s ease-in-out box-shadow;
-  }
-
-  button{
-    display: block;
-    width: 140px;
-    margin: 0 auto;
-    padding: 0.6rem;
-    border: none;
-    border-radius: 0.4rem;
-    background-color: #FFFDF0;
-    font-size: 1.4rem;
-    cursor: pointer;
-    &:hover{
-      box-shadow: 0 0 0 6px #19191E;
-    }
-    transition: 0.2s ease-in-out box-shadow;
-  }
-
-  span{
-    display: block;
-    margin: 0 auto;
-    text-align: center;
-  } 
-
-  span.error, span.message{
-    background-color: #E4363630;
-    color: #E43636;
-    font-style: italic;
-    font-size: 1rem;
-    margin: 0.6rem 0;
-    margin-bottom: 2rem;
-    padding: 0 0.2em;
-    text-align: left;
-    width: fit-content;
-  }
-
-  span.message{
-    color: #15B392; /* 84994F 556B2F*/
-    background-color: #E9FF97;
-  }
-}
-
-.logout-btn{
-  cursor: pointer;
-  border: none;
-  padding: 0.6rem 1.2rem;
-  border-radius: 0.4rem;
-  background-color: #FFFDF0;
-  font-size: 1.1rem;
-  color: #3D3BF3;
-  &:hover{
-    color: #E43636;
-    text-decoration: underline solid #E43636;
-  }
-}
-
-.authenticated nav > .error{
-  position: absolute;
-  left: 50%;           /* move to horizontal center */
-  transform: translateX(-50%); /* center precisely */
-  top: 100%;           /* place it just below the nav */
-  background-color: #FFFDF0;
-  color: #E43636;
-  font-style: italic;
-  font-size: 1rem;
-  padding: 0 0.2em;
-  text-align: center;
-  white-space: nowrap; /* optional: prevents breaking */
-}
-
-.authenticated::selection{
-  background-color: #FBD288;
-  color: #000;
 }
 
 .suggestions {
@@ -335,6 +184,21 @@ nav{
   body {
     @apply bg-background text-foreground;
   }
+  
+  ::selection {
+    @apply bg-white/20 text-white;
+  }
+  
+  /* Kill chrome autofill background */
+  input:-webkit-autofill,
+  input:-webkit-autofill:hover, 
+  input:-webkit-autofill:focus, 
+  input:-webkit-autofill:active {
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: #fafafa !important;
+      transition: background-color 5000s ease-in-out 0s;
+      box-shadow: inset 0 0 20px 20px transparent;
+  }
 }
 
 @keyframes meteor {
@@ -348,7 +212,7 @@ nav{
   top: 0;
   left: 0;
   width: 100%;
-  height: 2px;
+  height: 4px;
   background: linear-gradient(90deg, transparent 0%, #3b82f6 50%, transparent 100%);
   animation: meteor 2s infinite linear;
   z-index: 50;
