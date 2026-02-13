@@ -7,7 +7,9 @@ export const searchTool = tool(
   async ({ query }) => {
     try {
       const search = new TavilySearch({ maxResults: 3 });
-      const results = await search.invoke({ query });
+      // Passing { callbacks: [] } disconnects the sub-tool from the parent trace,
+      // preventing it from emitting events to the main streamEvents loop. 
+      const results = await search.invoke({ query }, { callbacks: [] });
       return results;
     } catch (error) {
       return `Search failed: ${error.message}. Please respond using your existing knowledge and let the user know the search was unavailable.`;

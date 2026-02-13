@@ -158,15 +158,17 @@ export const chatWithModelStream = async (req, res) => {
       // Tool start (for future tool support)
       else if (event.event === "on_tool_start") {
         res.write(`data: ${JSON.stringify({ 
-          type: "tool_call", 
-          val: `Using tool: ${event.name}` 
+          type: "tool_start", 
+          tool: event.name,
+          input: event.data.input
         })}\n\n`);
       }
       // Tool end
       else if (event.event === "on_tool_end") {
         res.write(`data: ${JSON.stringify({ 
-          type: "tool_call", 
-          val: "Tool finished." 
+          type: "tool_end", 
+          tool: event.name,
+          output: event.data.output
         })}\n\n`);
       }
     }
@@ -225,18 +227,49 @@ export const loadChatHistory = async (req, res) => {
       return res.json({ messages: [], threadName: thread.title });
 
     // Format messages for the client
-    const history = state.values.messages
-      .filter((msg) => {
-        const type = msg._getType();
-        return type === 'human' || type === 'ai';
-      })
-      .map((msg) => {
-        const type = msg._getType();
-        return {
-          role: type === 'human' ? 'user' : 'assistant',
-          content: msg.content,
-        };
-      });
+    const history = [];
+    const messages = state.values.messages || [];
+
+    // Pre-map tool messages by their ID for O(1) lookup
+    const toolOutputs = new Map(
+      messages
+        .filter(m => m._getType() === 'tool')
+        .map(m => [m.tool_call_id, m.content])
+    );
+
+    for (const msg of messages) {
+      const type = msg._getType();
+
+      // 1. Handle Regular User Messages
+      if (type === 'human') {
+        history.push({ role: 'user', content: msg.content });
+      } 
+      
+      // 2. Handle AI Messages (could be text OR tool calls)
+      else if (type === 'ai') {
+        // A. Handle Tool Calls
+        if (msg.tool_calls?.length > 0) {
+          for (const toolCall of msg.tool_calls) {
+            // Find the corresponding ToolMessage for this call
+            const output = toolOutputs.get(toolCall.id);
+            history.push({
+              role: 'tool_call',
+              content: {
+                toolName: toolCall.name,
+                input: toolCall.args,
+                output: output ?? null,
+                status: output ? 'success' : 'loading'
+              }
+            });
+          }
+        }
+
+        // B. Handle Text Content (if any)
+        if (msg.content) {
+          history.push({ role: 'assistant', content: msg.content });
+        }
+      }
+    }
 
     res.json({ messages: history, threadName: thread.title });
 
