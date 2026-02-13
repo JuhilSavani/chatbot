@@ -157,20 +157,24 @@ export const chatWithModelStream = async (req, res) => {
       }
       // Tool start
       else if (event.event === "on_tool_start") {
+        // event.data.input is the raw input object
         res.write(`data: ${JSON.stringify({ 
           type: "tool_start", 
           runId: event.run_id,
           tool: event.name,
-          input: JSON.parse(event.data.input.input)
+          input: event.data.input 
         })}\n\n`);
       }
       // Tool end
       else if (event.event === "on_tool_end") {
+        // event.data.output is the raw tool message
+        // Take a look at "LANGCHAIN TOOL MESSAGE OUTPUT SCHEMA" at the end of this file
         res.write(`data: ${JSON.stringify({ 
           type: "tool_end", 
           runId: event.run_id,
           tool: event.name,
-          output: parseToolOutput(event.data.output)
+          output: event.data.output,
+          status: event.data.output.status || 'success'
         })}\n\n`);
       }
     }
@@ -257,13 +261,14 @@ export const loadChatHistory = async (req, res) => {
           for (const toolCall of msg.tool_calls) {
             // Find the corresponding ToolMessage for this call
             const rawOutput = toolOutputs.get(toolCall.id);
-            const parsedOutput = rawOutput ? parseToolOutput(rawOutput) : null;
             history.push({
               role: 'tool_call',
               content: {
-                ...parsedOutput,
-                input: toolCall.args, 
-                output: parsedOutput.result,
+                id: rawOutput.tool_call_id,
+                tool: rawOutput.name,
+                input: toolCall.args,
+                output: rawOutput.content,
+                status: rawOutput.status,
               }
             });
           }
@@ -407,7 +412,8 @@ function generateFallbackName(message) {
 }
 
 
-/* LANGCHAIN TOOL OUTPUT SCHEMA (SERIALIZED TOOLMESSAGE)
+
+/* LANGCHAIN TOOL MESSAGE OUTPUT SCHEMA (SERIALIZED TOOLMESSAGE)
   {
     // 1. METADATA: Internal LangChain serialization markers.
     "lc": 1, 
@@ -429,48 +435,6 @@ function generateFallbackName(message) {
   } 
 */
 
-const parseToolOutput = (output) => {
-  const { tool_call_id, status, name, content } = output;
-
-  // While JSON strings are the most common (because they are easy for models to "read" back), 
-  // the content field in a ToolMessage can absolutely hold other formats.
-  // In LangChain, the content of a message is technically defined as string | list[string | dict]. 
-
-  let finalParsedResult;
-
-  // 1. Handle Array (Multi-modal content)
-  if (Array.isArray(content)) {
-    finalParsedResult = content; 
-  } 
-  // 2. Handle String
-  else if (typeof content === 'string') {
-    try {
-      // Try to see if it's stringified JSON
-      const parsed = JSON.parse(content);
-      if (name === 'web_search' && parsed.results) {
-        finalParsedResult = {
-          query: parsed.query,
-          items: parsed.results.map(item => ({
-            title: item.title,
-            url: item.url,
-            snippet: item.content // Rename to avoid confusion with message content
-            // fullText: item.raw_content,   // The full page text (only if enabled)
-          })),
-          count: parsed.results.length
-        };
-      } else {
-        finalParsedResult = parsed;
-      }
-    } catch {
-      // It's just a regular plain-text string
-      finalParsedResult = content;
-    }
-  }
-
-  return {
-    id: tool_call_id,
-    tool: name,
-    result: finalParsedResult, 
-    status: status, // "success" or "error"
-  };
-};
+// While JSON strings are the most common (because they are easy for models to "read" back), 
+// the content field in a ToolMessage can absolutely hold other formats.
+// In LangChain, the content of a message is technically defined as string | list[string | dict]. 

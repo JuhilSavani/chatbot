@@ -9,6 +9,7 @@ import { useAuth } from '@/utils/hooks/useAuth'
 import { loadChatHistoryAction, loadChatThreadsAction, streamChatAction } from '@/utils/actions/chat.actions'
 import MarkdownRenderer from '@/utils/components/MarkdownRenderer';
 import ToolCall from '@/utils/components/ToolCall';
+import { parseToolInput, parseToolOutput } from '@/utils/toolParsing';
 
 const SidebarInactiveIcon = ({ className = "w-5 h-5" }) => (
   <svg viewBox="0 0 20 20" fill="none" xmlns="[http://www.w3.org/2000/svg](http://www.w3.org/2000/svg)" className={className}>
@@ -64,7 +65,11 @@ const ChatMessage = React.memo(({ message }) => {
 
   // 2. Handle Tool Calls
   if (message.role === 'tool_call') {
-    return <ToolCall {...message.content} />; // content: { tool, input, output, status }
+    const { tool, input, output, status } = message.content;
+    const parsedInput = parseToolInput(input);
+    const parsedOutput = parseToolOutput(tool, output);
+
+    return <ToolCall tool={tool} input={parsedInput} output={parsedOutput} status={status} />;
   }
 
   // 3. Handle Standard Messages
@@ -181,7 +186,7 @@ function MainContent({ setThreads }) {
 
         } else if (event.type === 'tool_start') {
           setMessages(prev => [...prev, {
-            id: event.runId,
+            runId: event.runId,
             role: 'tool_call',
             content: { tool: event.tool, input: event.input, status: 'loading' }
           }]);
@@ -193,22 +198,20 @@ function MainContent({ setThreads }) {
             // 1. Find the index
             const index = prev.findIndex(msg => 
               msg.role === 'tool_call' && 
-              msg.id === event.runId
+              msg.runId === event.runId
             );
 
             // 2. Safety Check: If not found, return original state (No re-render)
             if (index === -1) return prev;
-            
-            const { result, status } = event.output;
 
             // 3. Update: Clone array and replace only the specific item
             const newMsgs = [...prev];
             newMsgs[index] = {
-              ...newMsgs[index],
+              ...newMsgs[index], // { runId, role, content: { tool, input, status: 'loading' } }
               content: { 
-                ...newMsgs[index].content, 
-                output: result,
-                status: status,
+                ...newMsgs[index].content,
+                output: event.output,
+                status: event.status || event.output?.status || 'success',
               }
             };
           
