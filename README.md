@@ -4,7 +4,7 @@ A project built to explore advanced agentic patterns. that featuring **database 
 
 ---
 
-<img width="1574" height="969" alt="Screenshot 2026-02-14 at 6 11 11 PM" src="https://github.com/user-attachments/assets/4806c3c8-0431-458e-a1d7-5fae37bbc24a" />
+<img width="1574" height="969" alt="Project Demo" src="https://github.com/user-attachments/assets/4806c3c8-0431-458e-a1d7-5fae37bbc24a" />
 
 ---
 
@@ -118,7 +118,7 @@ I spent a lot of time getting the "New Chat" flow right—generating a session I
 ### 3. The Reality of Streaming
 I had to **really get into the weeds** of how token streaming works on both ends. 
 
-On the **backend**, it wasn't just about sending text; I had to wrap my head around SSE (Server-Sent Events) and figure out how to loop through LangGraph’s event stream to send back tokens and tool status updates in real-time. 
+On the **backend**, it wasn't just about sending text; I had to wrap my head around **Server-Sent Events (SSE)** and figure out how to loop through LangGraph’s event stream to send back tokens and tool status updates in real-time. 
 
 On the **frontend**, the challenge was catching that stream and rendering it without the UI flickering or falling out of sync.
 
@@ -133,7 +133,7 @@ Live-streaming tool execution was definitely the biggest pain. Parsing the input
 ### 6. Frontend Tool Control
 I implemented a way to **force tool usage** directly from the UI. Usually, you just let the agent decide what to do autonomously, but I wanted to see how to override that when a user wants a specific tool to run immediately without waiting for the LLM to "decide" it's time.
 
-It gave me a much better feel for how to balance the agent's "brain" with actual frontend control, especially for those moments where the user knows better than the model.
+It really helped me figure out how to balance the agent’s autonomy with manual frontend overrides, giving the steering wheel to the user when they know exactly what they want, rather than making them wait for the LLM’s decision-making loop.
 
 ---
 
@@ -141,3 +141,4 @@ It gave me a much better feel for how to balance the agent's "brain" with actual
 Got something to add? Contributions are welcome! Fork the repo, make your changes, and open a PR.
 
 **Thanks for checking out this project! Happy shipping! ☕️**
+
