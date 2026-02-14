@@ -41,7 +41,8 @@ chatbot/
 │   │       ├── actions/             # API action functions (chat.actions.js)
 │   │       ├── components/          # Custom feature components (ChatSidebar, ChatInput)
 │   │       ├── contexts/            # React contexts (AuthProvider)
-│   │       └── hooks/               # Custom hooks (useAuth, useLogout)
+│   │       ├── hooks/               # Custom hooks (useAuth, useLogout)
+│   │       └── ...                  # Other utility files (axios.jsx, toolParsing.js)
 │   ├── package.json
 │   ├── vite.config.js
 │   ├── eslint.config.js
@@ -64,9 +65,10 @@ chatbot/
 │   ├── models/
 │   │   ├── user.models.js           # User Sequelize model
 │   │   └── thread.models.js         # Thread model + associations
-│   └── clients/
-│       ├── supabase.clients.js      # Supabase admin client
-│       └── googleoauth2.clients.js  # Google OAuth client
+│   ├── clients/
+│   │   ├── supabase.clients.js      # Supabase admin client
+│   │   └── googleoauth2.clients.js  # Google OAuth client
+│   └── tools/                       # Tools for AI agent
 │
 ├── .gitignore
 ├── AGENTS.md                        # This file
