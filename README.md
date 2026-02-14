@@ -102,11 +102,11 @@ Setting up Sidekick takes just a few minutes:
 ## 🙇🏻‍♂️ Things I learned (the hard way)
 
 ### 1. The Persistence Puzzle
-With LangGraph's state-based approach, continuing a conversation was actually the simple part. The real time-sink was just getting a clean list of chats from the persistence table.
+With LangGraph's state-based approach, continuing a conversation was actually the simple part. The part that really slowed me down was just getting a clean list of chats from the persistence table.
 
-Since LangGraph saves a snapshot at every single superstep, the database ends up with dozens of rows for a single conversation. Further there isn’t really a built-in isn't a built-in "get_all_threads" method that just returns a list of unique sessions with their latest state.
+Since LangGraph saves a snapshot at every single superstep, the database ends up with dozens of rows for a single conversation. Further there isn’t really a built-in "`get_all_threads`" method that just returns a list of unique sessions with their latest state.
 
-I had to figure out a way to query the checkpoints table to find only the **latest** `checkpoint_id` **for each unique** `thread_id`, without getting lost in a sea of version history. 
+I had to figure out a way to query the checkpoints table to find only the **latest** `checkpoint_id` **for each unique** `thread_id`, without getting lost in a sea of snapshots. 
 
 I also messed around with the best way to attach and pull the metadata I needed—like chat titles and timestamps—just so the UI had something readable to show.
 
@@ -141,4 +141,5 @@ It really helped me figure out how to balance the agent’s autonomy with manual
 Got something to add? Contributions are welcome! Fork the repo, make your changes, and open a PR.
 
 **Thanks for checking out this project! Happy shipping! ☕️**
+
 
