@@ -34,12 +34,39 @@ app.use((req, res, next) => {
 });
 
 
-// Testing Routes
-if (!IS_PROD){
-  app.get("/api/ping", (req, res) => {
-    res.send("pong");
-  });
-}
+// Root Route
+app.get("/", (req, res) => {
+  res.send(`
+    <html>
+      <head>
+        <title>chatbot</title>
+      </head>
+      <style>
+        *, *::before, *::after{
+          padding: 0;
+          margin: 0;
+          box-sizing: border-box;
+        }
+        ::selection {
+          background-color: rgb(252, 181, 59, 0.05); 
+          color: #FCB53B;
+        }
+        body{
+          min-height: 100vh;
+          background: #191919;
+          font-family: "Lucida Console", Monaco, monospace;
+        }
+        h1{
+          padding: 1rem;
+          color: #FFF287;
+        }
+      </style>
+      <body>
+        <h1>Server is up and running!</h1>
+      </body>
+    </html>
+  `);
+});
 
 // Actual Routes
 app.use("/api/authorize", authorizeRoutes);
