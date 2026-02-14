@@ -150,7 +150,7 @@ export default function ChatSidebar({ threads = [], isLoading = false, setThread
           </span>
           
           {/* Hover Actions */}
-          <div className="absolute right-0 top-0 h-full flex items-center gap-1 pl-8 bg-gradient-to-l from-zinc-800 via-zinc-800 to-transparent opacity-0 translate-x-2 group-hover/thread:opacity-100 group-hover/thread:translate-x-0 transition-all duration-200 ease-out">
+          <div className="absolute right-0 top-0 h-full flex items-center gap-1 pl-8 bg-gradient-to-l from-zinc-800 via-zinc-800 to-transparent opacity-0 translate-x-[100px] group-hover/thread:opacity-100 group-hover/thread:translate-x-0 transition-all duration-200 ease-out">
             <div 
               role="button"
               tabIndex={0}

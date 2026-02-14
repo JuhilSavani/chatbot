@@ -51,13 +51,14 @@ function Register() {
     setRegisterError(null);
     setRegisterMessage(null);
     
-    // key "confirmPassword" is just for UI validation, remove it before sending if needed, 
-    // but registerAction probably just picks what it needs or ignores extras.
-    // However, it's safer to just pass what we need. 
-    // But since I don't see registerAction implementation, I'll pass data and assume backend handles it or ignores extras.
+    const cleanData = { 
+      ...data, 
+      username: data.username.trim(),
+      email: data.email.trim()
+    };
     
     try{
-      const result = await registerAction(data);
+      const result = await registerAction(cleanData);
       if(result.error) setRegisterError(result.error);
       else{
         setRegisterMessage(result.message);

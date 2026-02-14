@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { SidebarProvider, SidebarInset, useSidebar } from "@/components/ui/sidebar"
-import { ArrowRight, StopCircle } from "lucide-react"
+import { ArrowRight, StopCircle, Copy, Check } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import ChatInput from '@/utils/components/ChatInput'
 import ChatSidebar from '@/utils/components/ChatSidebar'
@@ -51,6 +51,8 @@ export default function ChatWindow() {
 }
 
 const ChatMessage = React.memo(({ message }) => {
+  const [copied, setCopied] = useState(false);
+
   // 1. Handle "Thinking" State
   if (message.isThinking) {
     return (
@@ -78,11 +80,31 @@ const ChatMessage = React.memo(({ message }) => {
   const isUser = message.role === 'user';
   const isError = message.role === 'error';
 
+  const handleCopy = () => {
+    navigator.clipboard.writeText(message.content);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
   return (
-    <div className={`mb-6 p-4 rounded-2xl ${isUser ? 'bg-white/10 ml-auto max-w-[80%] w-fit border border-white/5 text-[#fafafa]' : 'bg-transparent w-full px-2'}`}>
+    <div className={`mb-6 p-4 rounded-2xl relative group ${isUser ? 'bg-white/10 ml-auto max-w-[80%] w-fit border border-white/5 text-[#fafafa]' : 'bg-transparent w-full px-2'}`}>
+      
       <div className={isUser ? 'text-[#fafafa]' : 'text-[#fafafa] w-full'}>
         {isUser ? message.content : isError ? <span className="text-red-400">{message.content}</span> : <MarkdownRenderer content={message.content} />}
       </div>
+
+      {!isUser && !isError && (
+        <div className="mt-2 flex items-center justify-start">
+          <button 
+            onClick={handleCopy}
+            className="flex items-center gap-1.5 p-1.5 rounded-md text-[#a1a1aa] hover:text-[#fafafa] hover:bg-white/5 transition-colors text-xs"
+            title="Copy response"
+          >
+            {copied ? <Check className="w-3.5 h-3.5 text-green-400" /> : <Copy className="w-3.5 h-3.5" />}
+            <span>Copy</span>
+          </button>
+        </div>
+      )}
     </div>
   );
 });

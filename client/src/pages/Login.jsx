@@ -30,8 +30,11 @@ function Login() {
   const onSubmit = async (data) => {
     setLoading(true);
     setLoginError(null);
+    
+    const cleanData = { ...data, username: data.username.trim() };
+
     try{
-      const result = await loginAction(data);
+      const result = await loginAction(cleanData);
       if(result.error) setLoginError(result.error);
       else{
         setAuth(result);
