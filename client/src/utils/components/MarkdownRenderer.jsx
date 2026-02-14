@@ -1,15 +1,27 @@
 import React, { useState } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import remarkMath from 'remark-math';
+import rehypeKatex from 'rehype-katex';
+import 'katex/dist/katex.min.css';
 import { PrismAsyncLight as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import { Copy, Check } from 'lucide-react';
 
+const preprocessLaTeX = (content) => {
+  // Replace block math \[ ... \] with $$ ... $$
+  const blockParsed = content.replace(/\\\[([\s\S]*?)\\\]/g, (match, equation) => `$$${equation}$$`);
+  // Replace inline math \( ... \) with $ ... $
+  const inlineParsed = blockParsed.replace(/\\\(([\s\S]*?)\\\)/g, (match, equation) => `$${equation}$`);
+  return inlineParsed;
+};
+
 export default function MarkdownRenderer({ content }) {
   return (
-    <div className="markdown-body max-w-none w-full break-words text-[#fafafa] font-sans">
+    <div className="markdown-body max-w-none w-full wrap-break-words text-[#fafafa] font-sans">
       <ReactMarkdown
-        remarkPlugins={[remarkGfm]}
+        remarkPlugins={[remarkGfm, remarkMath]}
+        rehypePlugins={[rehypeKatex]}
         components={{
           // Headings
           h1({ children }) {
@@ -120,7 +132,7 @@ export default function MarkdownRenderer({ content }) {
           }
         }}
       >
-        {content}
+        {preprocessLaTeX(content)}
       </ReactMarkdown>
     </div>
   );
