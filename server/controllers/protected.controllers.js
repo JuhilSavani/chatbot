@@ -96,7 +96,7 @@ export const chatWithModel = async (req, res) => {
  * Sends token-by-token updates to the client in real-time
  */
 export const chatWithModelStream = async (req, res) => {
-  const { message, threadId } = req.body;
+  const { message, threadId, web_search } = req.body;
   const userId = req.user.id;
 
   // Validation
@@ -135,7 +135,11 @@ export const chatWithModelStream = async (req, res) => {
     // 3. Start the stream with streamEvents v2
     const inputs = { messages: [new HumanMessage(message)] };
     const stream = await workflow.streamEvents(inputs, { 
-      configurable: { thread_id: threadId, signal: controller.signal },
+      configurable: { 
+        thread_id: threadId, 
+        signal: controller.signal,
+        web_search // Pass this through
+      },
       version: "v2",
       // signal: controller.signal 
     });

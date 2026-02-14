@@ -141,7 +141,11 @@ function MainContent({ setThreads }) {
   }, [threadId])
 
   // SEND MESSAGE HANDLER
-  const handleMessageSent = async (newMessage) => {
+  const handleMessageSent = async (messageData) => {
+    const { message: newMessage, webSearch } = typeof messageData === 'string' 
+      ? { message: messageData, webSearch: false } 
+      : messageData;
+
     // Optimistic UI Update
     setMessages(prev => [
       ...prev,
@@ -167,7 +171,8 @@ function MainContent({ setThreads }) {
     try {
       const { stream, abort } = streamChatAction({
         threadId: activeThreadId,
-        message: newMessage
+        message: newMessage,
+        web_search: webSearch
       })
       
       // Store abort function for stop button

@@ -105,7 +105,7 @@ export async function deleteThreadAction(threadId) {
  *     if (event.type === 'token') console.log(event.val);
  *   }
  */
-export function streamChatAction({ threadId, message }) {
+export function streamChatAction({ threadId, message, web_search }) {
   const controller = new AbortController();
 
   // 1. Define the generator function
@@ -117,7 +117,7 @@ export function streamChatAction({ threadId, message }) {
           "Content-Type": "application/json",
         },
         credentials: "include",
-        body: JSON.stringify({ message, threadId }),
+        body: JSON.stringify({ message, threadId, web_search }),
         signal: controller.signal,
       });
 

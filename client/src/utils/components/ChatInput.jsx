@@ -21,7 +21,7 @@ const ChatInput = ({ threadId, onMessageSent, loading, onStop }) => {
     setMessage('');
     setError(null);
 
-    onMessageSent?.(userMessage);
+    onMessageSent?.({ message: userMessage, webSearch: isSearchEnabled });
   };
 
 
