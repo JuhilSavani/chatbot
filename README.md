@@ -130,6 +130,8 @@ The trickiest part was the **persistence** logic. I had to ensure that when a us
 ### 5. Streaming Tool-Calling
 Live-streaming tool execution was definitely the biggest pain. Parsing the input and output in real-time while also maintainng a decoupled design to add more tools later took a lot of trial and error.
 
+The real struggle was the **disconnect** between the live stream and the saved history. While developing the parser, I found that the shape of a "live" tool call (serialized, event-based) is totally different from a "saved" tool call (static, persisted). I was getting raw, serialized events buried deep in `kwargs` during the stream, but a completely different, finalized structure from the database. I had to write a custom **normalization layer** on the frontend to ensure that the UI wouldn't break when transitioning from a live stream to a reloaded page.
+
 ### 6. Frontend Tool Control
 I implemented a way to **force tool usage** directly from the UI. Usually, you just let the agent decide what to do autonomously, but I wanted to see how to override that when a user wants a specific tool to run immediately without waiting for the LLM to "decide" it's time.
 
