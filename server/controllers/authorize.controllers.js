@@ -69,7 +69,7 @@ export const login = async (req, res) => {
     res.cookie("authJwt", data.session?.access_token, {
       httpOnly: true,
       secure: IS_PROD,
-      sameSite: IS_PROD ? "Strict" : "Lax",
+      sameSite: IS_PROD ? "None" : "Lax",
       maxAge: 60 * 60 * 1000, // 60 min
     });
 
@@ -97,7 +97,7 @@ export const logout = (req, res) => {
   res.clearCookie("authJwt", {
     httpOnly: true,
     secure: IS_PROD,
-    sameSite: IS_PROD ? "Strict" : "Lax",
+    sameSite: IS_PROD ? "None" : "Lax",
   });
 
   return res.sendStatus(200);
