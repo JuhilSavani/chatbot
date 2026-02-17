@@ -271,7 +271,7 @@ function MainContent({ setThreads }) {
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
-  }, [messages, loadingResponse])
+  }, [loadingResponse, loadingChat])
 
   const contentStateClasses = open 
     ? "bg-[#09090b] my-2 mr-2 rounded-2xl border-white/5 shadow-2xl" 
