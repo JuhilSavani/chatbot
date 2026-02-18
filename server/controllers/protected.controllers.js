@@ -3,6 +3,7 @@ import { HumanMessage } from "@langchain/core/messages";
 import { Thread } from "../models/thread.models.js";
 import { sequelize } from "../config/sequelize.config.js";
 import { QueryTypes } from 'sequelize';
+import { supermemory } from "../config/supermemory.config.js";
 
 export const loadChatThreads = async (req, res) => {
   try {
@@ -45,7 +46,26 @@ export const chatWithModel = async (req, res) => {
       return res.status(400).json({ message: "message and threadId are required" });
 
     // 1. Define configuration for persistence
-    const config = { configurable: { thread_id: threadId } };
+    // Fetch User Profile from Supermemory
+    let userProfile = { static: [], dynamic: [] };
+    try {
+      const profileData = await supermemory.profile({ containerTag: userId });
+      if (profileData && profileData.profile) {
+        userProfile = {
+          static: profileData.profile.static || [],
+          dynamic: profileData.profile.dynamic || []
+        };
+      }
+    } catch (err) {
+      console.error("Failed to fetch user profile:", err.message);
+    }
+
+    const config = { 
+      configurable: { 
+        thread_id: threadId,
+        userProfile: userProfile 
+      } 
+    };
 
     // 2. Check if this is the first message (or if thread exists in DB)
     // We'll trust our DB. If it's not in DB, it's effectively new for us.
@@ -85,6 +105,12 @@ export const chatWithModel = async (req, res) => {
       response: lastMessage.content,
     });
 
+    // 7. Store interaction in Supermemory (Fire & Forget)
+    await supermemory.add({
+      content: `User: ${message}\nAssistant: ${lastMessage.content}`,
+      containerTag: userId
+    }).catch(err => console.error("Failed to save memory:", err.message));
+
   } catch (error) {
     console.error("Error in chat endpoint:", error.stack);
     res.status(500).json({ message: "Internal Server Error" });
@@ -118,6 +144,8 @@ export const chatWithModelStream = async (req, res) => {
     controller.abort();
   });
 
+  let fullResponse = "";
+
   try {
     // 2. Thread setup (same as non-streaming)
     let thread = await Thread.findOne({ where: { threadId } });
@@ -132,19 +160,32 @@ export const chatWithModelStream = async (req, res) => {
       return; // Stop here! The 'finally' block below will take care of [DONE] and res.end()
     }
 
+    // 2.5 Fetch User Profile
+    let userProfile = { static: [], dynamic: [] };
+    try {
+      const profileData = await supermemory.profile({ containerTag: userId });
+      if (profileData && profileData.profile) {
+        userProfile = {
+          static: profileData.profile.static || [],
+          dynamic: profileData.profile.dynamic || []
+        };
+      }
+    } catch (err) {
+      console.error("Failed to fetch user profile:", err.message);
+    }
+
     // 3. Start the stream with streamEvents v2
     const inputs = { messages: [new HumanMessage(message)] };
     const stream = await workflow.streamEvents(inputs, { 
       configurable: { 
         thread_id: threadId, 
         signal: controller.signal,
-        web_search // Pass this through
+        web_search, // Pass tools forcing here (boolean)
+        userProfile // Pass profile here
       },
       version: "v2",
       // signal: controller.signal 
     });
-
-    let fullResponse = "";
 
     // 4. Iterate and filter events
     for await (const event of stream) {
@@ -216,6 +257,14 @@ export const chatWithModelStream = async (req, res) => {
     // 6. Signal end of stream
     res.write("data: [DONE]\n\n");
     res.end();
+
+    // 7. Store interaction in Supermemory (after stream ends)
+    if (fullResponse) {
+      await supermemory.add({
+        content: `User: ${message}\nAssistant: ${fullResponse}`,
+        containerTag: userId
+      }).catch(err => console.error("Failed to save memory:", err.message));
+    }
   }
 }
 

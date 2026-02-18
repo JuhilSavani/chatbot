@@ -56,6 +56,23 @@ async function callAgent(state, config){
 
   const shouldForceSearch = isForcedSearch && !hasSearchedInCurrentTurn;
 
+  // Extract Profile
+  const userProfile = config.configurable?.userProfile || { static: [], dynamic: [] };
+  
+  const profileContext = `
+## User Context & Memory
+You have access to the user's profile and recent history. 
+Use this to personalize your responses and avoid asking for information you already know.
+
+### User Profile (Long-term facts)
+${userProfile.static.length ? userProfile.static.map(f => `- ${f}`).join('\n') : "No long-term profile yet."}
+
+### Recent Context (Dynamic history)
+${userProfile.dynamic.length ? userProfile.dynamic.map(c => `- ${c}`).join('\n') : "No recent context."}
+`;
+
+  console.log(`===\n\n ${profileContext} \n\n===`)
+
   if (shouldForceSearch) { 
     // 🔴 FORCE MODE
     // We strictly tell the LLM: "You MUST call the tool named 'search'"
@@ -76,7 +93,8 @@ async function callAgent(state, config){
         Today's date is ${new Date().toDateString()}.
         You must use the search tool to answer the user's request. 
         Generate the best search query for it.
-        Always cite your sources if the search tool provides links.`
+        Always cite your sources if the search tool provides links.
+        ${profileContext}`
     };
     ""
   } else {
@@ -92,10 +110,12 @@ async function callAgent(state, config){
         Today's date is ${new Date().toDateString()}.
         If a user asks about current events, specific data you don't know, or 
         information from 2025-2026, use the search tool to provide accurate info.
-        Always cite your sources if the search tool provides links.`
+        Always cite your sources if the search tool provides links.
+        ${profileContext}`
     };
   }
 
+ console.log(`===\n\n ${systemInstructions} \n\n===`)
   
   const messagesWithSystem = [systemInstructions, ...state.messages];
 
