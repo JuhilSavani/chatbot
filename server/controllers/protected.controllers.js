@@ -3,7 +3,7 @@ import { HumanMessage } from "@langchain/core/messages";
 import { Thread } from "../models/thread.models.js";
 import { sequelize } from "../config/sequelize.config.js";
 import { QueryTypes } from 'sequelize';
-import { supermemory } from "../config/supermemory.config.js";
+import { supermemory, bufferMemory, getPendingMemories } from "../config/supermemory.config.js";
 
 export const loadChatThreads = async (req, res) => {
   try {
@@ -60,10 +60,13 @@ export const chatWithModel = async (req, res) => {
       console.error("Failed to fetch user profile:", err.message);
     }
 
+    const pendingContext = getPendingMemories(userId);
+    
     const config = { 
       configurable: { 
         thread_id: threadId,
-        userProfile: userProfile 
+        userProfile: userProfile,
+        pendingMemories: pendingContext
       } 
     };
 
@@ -105,9 +108,11 @@ export const chatWithModel = async (req, res) => {
       response: lastMessage.content,
     });
 
-    // 7. Store interaction in Supermemory (Fire & Forget)
+    // 7. Store interaction in Supermemory (Fire & Forget) + buffer locally
+    const memoryContent = `User: ${message}\nAssistant: ${lastMessage.content}`;
+    bufferMemory(userId, memoryContent);
     await supermemory.add({
-      content: `User: ${message}\nAssistant: ${lastMessage.content}`,
+      content: memoryContent,
       containerTag: userId
     }).catch(err => console.error("Failed to save memory:", err.message));
 
@@ -174,6 +179,8 @@ export const chatWithModelStream = async (req, res) => {
       console.error("Failed to fetch user profile:", err.message);
     }
 
+    const pendingContext = getPendingMemories(userId);
+
     // 3. Start the stream with streamEvents v2
     const inputs = { messages: [new HumanMessage(message)] };
     const stream = await workflow.streamEvents(inputs, { 
@@ -181,10 +188,10 @@ export const chatWithModelStream = async (req, res) => {
         thread_id: threadId, 
         signal: controller.signal,
         web_search, // Pass tools forcing here (boolean)
-        userProfile // Pass profile here
+        userProfile, // Pass profile here
+        pendingMemories: pendingContext
       },
       version: "v2",
-      // signal: controller.signal 
     });
 
     // 4. Iterate and filter events
@@ -258,10 +265,12 @@ export const chatWithModelStream = async (req, res) => {
     res.write("data: [DONE]\n\n");
     res.end();
 
-    // 7. Store interaction in Supermemory (after stream ends)
+    // 7. Store interaction in Supermemory (after stream ends) + buffer locally
     if (fullResponse) {
+      const memoryContent = `User: ${message}\nAssistant: ${fullResponse}`;
+      bufferMemory(userId, memoryContent);
       await supermemory.add({
-        content: `User: ${message}\nAssistant: ${fullResponse}`,
+        content: memoryContent,
         containerTag: userId
       }).catch(err => console.error("Failed to save memory:", err.message));
     }
