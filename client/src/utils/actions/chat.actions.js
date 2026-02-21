@@ -1,4 +1,4 @@
-import axios from "../axios";
+import axios, { BASE_URL } from "../axios";
 
 /**
  * Loads all existing threads.
@@ -111,7 +111,9 @@ export function streamChatAction({ threadId, message, web_search }) {
   // 1. Define the generator function
   async function* generateStream() {
     try {
-      const response = await fetch("http://localhost:4000/api/protected/chat/stream", {
+      // Axios doesn't expose the raw response stream.
+      ;
+      const response = await fetch(`${BASE_URL}/api/protected/chat/stream`, {
         method: "POST",
         headers: { 
           "Content-Type": "application/json",

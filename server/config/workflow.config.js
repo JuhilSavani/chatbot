@@ -76,8 +76,6 @@ ${userProfile.dynamic.length ? userProfile.dynamic.map((c) => `- ${c}`).join("\n
 ${pendingMemories.length ? `\n### Very Recent Interactions (just happened)\n${pendingMemories.map((m) => `- ${m}`).join("\n")}` : ""}
 `;
 
-  console.log(`===\n\n ${profileContext} \n\n===`);
-
   if (shouldForceSearch) {
     // 🔴 FORCE MODE
     // We strictly tell the LLM: "You MUST call the tool named 'search'"
@@ -95,12 +93,14 @@ ${pendingMemories.length ? `\n### Very Recent Interactions (just happened)\n${pe
     });
     systemInstructions = {
       role: "system",
-      content: `You are a helpful AI assistant with access to a real-time web search tool. 
-        Today's date is ${new Date().toDateString()}.
-        You must use the search tool to answer the user's request. 
-        Generate the best search query for it.
-        Always cite your sources if the search tool provides links.
-        ${profileContext}`,
+      content: `
+You are a helpful AI assistant with access to a real-time web search tool. 
+Today's date is ${new Date().toDateString()}.
+You must use the search tool to answer the user's request. 
+Generate the best search query for it.
+Always cite your sources if the search tool provides links.
+${profileContext}
+`,
     };
   } else {
     // 🟢 AUTONOMY MODE
@@ -111,16 +111,16 @@ ${pendingMemories.length ? `\n### Very Recent Interactions (just happened)\n${pe
     });
     systemInstructions = {
       role: "system",
-      content: `You are a helpful AI assistant with access to a real-time web search tool. 
-        Today's date is ${new Date().toDateString()}.
-        If a user asks about current events, specific data you don't know, or 
-        information from 2025-2026, use the search tool to provide accurate info.
-        Always cite your sources if the search tool provides links.
-        ${profileContext}`,
+      content: `
+You are a helpful AI assistant with access to a real-time web search tool. 
+Today's date is ${new Date().toDateString()}.
+If a user asks about current events, specific data you don't know, or 
+information from 2025-2026, use the search tool to provide accurate info.
+Always cite your sources if the search tool provides links.
+${profileContext}
+`,
     };
   }
-
-  console.log(`===\n\n ${systemInstructions} \n\n===`);
 
   const messagesWithSystem = [systemInstructions, ...state.messages];
 
