@@ -1,5 +1,6 @@
 import { Router } from "express";
-import { login, register, logout } from "../controllers/authorize.controllers.js";
+import { login, register, logout, googleCallback } from "../controllers/authorize.controllers.js";
+
 import { authenticateJWT } from "../config/passport.config.js";
 
 const router = Router();
@@ -20,5 +21,7 @@ router.post("/logout", logout);
 router.get("/me", authenticateJWT, (req, res) => {
   res.status(200).json({ isAuthenticated: true, user: req.user });
 });
+router.get("/google/callback", googleCallback);
+
 
 export default router;

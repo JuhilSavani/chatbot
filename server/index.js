@@ -11,7 +11,7 @@ const app = express();
 
 // Constants
 const PORT = process.env.PORT || 4000;
-const IS_PROD = process.env.NODE_ENV !== "development";
+const CLIENT_APP_ORIGIN_URL = process.env.CLIENT_APP_ORIGIN_URL || "http://localhost:3000"
 
 // Configs
 connectPostgres();
@@ -20,7 +20,7 @@ configPassport();
 
 // Middlewares
 app.use(cors({
-  origin: IS_PROD ? process.env.CLIENT_APP_ORIGIN_URL : "http://localhost:3000",
+  origin: CLIENT_APP_ORIGIN_URL,
   methods: ["GET", "PUT", "POST", "PATCH", "DELETE"],
   credentials: true,
 }));
