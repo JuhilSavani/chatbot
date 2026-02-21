@@ -111,9 +111,8 @@ export function streamChatAction({ threadId, message, web_search }) {
   // 1. Define the generator function
   async function* generateStream() {
     try {
-      // Axios doesn't expose the raw response stream.
-      ;
-      const response = await fetch(`${BASE_URL}/api/protected/chat/stream`, {
+      // Axios doesn't support the raw response stream.
+      const response = await fetch(`${BASE_URL}/protected/chat/stream`, {
         method: "POST",
         headers: { 
           "Content-Type": "application/json",
