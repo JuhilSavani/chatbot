@@ -52,7 +52,8 @@ Setting up Sidekick takes just a few minutes:
     
     # AI Providers
     TAVILY_API_KEY=[YOUR_TAVILY_KEY]
-    OPENAI_API_KEY=[YOUR_OPENAI_KEY]
+    GITHUB_TOKEN=[YOUR_GITHUB_TOKEN]
+    SUPERMEMORY_API_KEY=[YOUR_SUPERMEMORY_API_KEY]
     ```
 
 4. **Start the server application:**
@@ -71,6 +72,7 @@ Setting up Sidekick takes just a few minutes:
     Create a `.env` file in the `client` folder. You can copy the structure from `.env.example`:
     ```env
     # Google OAuth
+    VITE_BASE_API_ENDPOINT=http://localhost:4000/api
     VITE_GOOGLE_CLIENT_ID=[YOUR_CLIENT_ID]
     VITE_GOOGLE_REDIRECT_URI=http://localhost:4000/api/authorize/google/callback
     ```
