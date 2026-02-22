@@ -4,13 +4,14 @@ import cookieParser from "cookie-parser";
 import { connectPostgres, createPersistenceTables } from "./config/sequelize.config.js";
 import { authenticateJWT, configPassport } from "./config/passport.config.js";
 import authorizeRoutes from "./routes/authorize.routes.js";
-import protectedRoutes from "./routes/protected.routes.js";
+import chatRoutes from "./routes/chat.routes.js";
 import passport from "passport";
 
 const app = express();
 
 // Constants
 const PORT = process.env.PORT || 4000;
+const NODE_ENV = process.env.NODE_ENV || "development";
 const CLIENT_APP_ORIGIN_URL = process.env.CLIENT_APP_ORIGIN_URL || "http://localhost:3000"
 
 // Configs
@@ -71,8 +72,8 @@ app.get("/", (req, res) => {
 // Actual Routes
 app.use("/api/authorize", authorizeRoutes);
 app.use(authenticateJWT);
-app.use("/api/protected", protectedRoutes);
+app.use("/api/chat", chatRoutes);
 
 app.listen(PORT, () => {
-  console.log(`Server running in ${process.env.NODE_ENV} mode at http://localhost:${PORT}`);
+  console.log(`Server running in ${NODE_ENV} mode at http://localhost:${PORT}`);
 });

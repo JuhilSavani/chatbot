@@ -1,8 +1,8 @@
 import axios from "axios";
 
-export const BASE_URL = (import.meta.env.VITE_BASE_URL || "http://localhost:4000").replace(/\/$/, "") + "/api";
+export const BASE_API_ENDPOINT = (import.meta.env.VITE_BASE_API_ENDPOINT || "http://localhost:4000/api")
 
 export default axios.create({
-  baseURL: BASE_URL,
+  baseURL: BASE_API_ENDPOINT,
   withCredentials: true,
 });

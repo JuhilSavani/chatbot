@@ -3,15 +3,15 @@ import dotenv from "dotenv";
 
 dotenv.config();
 
-const apiKey = process.env.SUPERMEMORY_API_KEY;
+const SUPERMEMORY_API_KEY = process.env.SUPERMEMORY_API_KEY;
 
-if (!apiKey) {
+if (!SUPERMEMORY_API_KEY) {
   console.warn("⚠️ SUPERMEMORY_API_KEY is not set in environment variables. Supermemory features will be disabled.");
 }
 
 // Export a real client if key exists, otherwise a mock client to prevent crashes
-export const supermemory = apiKey 
-  ? new Supermemory({ apiKey: apiKey })
+export const supermemory = SUPERMEMORY_API_KEY 
+  ? new Supermemory({ apiKey: SUPERMEMORY_API_KEY })
   : {
       profile: async () => ({ profile: { static: [], dynamic: [] } }),
       add: async () => console.warn("Supermemory: 'add' called but no API key is set."),

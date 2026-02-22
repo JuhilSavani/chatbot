@@ -1,4 +1,4 @@
-import axios, { BASE_URL } from "../axios";
+import axios, { BASE_API_ENDPOINT } from "../axios";
 
 /**
  * Loads all existing threads.
@@ -6,7 +6,7 @@ import axios, { BASE_URL } from "../axios";
  */
 export async function loadChatThreadsAction() {
   try {
-    const response = await axios.get("/protected/chat/threads");
+    const response = await axios.get("/chat/threads");
     return response.data; 
   } catch (error) {
     console.error("Load Threads Error:", error);
@@ -25,7 +25,7 @@ export async function chatWithModelAction({ threadId, message }) {
       return handleAxiosError(null, "Your request failed because no user input or thread ID was included.");
     }
 
-    const response = await axios.post("/protected/chat/message", { 
+    const response = await axios.post("/chat/message", { 
       message, 
       threadId 
     });
@@ -46,7 +46,7 @@ export async function loadChatHistoryAction(threadId, signal) {
     if (!threadId) {
       return handleAxiosError(null, "Your request failed because no thread ID was included.");
     }
-    const response = await axios.get(`/protected/chat/${threadId}`, { signal });
+    const response = await axios.get(`/chat/${threadId}`, { signal });
     return response.data;
   } catch (error) {
     // Check if this was a user cancellation,
@@ -69,7 +69,7 @@ export async function syncPinStatusAction(threadId, isPinned) {
     }
 
     const action = isPinned ? "pin" : "unpin";
-    const response = await axios.put(`/protected/chat/pin/${threadId}/${action}`);
+    const response = await axios.put(`/chat/pin/${threadId}/${action}`);
     return response.data;
   } catch (error) {
     console.error("Sync Pin Status Error:", error);
@@ -87,7 +87,7 @@ export async function deleteThreadAction(threadId) {
       return handleAxiosError(null, "Your request failed because no thread ID was included.");
     }
 
-    const response = await axios.delete(`/protected/chat/${threadId}`);
+    const response = await axios.delete(`/chat/${threadId}`);
     return response.data;
   } catch (error) {
     console.error("Delete Thread Error:", error);
@@ -112,7 +112,7 @@ export function streamChatAction({ threadId, message, web_search }) {
   async function* generateStream() {
     try {
       // Axios doesn't support the raw response stream.
-      const response = await fetch(`${BASE_URL}/protected/chat/stream`, {
+      const response = await fetch(`${BASE_API_ENDPOINT}/chat/stream`, {
         method: "POST",
         headers: { 
           "Content-Type": "application/json",

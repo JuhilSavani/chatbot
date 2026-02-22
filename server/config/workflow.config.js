@@ -13,9 +13,7 @@ const toolNode = new ToolNode(tools);
 
 // 3. Bind tools to the model
 export const chatModel = new ChatOpenAI({
-  configuration: {
-    baseURL: "https://models.github.ai/inference",
-  },
+  configuration: { baseURL: "https://models.github.ai/inference" },
   apiKey: process.env.GITHUB_TOKEN,
   model: "openai/gpt-4o-mini",
   streaming: true,
