@@ -55,13 +55,14 @@ chatbot/
 │   ├── config/
 │   │   ├── sequelize.config.js      # PostgreSQL + LangGraph checkpointer
 │   │   ├── passport.config.js       # JWT strategy with Supabase JWKS
-│   │   └── workflow.config.js       # LangGraph StateGraph configuration
+│   │   ├── workflow.config.js       # LangGraph StateGraph configuration
+│   │   └── supermemory.config.js    # Supermemory client configuration
 │   ├── routes/
 │   │   ├── authorize.routes.js      # Public auth routes
-│   │   └── protected.routes.js      # Authenticated routes
+│   │   └── chat.routes.js           # Authenticated chat routes
 │   ├── controllers/
 │   │   ├── authorize.controllers.js # Auth logic
-│   │   └── protected.controllers.js # Chat/thread logic
+│   │   └── chat.controllers.js      # Chat/thread logic
 │   ├── models/
 │   │   ├── user.models.js           # User Sequelize model
 │   │   └── thread.models.js         # Thread model + associations
@@ -123,8 +124,9 @@ cd client && npm install && npm run dev
 
 **Client (.env)**:
 ```
+VITE_BASE_API_ENDPOINT=http://localhost:4000/api
 VITE_GOOGLE_CLIENT_ID=
-VITE_GOOGLE_REDIRECT_URI=
+VITE_GOOGLE_REDIRECT_URI=http://localhost:4000/api/authorize/google/callback
 ```
 
 **Server (.env)**:
@@ -135,10 +137,12 @@ CLIENT_APP_ORIGIN_URL=http://localhost:3000
 SUPABASE_PG_URI=
 SUPABASE_PROJECT_URL=
 SUPABASE_SERVICE_ROLE_KEY=
-GITHUB_TOKEN=
 GOOGLE_CLIENT_ID=
 GOOGLE_CLIENT_SECRET=
-GOOGLE_REDIRECT_URI=
+GOOGLE_REDIRECT_URI=http://localhost:4000/api/authorize/google/callback
+GITHUB_TOKEN=
+TAVILY_API_KEY=
+SUPERMEMORY_API_KEY=
 ```
 
 ---
@@ -433,25 +437,34 @@ import cookieParser from "cookie-parser"
 import passport from "passport"
 
 const app = express()
-const PORT = process.env.PORT || 4000
-const IS_PROD = process.env.NODE_ENV !== "development"
 
-// Initialize configs
+// Constants
+const PORT = process.env.PORT || 4000;
+const NODE_ENV = process.env.NODE_ENV || "development";
+const CLIENT_APP_ORIGIN_URL = process.env.CLIENT_APP_ORIGIN_URL || "http://localhost:3000"
+
+// Configs
 connectPostgres()
 createPersistenceTables()
 configPassport()
 
-// Middleware stack (order matters)
+// Middlewares
 app.use(cors({
-  origin: IS_PROD ? process.env.APP_ORIGIN : "http://localhost:3000",
+  origin: CLIENT_APP_ORIGIN_URL,
+  methods: ["GET", "PUT", "POST", "PATCH", "DELETE"],
   credentials: true,
-}))
-app.use(express.json())
-app.use(cookieParser())
-app.use(passport.initialize())
+}));
+app.use(express.json());
+app.use(cookieParser());
+app.use(passport.initialize());
+app.use((req, res, next) => {
+  console.log(`📍 ${req.method} ${req.url}`);
+  console.log(`Cookies present:`, req.cookies ? Object.keys(req.cookies) : "None");
+  next();
+});
 
 // Routes
-app.use("/api/authorize", authorizeRoutes)  // Public
+app.use("/api/authorize", authorizeRoutes)   // Public
 app.use(authenticateJWT)                     // Auth middleware
 app.use("/api/protected", protectedRoutes)   // Protected
 ```
@@ -472,10 +485,10 @@ router.get("/me", authenticateJWT, (req, res) => {
 
 // protected.routes.js - Authenticated routes
 const router = express.Router()
-router.get("/chat/threads", loadChatThreads)
-router.get("/chat/:threadId", loadChatHistory)
-router.post("/chat/message", chatWithModel)
-router.put("/chat/pin/:threadId/:action", setPinStatus)
+router.get("/threads", loadChatThreads)
+router.get("/:threadId", loadChatHistory)
+router.post("/message", chatWithModel)
+router.put("/pin/:threadId/:action", setPinStatus)
 ```
 
 ### Controller Patterns
@@ -622,48 +635,9 @@ const jwtOptions = {
 res.cookie("authJwt", data.session?.access_token, {
   httpOnly: true,
   secure: IS_PROD,
-  sameSite: IS_PROD ? "Strict" : "Lax",
+  sameSite: IS_PROD ? "None" : "Lax",
   maxAge: 60 * 60 * 1000, // 60 minutes
 })
-```
-
-### LangGraph Integration
-
-**Workflow configuration:**
-
-```javascript
-export const chatModel = new ChatOpenAI({
-  configuration: { baseURL: "https://models.github.ai/inference" },
-  apiKey: process.env.GITHUB_TOKEN,
-  model: "openai/gpt-4o-mini",
-})
-
-async function callAgent(state) {
-  const response = await chatModel.invoke(state.messages)
-  return { messages: [response] }
-}
-
-const graph = new StateGraph(MessagesAnnotation)
-graph.addNode("chatAgent", callAgent)
-graph.addEdge("__start__", "chatAgent")
-graph.addEdge("chatAgent", "__end__")
-
-export const workflow = graph.compile({ checkpointer })
-```
-
-**Invoking workflow:**
-
-```javascript
-const config = { configurable: { thread_id: threadId } }
-const inputs = { messages: [new HumanMessage(message)] }
-const result = await workflow.invoke(inputs, config)
-
-// Get history
-const state = await workflow.getState(config)
-const history = state.values.messages.map((msg) => ({
-  role: msg._getType() === 'human' ? 'user' : 'assistant',
-  content: msg.content,
-}))
 ```
 
 ### External Client Pattern
