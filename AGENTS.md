@@ -264,7 +264,7 @@ export async function chatWithModelAction({ threadId, message }) {
     if (!message || !threadId) {
       return handleAxiosError(null, "message and threadId required")
     }
-    const response = await axios.post("/protected/chat/message", { message, threadId })
+    const response = await axios.post("/chat/message", { message, threadId })
     return response.data
   } catch (error) {
     console.error("Chat Action Error:", error)
@@ -313,25 +313,43 @@ const onSubmit = async (data) => {
 
 ### Routing Patterns
 
-**Use React Router v7 with protected routes:**
+**Use React Router v7 with an inline `<Protected>` guard component:**
 
 ```jsx
-// App.jsx
+const Protected = ({ children }) => {
+  const { auth, loading } = useAuth();
+  const location = useLocation();
+
+  if (loading) return <Loading />;
+  if (!auth?.isAuthenticated) {
+    return <Navigate to="/login" state={{ from: location }} replace />;
+  }
+  return children;
+};
+
 const router = createBrowserRouter(
   createRoutesFromElements(
     <>
-      {/* Public routes */}
-      <Route path="login" element={<Login />} />
-      <Route path="register" element={<Register />} />
-      
-      {/* Protected routes */}
-      <Route element={<ProtectedLayout />}>
-        <Route index element={<Navigate to="/chat" replace />} />
-        <Route path="/chat/:threadId?" element={<ChatWindow />} />
+      <Route path="/">
+        {/* Public routes */}
+        <Route index element={<LandingPage />} />
+        <Route path="login" element={<Login />} />
+        <Route path="register" element={<Register />} />
+
+        {/* Protected route — wrapped by <Protected> */}
+        <Route
+          path="chat/:threadId?"
+          element={
+            <Protected>
+              <ChatWindow />
+            </Protected>
+          }
+        />
+
+        {/* Error routes */}
+        <Route path="401" element={<UnAuth />} />
+        <Route path="*" element={<NotFound />} />
       </Route>
-      
-      {/* Error routes */}
-      <Route path="*" element={<NotFound />} />
     </>
   )
 )
@@ -465,8 +483,8 @@ app.use((req, res, next) => {
 
 // Routes
 app.use("/api/authorize", authorizeRoutes)   // Public
-app.use(authenticateJWT)                     // Auth middleware
-app.use("/api/protected", protectedRoutes)   // Protected
+app.use(authenticateJWT)                     // Auth middleware (applied to all routes below)
+app.use("/api/chat", chatRoutes)             // Protected chat routes
 ```
 
 ### Route Organization
@@ -474,7 +492,7 @@ app.use("/api/protected", protectedRoutes)   // Protected
 **Domain-based separation:**
 
 ```javascript
-// authorize.routes.js - Public routes
+// authorize.routes.js - Public routes (/api/authorize/*)
 const router = Router()
 router.post("/login", login)
 router.post("/register", register)
@@ -483,12 +501,14 @@ router.get("/me", authenticateJWT, (req, res) => {
   res.status(200).json({ isAuthenticated: true, user: req.user })
 })
 
-// protected.routes.js - Authenticated routes
+// chat.routes.js - Authenticated routes (/api/chat/*)
 const router = express.Router()
-router.get("/threads", loadChatThreads)
-router.get("/:threadId", loadChatHistory)
-router.post("/message", chatWithModel)
-router.put("/pin/:threadId/:action", setPinStatus)
+router.get("/threads", loadChatThreads)              // GET  /api/chat/threads
+router.get("/:threadId", loadChatHistory)            // GET  /api/chat/:threadId
+router.post("/message", chatWithModel)               // POST /api/chat/message
+router.post("/stream", chatWithModelStream)          // POST /api/chat/stream (SSE)
+router.put("/pin/:threadId/:action", setPinStatus)   // PUT  /api/chat/pin/:threadId/:action
+router.delete("/:threadId", deleteThread)            // DELETE /api/chat/:threadId
 ```
 
 ### Controller Patterns
