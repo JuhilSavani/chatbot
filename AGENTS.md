@@ -149,29 +149,6 @@ SUPERMEMORY_API_KEY=
 
 ## Frontend Code Guidelines
 
-### Component Patterns
-
-**Use functional components exclusively with hooks:**
-
-```jsx
-// Good - Functional component with hooks
-export default function ChatWindow() {
-  const { auth } = useAuth()
-  const [messages, setMessages] = useState([])
-  const [loading, setLoading] = useState(false)
-  
-  return (
-    <SidebarProvider>
-      <ChatSidebar threads={threads} />
-      <MainContent setThreads={setThreads} />
-    </SidebarProvider>
-  )
-}
-
-// Bad - Class components
-class ChatWindow extends React.Component { }
-```
-
 ### File Naming Conventions
 
 | Type | Convention | Example |
@@ -193,11 +170,11 @@ import { Button } from "@/components/ui/button"
 import { useAuth } from "@/utils/hooks/useAuth"
 
 // Acceptable: Relative imports within the same directory or one directory level up
-// - ./ for the same directory
-// - ../ for one directory level up
+// ./ for the same directory
+// ../ for one directory level up
 
 // Not acceptable:
-// - ../../ or deeper relative paths
+// ../../ or deeper relative paths
 ```
 
 ### Export Patterns
@@ -218,37 +195,6 @@ export async function chatWithModelAction({ threadId, message }) { }
 // Contexts - mixed exports
 export const AuthContext = createContext(null)  // Named
 export default AuthProvider                     // Default
-```
-
-### State Management
-
-**Use React Context for global state:**
-
-```jsx
-// Context definition (AuthProvider.jsx)
-export const AuthContext = createContext(null)
-
-function AuthProvider({ children }) {
-  const [auth, setAuth] = useState({ isAuthenticated: false, user: null })
-  const [loading, setLoading] = useState(true)
-
-  // Memoize context value to prevent unnecessary re-renders
-  const value = useMemo(() => ({ auth, setAuth, loading }), [auth, loading])
-
-  return (
-    <AuthContext.Provider value={value}>
-      {children}
-    </AuthContext.Provider>
-  )
-}
-```
-
-**Use local state for component-specific data:**
-
-```jsx
-const [messages, setMessages] = useState([])
-const [loading, setLoading] = useState(false)
-const [error, setError] = useState(null)
 ```
 
 ### API Communication
@@ -311,50 +257,6 @@ const onSubmit = async (data) => {
 {error && <span className="text-red-500">{error}</span>}
 ```
 
-### Routing Patterns
-
-**Use React Router v7 with an inline `<Protected>` guard component:**
-
-```jsx
-const Protected = ({ children }) => {
-  const { auth, loading } = useAuth();
-  const location = useLocation();
-
-  if (loading) return <Loading />;
-  if (!auth?.isAuthenticated) {
-    return <Navigate to="/login" state={{ from: location }} replace />;
-  }
-  return children;
-};
-
-const router = createBrowserRouter(
-  createRoutesFromElements(
-    <>
-      <Route path="/">
-        {/* Public routes */}
-        <Route index element={<LandingPage />} />
-        <Route path="login" element={<Login />} />
-        <Route path="register" element={<Register />} />
-
-        {/* Protected route — wrapped by <Protected> */}
-        <Route
-          path="chat/:threadId?"
-          element={
-            <Protected>
-              <ChatWindow />
-            </Protected>
-          }
-        />
-
-        {/* Error routes */}
-        <Route path="401" element={<UnAuth />} />
-        <Route path="*" element={<NotFound />} />
-      </Route>
-    </>
-  )
-)
-```
-
 ### Styling with Tailwind
 
 **Use the `cn()` utility for conditional classes:**
@@ -370,77 +272,6 @@ import { cn } from "@/lib/utils"
   Submit
 </button>
 ```
-
-**Use CSS variables for theming (defined in index.css):**
-
-```css
-:root {
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-}
-
-.dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-}
-```
-
-### Custom Hooks Pattern
-
-```jsx
-// Stateful action hook
-function useLogout() {
-  const [logoutError, setLogoutError] = useState(null)
-  const [logoutLoading, setLogoutLoading] = useState(false)
-  const { setAuth } = useAuth()
-
-  const logout = async () => {
-    setLogoutLoading(true)
-    setLogoutError(null)
-    try {
-      await axios.post("/authorize/logout", { withCredentials: true })
-      setAuth({ isAuthenticated: false, user: null })
-    } catch (e) {
-      setLogoutError("Logout failed. Please, try again!")
-      console.error("Logout failed: ", e)
-    } finally {
-      setLogoutLoading(false)
-    }
-  }
-  
-  return { logout, logoutError, logoutLoading }
-}
-```
-
-### shadcn/ui Usage
-
-**Components use Class Variance Authority (CVA) for variants:**
-
-```jsx
-const buttonVariants = cva(
-  "inline-flex items-center justify-center rounded-md text-sm font-medium...",
-  {
-    variants: {
-      variant: {
-        default: "bg-primary text-primary-foreground hover:bg-primary/90",
-        destructive: "bg-destructive text-white hover:bg-destructive/90",
-        outline: "border bg-background hover:bg-accent",
-        ghost: "hover:bg-accent hover:text-accent-foreground",
-      },
-      size: {
-        default: "h-9 px-4 py-2",
-        sm: "h-8 px-3",
-        lg: "h-10 px-6",
-        icon: "size-9",
-      },
-    },
-    defaultVariants: { variant: "default", size: "default" },
-  }
-)
-```
-
----
 
 ## Backend Code Guidelines
 
@@ -680,23 +511,17 @@ export const supabase = createClient(
 
 ### Do's
 
-- Use functional components with hooks
 - Use `@/` absolute imports for cross-directory imports
 - Return `{ error: string }` from action functions on failure
 - Use `cn()` utility for conditional Tailwind classes
-- Use `IS_PROD` flag for environment-aware configurations
 - Define Sequelize models with explicit table names and timestamps
-- Use HTTP-only cookies for JWT storage
 - Memoize context values with `useMemo`
 - Log errors with `console.error` before returning error responses
 
 ### Don'ts
 
 - Don't use class components
-- Don't store JWTs in localStorage (use HTTP-only cookies)
 - Don't skip error handling in async functions
-- Don't mutate state directly (use setState/setters)
-- Don't hardcode environment-specific values
 - Don't use `require()` syntax (use ES Modules)
 - Don't create centralized error middleware (use inline try-catch)
 - Don't skip authentication checks in protected controllers
