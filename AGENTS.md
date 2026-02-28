@@ -12,14 +12,7 @@ This is a **full-stack AI chatbot application** built as a monorepo with:
 - **Backend**: Express 5 + PostgreSQL (Supabase) + Sequelize ORM
 - **AI Engine**: LangGraph with OpenAI GPT-4o-mini (via GitHub Models API)
 - **Authentication**: Supabase Auth + Passport.js JWT + HTTP-only cookies
-
-### Core Features
-
-1. **AI Chat Interface** - Real-time conversations with LLM
-2. **Persistent Conversations** - Thread-based chat history with LangGraph checkpointing
-3. **Thread Management** - Create, view, pin/unpin chat threads
-4. **Auto-generated Titles** - AI-generated thread titles based on conversation
-5. **Authentication** - Email/password + Google OAuth with email verification
+- **File Storage**: Cloudinary (signed uploads)
 
 ---
 
@@ -38,10 +31,11 @@ chatbot/
 │   │   ├── hooks/                   # shadcn-specific hooks (use-mobile)
 │   │   ├── lib/                     # Utility functions initialized by shadcn (includes utils.js with cn())
 │   │   └── utils/
-│   │       ├── actions/             # API action functions (chat.actions.js)
+│   │       ├── actions/             # API action functions (chat.actions.js, upload.actions.js)
 │   │       ├── components/          # Custom feature components (ChatSidebar, ChatInput)
 │   │       ├── contexts/            # React contexts (AuthProvider)
 │   │       ├── hooks/               # Custom hooks (useAuth, useLogout)
+│   │       ├── workers/             # Web Workers (countTokensWorker.js)
 │   │       └── ...                  # Other utility files (axios.jsx, toolParsing.js)
 │   ├── package.json
 │   ├── vite.config.js
@@ -59,10 +53,12 @@ chatbot/
 │   │   └── supermemory.config.js    # Supermemory client configuration
 │   ├── routes/
 │   │   ├── authorize.routes.js      # Public auth routes
-│   │   └── chat.routes.js           # Authenticated chat routes
+│   │   ├── chat.routes.js           # Authenticated chat routes
+│   │   └── upload.routes.js         # Cloudinary upload signature route
 │   ├── controllers/
 │   │   ├── authorize.controllers.js # Auth logic
-│   │   └── chat.controllers.js      # Chat/thread logic
+│   │   ├── chat.controllers.js      # Chat/thread logic
+│   │   └── upload.controllers.js    # Cloudinary upload logic
 │   ├── models/
 │   │   ├── user.models.js           # User Sequelize model
 │   │   └── thread.models.js         # Thread model + associations
@@ -140,6 +136,9 @@ SUPABASE_SERVICE_ROLE_KEY=
 GOOGLE_CLIENT_ID=
 GOOGLE_CLIENT_SECRET=
 GOOGLE_REDIRECT_URI=http://localhost:4000/api/authorize/google/callback
+CLOUDINARY_CLOUD_NAME=
+CLOUDINARY_API_KEY= 
+CLOUDINARY_API_SECRET= 
 GITHUB_TOKEN=
 TAVILY_API_KEY=
 SUPERMEMORY_API_KEY=
@@ -316,6 +315,7 @@ app.use((req, res, next) => {
 app.use("/api/authorize", authorizeRoutes)   // Public
 app.use(authenticateJWT)                     // Auth middleware (applied to all routes below)
 app.use("/api/chat", chatRoutes)             // Protected chat routes
+app.use("/api/upload", uploadRoutes)         // Protected upload routes
 ```
 
 ### Route Organization
@@ -520,26 +520,9 @@ export const supabase = createClient(
 
 ### Don'ts
 
+- Design solutions such that they don't expose sensitive env variables
 - Don't use class components
 - Don't skip error handling in async functions
 - Don't use `require()` syntax (use ES Modules)
 - Don't create centralized error middleware (use inline try-catch)
 - Don't skip authentication checks in protected controllers
-
----
-
-## Technology Reference
-
-| Layer | Technology | Version |
-|-------|------------|---------|
-| Frontend Framework | React | 19.1.1 |
-| Build Tool | Vite | 7.1.2 |
-| Styling | TailwindCSS | 4.1.18 |
-| UI Components | shadcn/ui | latest |
-| Routing | React Router | 7.9.1 |
-| Backend Framework | Express | 5.1.0 |
-| Database | PostgreSQL | via Supabase |
-| ORM | Sequelize | 6.37.7 |
-| Auth | Supabase Auth | latest |
-| AI Workflow | LangGraph | latest |
-| LLM | OpenAI GPT-4o-mini | via GitHub Models |
