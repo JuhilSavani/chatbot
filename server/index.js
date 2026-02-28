@@ -5,6 +5,7 @@ import { connectPostgres, createPersistenceTables } from "./config/sequelize.con
 import { authenticateJWT, configPassport } from "./config/passport.config.js";
 import authorizeRoutes from "./routes/authorize.routes.js";
 import chatRoutes from "./routes/chat.routes.js";
+import uploadRoutes from "./routes/upload.routes.js";
 import passport from "passport";
 
 const app = express();
@@ -73,6 +74,7 @@ app.get("/", (req, res) => {
 app.use("/api/authorize", authorizeRoutes);
 app.use(authenticateJWT);
 app.use("/api/chat", chatRoutes);
+app.use("/api/upload", uploadRoutes);
 
 app.listen(PORT, () => {
   console.log(`Server running in ${NODE_ENV} mode at http://localhost:${PORT}`);

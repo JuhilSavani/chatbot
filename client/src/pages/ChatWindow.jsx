@@ -164,9 +164,7 @@ function MainContent({ setThreads }) {
 
   // SEND MESSAGE HANDLER
   const handleMessageSent = async (messageData) => {
-    const { message: newMessage, webSearch } = typeof messageData === 'string' 
-      ? { message: messageData, webSearch: false } 
-      : messageData;
+    const { message: newMessage, webSearch, attachments } = messageData;
 
     // Optimistic UI Update
     setMessages(prev => [

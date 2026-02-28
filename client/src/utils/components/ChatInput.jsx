@@ -1,11 +1,22 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Paperclip, ArrowUp, Globe, Square } from 'lucide-react';
+import { Paperclip, ArrowUp, Globe, Square, X, FileText, Loader2 } from 'lucide-react';
+import pdfjsWorkerUrl from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
+import { uploadPdfToCloudinary } from '../actions/upload.actions';
+
+const MAX_PDFS = 5;
+const MAX_TOKENS = 32768;
 
 const ChatInput = ({ threadId, onMessageSent, loading, onStop }) => {
   const [message, setMessage] = useState('');
   const [isSearchEnabled, setIsSearchEnabled] = useState(false);
   const [error, setError] = useState(null);
+  
+  // Each entry: { id, file, text, status: 'verifying' | 'uploading' | 'done' | 'error', tokenCount, error }
+  const [attachments, setAttachments] = useState([]);
+  const [isDragging, setIsDragging] = useState(false);
+
   const textareaRef = useRef(null);
+  const fileInputRef = useRef(null);
 
   useEffect(() => {
     if (textareaRef.current) {
@@ -14,16 +25,186 @@ const ChatInput = ({ threadId, onMessageSent, loading, onStop }) => {
     }
   }, [message]);
 
-  const handleSendMessage = () => {
-    if (!message.trim() || loading || !threadId) return;
+  const updateAttachment = (id, updates) => {
+    setAttachments(prev => prev.map(a => a.id === id ? { ...a, ...updates } : a));
+  };
+
+  const processSinglePdf = async (file, id) => {
+    try {
+      // 1. Extract text
+      const fileBuffer = await file.arrayBuffer();
+      console.log(`[ChatInput] Processing "${file.name}" (${fileBuffer.byteLength} bytes)`);
+
+      const pdfjsLib = await import('pdfjs-dist');
+      pdfjsLib.GlobalWorkerOptions.workerSrc = pdfjsWorkerUrl;
+
+      const loadingTask = pdfjsLib.getDocument({ data: new Uint8Array(fileBuffer) });
+      const pdfDocument = await loadingTask.promise;
+      console.log(`[ChatInput] "${file.name}" loaded. Pages: ${pdfDocument.numPages}`);
+
+      let fullText = '';
+      for (let i = 1; i <= pdfDocument.numPages; i++) {
+        const page = await pdfDocument.getPage(i);
+        const textContent = await page.getTextContent();
+        const pageText = textContent.items.map((item) => item.str).join(' ');
+        fullText += pageText + '\n';
+      }
+      console.log(`[ChatInput] "${file.name}" text extracted. Length: ${fullText.length}`);
+
+      // 2. Count tokens in web worker
+
+      const tokenCount = await new Promise((resolve, reject) => {
+        const worker = new Worker(
+          new URL('../workers/countTokensWorker.js', import.meta.url),
+          { type: 'module' }
+        );
+        worker.onerror = (err) => {
+          worker.terminate();
+          reject(new Error('Token counting worker failed.'));
+        };
+        worker.onmessage = (e) => {
+          worker.terminate();
+          if (e.data.success) {
+            resolve(e.data.tokenCount);
+          } else {
+            reject(new Error(e.data.error || 'Token counting failed'));
+          }
+        };
+        worker.postMessage({ text: fullText });
+      });
+
+      console.log(`[ChatInput] "${file.name}" token count: ${tokenCount}`);
+
+      // 3. Check token limit
+      if (tokenCount > MAX_TOKENS) {
+        console.error(`Rejected "${file.name}" due to token limit`);
+        setAttachments(prev => prev.filter(a => a.id !== id));
+        setError(`"${file.name}" exceeds the token limit (${tokenCount.toLocaleString()} / ${MAX_TOKENS.toLocaleString()} tokens).`);
+      } else {
+        console.log(`"${file.name}" done`);
+        updateAttachment(id, { status: 'done', text: fullText, tokenCount });
+      }
+    } catch (err) {
+      console.error(`[ChatInput] Error processing "${file.name}":`, err);
+      updateAttachment(id, { status: 'error', error: err.message });
+    }
+  };
+
+  const processPdfFiles = (files) => {
+    const pdfFiles = Array.from(files).filter(f => f.type === 'application/pdf');
+
+    if (pdfFiles.length === 0) {
+      setError('Only PDF files are supported.');
+      return;
+    }
+
+    const remainingSlots = MAX_PDFS - attachments.length;
+    if (remainingSlots <= 0) {
+      setError(`Maximum of ${MAX_PDFS} PDFs allowed per message.`);
+      return;
+    }
+
+    const filesToProcess = pdfFiles.slice(0, remainingSlots);
+    if (pdfFiles.length > remainingSlots) {
+      setError(`Only ${remainingSlots} more PDF(s) can be added. ${pdfFiles.length - remainingSlots} file(s) were skipped.`);
+    } else {
+      setError(null);
+    }
+
+    // Create entries for all files
+    const newEntries = filesToProcess.map(file => ({
+      id: crypto.randomUUID(),
+      file,
+      text: '',
+      status: 'verifying',
+      tokenCount: 0,
+      error: null,
+    }));
+
+    setAttachments(prev => [...prev, ...newEntries]);
+
+    // Process all concurrently
+    newEntries.forEach(entry => {
+      processSinglePdf(entry.file, entry.id);
+    });
+  };
+
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    if (!isDragging) setIsDragging(true);
+  };
+
+  const handleDragLeave = (e) => {
+    e.preventDefault();
+    setIsDragging(false);
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    setIsDragging(false);
+    
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      processPdfFiles(e.dataTransfer.files);
+      e.dataTransfer.clearData();
+    }
+  };
+
+  const handleFileSelect = (e) => {
+    if (e.target.files && e.target.files.length > 0) {
+      processPdfFiles(e.target.files);
+    }
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
+  const removeAttachment = (id) => {
+    setAttachments(prev => prev.filter(a => a.id !== id));
+  };
+
+  const clearAllAttachments = () => {
+    setAttachments([]);
+  };
+
+  const doneAttachments = attachments.filter(a => a.status === 'done');
+  const isBusy = attachments.some(a => a.status === 'verifying' || a.status === 'uploading');
+
+  const handleSendMessage = async () => {
+    if ((!message.trim() && doneAttachments.length === 0) || loading || !threadId) return;
 
     const userMessage = message.trim();
     setMessage('');
     setError(null);
 
-    onMessageSent?.({ message: userMessage, webSearch: isSearchEnabled });
-  };
+    // If there are attachments, upload them to Cloudinary first
+    if (doneAttachments.length > 0) {
+      try {
+        // Set all done attachments to 'uploading' for Cloudinary phase
+        doneAttachments.forEach(att => updateAttachment(att.id, { status: 'uploading' }));
 
+        const uploadResults = await Promise.all(
+          doneAttachments.map(async (att) => {
+            console.log(`[ChatInput] Uploading "${att.file.name}" to Cloudinary...`);
+            const result = await uploadPdfToCloudinary(att.file);
+            console.log(`[ChatInput] Upload complete for "${att.file.name}":`, result);
+            return result;
+          })
+        );
+        console.log('[ChatInput] All uploads complete:', uploadResults);
+        clearAllAttachments();
+        return; // Stop here for now — we'll wire onMessageSent later
+      } catch (err) {
+        console.error('[ChatInput] Cloudinary upload failed:', err);
+        setError('Failed to upload PDF: ' + err.message);
+        return;
+      }
+    }
+
+    onMessageSent?.({ 
+      message: userMessage, 
+      webSearch: isSearchEnabled,
+    });
+    
+    clearAllAttachments();
+  };
 
   const handleKeyDown = (e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -41,8 +222,69 @@ const ChatInput = ({ threadId, onMessageSent, loading, onStop }) => {
       )}
       
       {/* Main Input Container */}
-      <div className="w-full max-w-4xl bg-[#18181b]/50 backdrop-blur-xl rounded-2xl p-4 border border-white/5 relative flex flex-col min-h-32 transition-all duration-200 z-10 group focus-within:shadow-[0_0_0_4px_rgba(255,255,255,0.8)]">
+      <div 
+        className={`w-full max-w-4xl bg-[#18181b]/50 backdrop-blur-xl rounded-2xl p-4 border relative flex flex-col min-h-32 transition-all duration-200 z-10 group focus-within:shadow-[0_0_0_4px_rgba(255,255,255,0.8)] ${isDragging ? 'border-blue-500 bg-blue-500/10' : 'border-white/5'}`}
+        onDragOver={handleDragOver}
+        onDragLeave={handleDragLeave}
+        onDrop={handleDrop}
+      >
+        {/* Hidden File Input */}
+        <input
+          type="file"
+          accept="application/pdf"
+          multiple
+          ref={fileInputRef}
+          onChange={handleFileSelect}
+          className="hidden"
+        />
         
+        {/* Attachments UI */}
+        {attachments.length > 0 && (
+          <div className="flex flex-wrap gap-2 mb-3">
+            {attachments.map(att => (
+              <div 
+                key={att.id}
+                className={`flex items-center gap-2 text-sm px-3 py-1.5 rounded-lg border ${
+                  att.status === 'error'
+                    ? 'bg-red-500/10 border-red-500/20 text-red-400'
+                    : 'bg-white/10 border-white/10 text-white'
+                }`}
+              >
+                {(att.status === 'verifying' || att.status === 'uploading') ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin text-blue-400" />
+                    <span className="text-[#a1a1aa] truncate max-w-[160px]">
+                      {att.status === 'verifying' ? 'Verifying' : 'Uploading'}... {att.file.name}
+                    </span>
+                  </>
+                ) : att.status === 'error' ? (
+                  <>
+                    <FileText className="w-4 h-4 text-red-400" />
+                    <span className="truncate max-w-[160px]" title={att.error}>{att.file.name}</span>
+                    <button 
+                      onClick={() => removeAttachment(att.id)}
+                      className="p-0.5 hover:bg-white/20 rounded-full transition-colors ml-1"
+                    >
+                      <X className="w-3.5 h-3.5 text-red-400 hover:text-red-300" />
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <FileText className="w-4 h-4 text-blue-400" />
+                    <span className="truncate max-w-[160px]">{att.file.name}</span>
+                    <button 
+                      onClick={() => removeAttachment(att.id)}
+                      className="p-0.5 hover:bg-white/20 rounded-full transition-colors ml-1"
+                    >
+                      <X className="w-3.5 h-3.5 text-red-400 hover:text-red-300" />
+                    </button>
+                  </>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+
         {/* Text Input Area */}
         <div className="grow mb-2">
           <textarea
@@ -86,7 +328,8 @@ const ChatInput = ({ threadId, onMessageSent, loading, onStop }) => {
 
             {/* Attachment Button */}
             <button 
-              disabled={loading}
+              onClick={() => fileInputRef.current?.click()}
+              disabled={loading || isBusy || attachments.length >= MAX_PDFS}
               className="p-1.5 text-[#52525b] hover:text-[#fafafa] transition-colors rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <Paperclip className="w-4 h-4" strokeWidth={2} />
@@ -96,9 +339,9 @@ const ChatInput = ({ threadId, onMessageSent, loading, onStop }) => {
           {/* Right Side: Send/Stop Button */}
           <button 
             onClick={loading ? onStop : handleSendMessage}
-            disabled={!loading && !message.trim()}
+            disabled={!loading && !message.trim() && doneAttachments.length === 0}
             className={`w-8 h-8 rounded-lg transition-all duration-200 flex items-center justify-center
-              ${(loading || message.trim())
+              ${(loading || message.trim() || doneAttachments.length > 0)
                 ? 'bg-[#fafafa] text-[#18181b] hover:bg-white hover:shadow-[0_0_10px_rgba(255,255,255,0.2)]' 
                 : 'bg-white/10 text-[#52525b] cursor-not-allowed'
               }`}
