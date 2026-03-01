@@ -26,7 +26,7 @@ async function callAgent(state, config) {
   let systemInstructions;
 
   // Check the button state from the frontend
-  const isForcedSearch = config.configurable?.web_search === true;
+  const isForcedSearch = config.configurable?.webSearch === true;
 
   // FUTURE TODO : Decouple this, and allow multiple tools to be forced
 
@@ -59,20 +59,32 @@ async function callAgent(state, config) {
     static: [],
     dynamic: [],
   };
-  const pendingMemories = config.configurable?.pendingMemories || [];
 
-  const profileContext = `
+  const userProfileContext = userProfile.static.length ? userProfile.static.map((f) => `- ${f}`).join("\n") : "No long-term profile yet.";
+  const crossSessionContext = userProfile.dynamic.length ? userProfile.dynamic.map((c) => `- ${c}`).join("\n") : "No recent context.";
+  const veryRecentInteractions = config.configurable?.pendingMemories ? 
+  `\n### Very Recent Interactions (just happened)\n${config.configurable.pendingMemories.map((m) => `- ${m}`).join("\n")}`
+  : "";
+
+  const personalizedContext = `
 ## User Context & Memory
 You have access to the user's profile and recent history. 
 Use this to personalize your responses and avoid asking for information you already know.
-
+ 
 ### User Profile (Long-term facts)
-${userProfile.static.length ? userProfile.static.map((f) => `- ${f}`).join("\n") : "No long-term profile yet."}
+${userProfileContext}
 
 ### Recent Context (Dynamic history)
-${userProfile.dynamic.length ? userProfile.dynamic.map((c) => `- ${c}`).join("\n") : "No recent context."}
-${pendingMemories.length ? `\n### Very Recent Interactions (just happened)\n${pendingMemories.map((m) => `- ${m}`).join("\n")}` : ""}
+${crossSessionContext}
+${veryRecentInteractions}
 `;
+
+  const documentContext = config.configurable?.relevantDocuments?.length > 0 ? `
+## Referenced Documents
+The user has uploaded documents in this conversation. Use the content below to answer their questions accurately.
+
+${config.configurable.relevantDocuments.map(doc => `### Document: ${doc.name}\n${doc.content}`).join("\n\n")}
+` : "";
 
   if (shouldForceSearch) {
     // 🔴 FORCE MODE
@@ -97,7 +109,8 @@ Today's date is ${new Date().toDateString()}.
 You must use the search tool to answer the user's request. 
 Generate the best search query for it.
 Always cite your sources if the search tool provides links.
-${profileContext}
+${personalizedContext}
+${documentContext}
 `,
     };
   } else {
@@ -115,7 +128,8 @@ Today's date is ${new Date().toDateString()}.
 If a user asks about current events, specific data you don't know, or 
 information from 2025-2026, use the search tool to provide accurate info.
 Always cite your sources if the search tool provides links.
-${profileContext}
+${personalizedContext}
+${documentContext}
 `,
     };
   }

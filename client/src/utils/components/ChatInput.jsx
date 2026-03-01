@@ -194,10 +194,10 @@ const ChatInput = ({ threadId, onMessageSent, loading, onStop }) => {
         );
         console.log('[ChatInput] All uploads complete:', uploadResults);
 
-        // Extract attachment URLs from Cloudinary response
-        const attachmentUrls = uploadResults.map(r => ({
+        const attachmentUrls = uploadResults.map((r, i) => ({
           public_id: r.public_id,
           name: r.original_filename,
+          tokenCount: doneAttachments[i]?.tokenCount || 0,
         }));
 
         setMessage('');

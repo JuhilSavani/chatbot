@@ -65,7 +65,7 @@ const ChatMessage = React.memo(({ message }) => {
     );
   }
 
-  // 1.5 Handle "PDF Processing" State
+  // 2. Handle "PDF Processing" State
   if (message.isPdfProcessing) {
     return (
       <div className="mb-6 p-4 rounded-2xl bg-white/5 w-full border border-white/5 animate-pulse">
@@ -77,7 +77,7 @@ const ChatMessage = React.memo(({ message }) => {
     );
   }
 
-  // 2. Handle Tool Calls
+  // 3. Handle Tool Calls
   if (message.role === 'tool_call') {
     const { tool, input, output, status } = message.content;
     const parsedInput = parseToolInput(input);
@@ -86,7 +86,7 @@ const ChatMessage = React.memo(({ message }) => {
     return <ToolCall tool={tool} input={parsedInput} output={parsedOutput} status={status} />;
   }
 
-  // 3. Handle Standard Messages
+  // 4. Handle Standard Messages
   if (!message.content) return null;
   
   const isUser = message.role === 'user';
@@ -204,7 +204,7 @@ function MainContent({ setThreads }) {
       const { stream, abort } = streamChatAction({
         threadId: activeThreadId,
         message: newMessage,
-        web_search: webSearch,
+        webSearch,
         attachments
       })
       

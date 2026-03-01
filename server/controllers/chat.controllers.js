@@ -1,4 +1,4 @@
-import { workflow, chatModel } from "../config/workflow.config.js";
+import { workflow } from "../config/workflow.config.js";
 import { HumanMessage } from "@langchain/core/messages";
 import { Thread } from "../models/thread.models.js";
 import { sequelize } from "../config/sequelize.config.js";
@@ -6,6 +6,9 @@ import { QueryTypes } from 'sequelize';
 import { supermemory, bufferMemory, getPendingMemories } from "../config/supermemory.config.js";
 import { extractText, getDocumentProxy } from "unpdf";
 import cloudinary from "../config/cloudinary.config.js";
+import { Attachment } from "../models/attachment.models.js";
+import { generateThreadName } from "../utils/generateThreadName.js";
+import { selectRelevantDocuments } from "../utils/selectRelevantDocuments.js";
 
 export const loadChatThreads = async (req, res) => {
   try {
@@ -62,13 +65,13 @@ export const chatWithModel = async (req, res) => {
       console.error("Failed to fetch user profile:", err.message);
     }
 
-    const pendingContext = getPendingMemories(userId);
+    const pendingMemories = getPendingMemories(userId);
     
     const config = { 
       configurable: { 
         thread_id: threadId,
-        userProfile: userProfile,
-        pendingMemories: pendingContext
+        userProfile,
+        pendingMemories
       } 
     };
 
@@ -129,7 +132,7 @@ export const chatWithModel = async (req, res) => {
  * Sends token-by-token updates to the client in real-time
  */
 export const chatWithModelStream = async (req, res) => {
-  const { message, threadId, web_search, attachments } = req.body;
+  const { message, threadId, webSearch, attachments } = req.body;
   const userId = req.user.id;
 
   // Validation
@@ -167,21 +170,20 @@ export const chatWithModelStream = async (req, res) => {
       return; // Stop here! The 'finally' block below will take care of [DONE] and res.end()
     }
 
-    // 2.25 Handle PDF attachments if present
+    // 3. Handle NEW PDF attachments — extract text & store in DB
     if (attachments?.length > 0) {
       res.write(`data: ${JSON.stringify({ type: "pdf_processing" })}\n\n`);
 
       for (const att of attachments) {
         try {
-
           const signedUrl = cloudinary.utils.private_download_url(
             att.public_id, 
             "",
             {
-              resource_type: "raw",   // Must match /raw/upload endpoint
-              type: "authenticated",  // Must match upload type
-              expires_at: Math.floor(Date.now() / 1000) + 300, // Link valid for 5 mins
-              attachment: false       // 'false' ensures we can stream it, not force "Save As"
+              resource_type: "raw",
+              type: "authenticated",
+              expires_at: Math.floor(Date.now() / 1000) + 300,
+              attachment: false
             }
           );
 
@@ -198,17 +200,59 @@ export const chatWithModelStream = async (req, res) => {
           const pdf = await getDocumentProxy(new Uint8Array(buffer));
           const { text } = await extractText(pdf, { mergePages: true });
 
-          res.write(`data: ${JSON.stringify({ type: "token", val: `\n\n**${att.name}**:\n\n${text}\n` })}\n\n`);
+          // Save to DB
+          await Attachment.create({
+            threadId,
+            publicId: att.public_id,
+            name: att.name,
+            content: text,
+            tokenCount: att.tokenCount || 0,
+          });
+          console.log(`[PDF] Stored attachment "${att.name}" for thread ${threadId}`);
         } catch (err) {
           console.error(`Failed to process PDF "${att.name}":`, err.message);
           res.write(`data: ${JSON.stringify({ type: "error", val: `Failed to process "${att.name}"` })}\n\n`);
         }
       }
       res.write(`data: ${JSON.stringify({ type: "pdf_done" })}\n\n`);
-      return; // Skip the LangGraph workflow — the finally block will send [DONE] and res.end()
     }
 
-    // 2.5 Fetch User Profile
+    // 4. Load all attachments for this thread & select relevant ones
+    const attachments = await Attachment.findAll({
+      where: { threadId },
+      attributes: ["publicId", "name", "content"],
+    });
+
+    let relevantDocuments = [];
+    if (attachments.length > 0) {
+      // Get last 6 turns (12 messages) from LangGraph state for context
+      let recentHistory = [];
+      try {
+        const state = await workflow.getState({ configurable: { thread_id: threadId } });
+        const allMsgs = state.values?.messages || [];
+        // Filter to only human and AI text messages (skip tool calls and tool results)
+        const conversationalMsgs = allMsgs.filter(m => {
+          const type = m._getType();
+          if (type === 'human') return true;
+          if (type === 'ai' && m.content && !m.tool_calls?.length) return true;
+          return false;
+        });
+        recentHistory = conversationalMsgs.slice(-12).map(m => ({
+          role: m._getType(),
+          content: m.content,
+        }));
+      } catch (err) {
+        console.error("Failed to load history for doc selection:", err.message);
+      }
+
+      const selectedIds = await selectRelevantDocuments(message, recentHistory, attachments);
+
+      // Filter to selected docs and build context string
+      relevantDocuments = attachments.filter(a => selectedIds.includes(a.publicId));
+      console.log(`[DocContext] Injecting ${relevantDocuments.length} doc(s) into context`);
+    }
+
+    // 5. Fetch User Profile
     let userProfile = { static: [], dynamic: [] };
     try {
       const profileData = await supermemory.profile({ containerTag: userId });
@@ -222,22 +266,23 @@ export const chatWithModelStream = async (req, res) => {
       console.error("Failed to fetch user profile:", err.message);
     }
 
-    const pendingContext = getPendingMemories(userId);
+    const pendingMemories = getPendingMemories(userId);
 
-    // 3. Start the stream with streamEvents v2
+    // 6. Start the stream with streamEvents v2
     const inputs = { messages: [new HumanMessage(message)] };
     const stream = await workflow.streamEvents(inputs, { 
       configurable: { 
         thread_id: threadId, 
         signal: controller.signal,
-        web_search, // Pass tools forcing here (boolean)
-        userProfile, // Pass profile here
-        pendingMemories: pendingContext
+        webSearch,
+        userProfile,
+        pendingMemories,
+        relevantDocuments,
       },
       version: "v2",
     });
 
-    // 4. Iterate and filter events
+    // 7. Iterate and filter events
     for await (const event of stream) {
       // Token from the LLM
       if (event.event === "on_chat_model_stream") {
@@ -274,7 +319,7 @@ export const chatWithModelStream = async (req, res) => {
       }
     }
 
-    // 5. Update thread name for new threads
+    // 8. Update thread name for new threads
     try {
       if (isNewThread && fullResponse) {
         thread.title = await generateThreadName(message, fullResponse);
@@ -304,11 +349,11 @@ export const chatWithModelStream = async (req, res) => {
       val: "An internal server error occurred during generation." 
     })}\n\n`);
   } finally {
-    // 6. Signal end of stream
+    // 9. Signal end of stream
     res.write("data: [DONE]\n\n");
     res.end();
 
-    // 7. Store interaction in Supermemory (after stream ends) + buffer locally
+    // 10. Store interaction local buffer + Supermemory (after stream ends)
     if (fullResponse) {
       const memoryContent = `User: ${message}\nAssistant: ${fullResponse}`;
       bufferMemory(userId, memoryContent);
@@ -477,46 +522,6 @@ export const deleteThread = async (req, res) => {
     res.status(500).json({ message: "Internal Server Error" });
   }
 };
-
-
-// Helper function to generate a thread name based on the first message
-async function generateThreadName(userMessage, aiResponse) {
-  try {
-    // Option 1: Use a simple LLM call to generate a concise title
-    const titlePrompt = `
-      Based on this conversation, generate a short, descriptive title (max 6 words):
-
-      User: ${userMessage}
-      Assistant: ${aiResponse}
-
-      Generate only the title, nothing else.
-    `;
-
-    const titleResult = await chatModel.invoke([ new HumanMessage(titlePrompt) ]);
-
-    const title = titleResult.content
-      .trim()
-      .replace(/^["']|["']$/g, '') // Remove quotes if present
-      .substring(0, 60); // Max 60 characters
-    
-    return title || generateFallbackName(userMessage);
-    
-  } catch (error) {
-    console.error("Error generating thread name:", error);
-    return generateFallbackName(userMessage);
-  }
-}
-
-// Fallback: Generate a simple name from the first message
-function generateFallbackName(message) {
-  // Take first 50 characters and add ellipsis if needed
-  const cleanMessage = message.trim().substring(0, 50);
-  return cleanMessage.length < message.trim().length 
-    ? `${cleanMessage}...` 
-    : cleanMessage;
-}
-
-
 
 /* LANGCHAIN TOOL MESSAGE OUTPUT SCHEMA (SERIALIZED TOOLMESSAGE)
   {
