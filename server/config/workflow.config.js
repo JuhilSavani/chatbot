@@ -62,9 +62,6 @@ async function callAgent(state, config) {
 
   const userProfileContext = userProfile.static.length ? userProfile.static.map((f) => `- ${f}`).join("\n") : "No long-term profile yet.";
   const crossSessionContext = userProfile.dynamic.length ? userProfile.dynamic.map((c) => `- ${c}`).join("\n") : "No recent context.";
-  const veryRecentInteractions = config.configurable?.pendingMemories ? 
-  `\n### Very Recent Interactions (just happened)\n${config.configurable.pendingMemories.map((m) => `- ${m}`).join("\n")}`
-  : "";
 
   const personalizedContext = `
 ## User Context & Memory
@@ -76,7 +73,6 @@ ${userProfileContext}
 
 ### Recent Context (Dynamic history)
 ${crossSessionContext}
-${veryRecentInteractions}
 `;
 
   const documentContext = config.configurable?.relevantDocuments?.length > 0 ? `

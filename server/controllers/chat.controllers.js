@@ -3,7 +3,7 @@ import { HumanMessage } from "@langchain/core/messages";
 import { Thread } from "../models/thread.models.js";
 import { sequelize } from "../config/sequelize.config.js";
 import { QueryTypes } from 'sequelize';
-import { supermemory, bufferMemory, getPendingMemories } from "../config/supermemory.config.js";
+import { supermemory } from "../config/supermemory.config.js";
 import { extractText, getDocumentProxy } from "unpdf";
 import cloudinary from "../config/cloudinary.config.js";
 import { Attachment } from "../models/attachment.models.js";
@@ -64,14 +64,11 @@ export const chatWithModel = async (req, res) => {
     } catch (err) {
       console.error("Failed to fetch user profile:", err.message);
     }
-
-    const pendingMemories = getPendingMemories(userId);
     
     const config = { 
       configurable: { 
         thread_id: threadId,
-        userProfile,
-        pendingMemories
+        userProfile
       } 
     };
 
@@ -113,9 +110,8 @@ export const chatWithModel = async (req, res) => {
       response: lastMessage.content,
     });
 
-    // 7. Store interaction in Supermemory (Fire & Forget) + buffer locally
+    // 7. Store interaction in Supermemory (Fire & Forget)
     const memoryContent = `User: ${message}\nAssistant: ${lastMessage.content}`;
-    bufferMemory(userId, memoryContent);
     await supermemory.add({
       content: memoryContent,
       containerTag: userId
@@ -271,8 +267,6 @@ export const chatWithModelStream = async (req, res) => {
       console.error("Failed to fetch user profile:", err.message);
     }
 
-    const pendingMemories = getPendingMemories(userId);
-
     // 6. Start the stream with streamEvents v2
     const inputs = { messages: [new HumanMessage(message)] };
     const stream = await workflow.streamEvents(inputs, { 
@@ -281,7 +275,6 @@ export const chatWithModelStream = async (req, res) => {
         signal: controller.signal,
         webSearch,          // Pass tools forcing here (boolean)
         userProfile,        // Pass profile here
-        pendingMemories,    // Pass pending memories here
         relevantDocuments,  // Pass relevant documents here
       },
       version: "v2",
@@ -358,10 +351,9 @@ export const chatWithModelStream = async (req, res) => {
     res.write("data: [DONE]\n\n");
     res.end();
 
-    // 10. Store interaction local buffer + Supermemory (after stream ends)
+    // 10. Store interaction in Supermemory (after stream ends)
     if (fullResponse) {
       const memoryContent = `User: ${message}\nAssistant: ${fullResponse}`;
-      bufferMemory(userId, memoryContent);
       await supermemory.add({
         content: memoryContent,
         containerTag: userId
