@@ -10,8 +10,9 @@ const ChatInput = ({ threadId, onMessageSent, loading, onStop }) => {
   const [message, setMessage] = useState('');
   const [isSearchEnabled, setIsSearchEnabled] = useState(false);
   const [error, setError] = useState(null);
+  const [isSending, setIsSending] = useState(false);
   
-  // Each entry: { id, file, text, status: 'verifying' | 'uploading' | 'done' | 'error', tokenCount, error }
+  // Each entry: { id, file, text, status: 'verifying' | 'done' | 'error', tokenCount, error }
   const [attachments, setAttachments] = useState([]);
   const [isDragging, setIsDragging] = useState(false);
 
@@ -24,6 +25,11 @@ const ChatInput = ({ threadId, onMessageSent, loading, onStop }) => {
       textareaRef.current.style.height = textareaRef.current.scrollHeight + 'px';
     }
   }, [message]);
+
+  // Reset isSending once the parent's loading (streaming) kicks in
+  useEffect(() => {
+    if (loading) setIsSending(false);
+  }, [loading]);
 
   const updateAttachment = (id, updates) => {
     setAttachments(prev => prev.map(a => a.id === id ? { ...a, ...updates } : a));
@@ -165,20 +171,18 @@ const ChatInput = ({ threadId, onMessageSent, loading, onStop }) => {
   };
 
   const doneAttachments = attachments.filter(a => a.status === 'done');
-  const isBusy = attachments.some(a => a.status === 'verifying' || a.status === 'uploading');
+  const isBusy = attachments.some(a => a.status === 'verifying');
 
   const handleSendMessage = async () => {
-    if ((!message.trim() && doneAttachments.length === 0) || loading || !threadId) return;
+    if (!message.trim() || loading || isSending || !threadId) return;
 
     const userMessage = message.trim();
-    setMessage('');
     setError(null);
+    setIsSending(true);
 
     // If there are attachments, upload them to Cloudinary first
     if (doneAttachments.length > 0) {
       try {
-        // Set all done attachments to 'uploading' for Cloudinary phase
-        doneAttachments.forEach(att => updateAttachment(att.id, { status: 'uploading' }));
 
         const uploadResults = await Promise.all(
           doneAttachments.map(async (att) => {
@@ -196,6 +200,7 @@ const ChatInput = ({ threadId, onMessageSent, loading, onStop }) => {
           name: r.original_filename,
         }));
 
+        setMessage('');
         onMessageSent?.({
           message: userMessage,
           webSearch: isSearchEnabled,
@@ -206,10 +211,12 @@ const ChatInput = ({ threadId, onMessageSent, loading, onStop }) => {
       } catch (err) {
         console.error('[ChatInput] Cloudinary upload failed:', err);
         setError('Failed to upload PDF: ' + err.message);
+        setIsSending(false);
         return;
       }
     }
 
+    setMessage('');
     onMessageSent?.({ 
       message: userMessage, 
       webSearch: isSearchEnabled,
@@ -262,11 +269,11 @@ const ChatInput = ({ threadId, onMessageSent, loading, onStop }) => {
                     : 'bg-white/10 border-white/10 text-white'
                 }`}
               >
-                {(att.status === 'verifying' || att.status === 'uploading') ? (
+                {att.status === 'verifying' ? (
                   <>
                     <Loader2 className="w-4 h-4 animate-spin text-blue-400" />
                     <span className="text-[#a1a1aa] truncate max-w-[160px]">
-                      {att.status === 'verifying' ? 'Verifying' : 'Uploading'}... {att.file.name}
+                      Verifying... {att.file.name}
                     </span>
                   </>
                 ) : att.status === 'error' ? (
@@ -306,7 +313,7 @@ const ChatInput = ({ threadId, onMessageSent, loading, onStop }) => {
             value={message}
             onChange={(e) => setMessage(e.target.value)}
             onKeyDown={handleKeyDown}
-            disabled={loading}
+            disabled={loading || isSending}
             rows={1}
             style={{ maxHeight: '200px', overflowY: 'auto' }}
           />
@@ -341,7 +348,7 @@ const ChatInput = ({ threadId, onMessageSent, loading, onStop }) => {
             {/* Attachment Button */}
             <button 
               onClick={() => fileInputRef.current?.click()}
-              disabled={loading || isBusy || attachments.length >= MAX_PDFS}
+              disabled={loading || isSending || isBusy || attachments.length >= MAX_PDFS}
               className="p-1.5 text-[#52525b] hover:text-[#fafafa] transition-colors rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <Paperclip className="w-4 h-4" strokeWidth={2} />
@@ -351,15 +358,17 @@ const ChatInput = ({ threadId, onMessageSent, loading, onStop }) => {
           {/* Right Side: Send/Stop Button */}
           <button 
             onClick={loading ? onStop : handleSendMessage}
-            disabled={!loading && !message.trim() && doneAttachments.length === 0}
+            disabled={isSending || (!loading && !message.trim())}
             className={`w-8 h-8 rounded-lg transition-all duration-200 flex items-center justify-center
-              ${(loading || message.trim() || doneAttachments.length > 0)
+              ${(loading || isSending || message.trim())
                 ? 'bg-[#fafafa] text-[#18181b] hover:bg-white hover:shadow-[0_0_10px_rgba(255,255,255,0.2)]' 
                 : 'bg-white/10 text-[#52525b] cursor-not-allowed'
               }`}
           >
             {loading ? (
               <Square className="w-3 h-3 fill-current" />
+            ) : isSending ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
             ) : (
               <ArrowUp className="w-4 h-4" strokeWidth={3} />
             )}

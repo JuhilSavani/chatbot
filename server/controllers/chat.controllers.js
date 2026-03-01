@@ -204,6 +204,7 @@ export const chatWithModelStream = async (req, res) => {
           res.write(`data: ${JSON.stringify({ type: "error", val: `Failed to process "${att.name}"` })}\n\n`);
         }
       }
+      res.write(`data: ${JSON.stringify({ type: "pdf_done" })}\n\n`);
       return; // Skip the LangGraph workflow — the finally block will send [DONE] and res.end()
     }
 

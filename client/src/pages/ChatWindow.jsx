@@ -258,11 +258,12 @@ function MainContent({ setThreads }) {
 
         } else if (event.type === 'error') {
           setMessages(prev => [...prev, { role: 'error', content: event.val }]);
-          
         } else if (event.type === 'threadName') {
            setThreads(prev => prev.map(t => t.threadId === activeThreadId ? { ...t, threadName: event.val } : t));
         } else if (event.type === 'pdf_processing') {
           setMessages(prev => [...prev, { isPdfProcessing: true }]);
+        } else if (event.type === 'pdf_done') {
+          setMessages(prev => prev.filter(m => !m.isPdfProcessing));
         }
       }
     } catch (err) {
@@ -328,7 +329,7 @@ function MainContent({ setThreads }) {
               <ChatMessage key={index} message={message} />
             ))}
 
-            {loadingResponse && messages[messages.length - 1]?.role !== 'assistant' && (
+            {loadingResponse && messages[messages.length - 1]?.role !== 'assistant' && !messages.some(m => m.isPdfProcessing) && (
               <ChatMessage message={{ isThinking: true }} />
             )}
             <div ref={messagesEndRef} className="h-4 w-full" />
