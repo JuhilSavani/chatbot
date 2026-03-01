@@ -56,11 +56,9 @@ const ChatMessage = React.memo(({ message }) => {
   // 1. Handle "Thinking" State
   if (message.isThinking) {
     return (
-      <div className="mb-6 p-4 rounded-2xl bg-white/5 w-full border border-white/5 animate-pulse">
-        <div className="flex items-center gap-3 text-[#a1a1aa] text-sm">
-          <div className="w-4 h-4 border-2 border-[#a1a1aa] border-t-transparent rounded-full animate-spin" />
-          <span>Thinking...</span>
-        </div>
+      <div className="flex items-center gap-3 text-[#d4d4d8] text-sm">
+        <div className="w-4 h-4 border-2 border-[#d4d4d8] border-t-transparent rounded-full animate-spin" />
+        <span>Thinking...</span>
       </div>
     );
   }
@@ -68,11 +66,9 @@ const ChatMessage = React.memo(({ message }) => {
   // 2. Handle "PDF Processing" State
   if (message.isPdfProcessing) {
     return (
-      <div className="mb-6 p-4 rounded-2xl bg-white/5 w-full border border-white/5 animate-pulse">
-        <div className="flex items-center gap-3 text-[#a1a1aa] text-sm">
-          <div className="w-4 h-4 border-2 border-blue-400 border-t-transparent rounded-full animate-spin" />
-          <span>Processing PDFs...</span>
-        </div>
+      <div className="flex items-center gap-3 text-[#d4d4d8] text-sm">
+        <div className="w-4 h-4 border-2 border-[#d4d4d8] border-t-transparent rounded-full animate-spin" />
+        <span>Processing PDFs...</span>
       </div>
     );
   }
@@ -99,24 +95,48 @@ const ChatMessage = React.memo(({ message }) => {
   };
 
   return (
-    <div className={`mb-6 p-4 rounded-2xl relative group ${isUser ? 'bg-white/10 ml-auto max-w-[80%] w-fit border border-white/5 text-[#fafafa]' : 'bg-transparent w-full px-2'}`}>
+    <div className={`mb-6 flex flex-col relative group ${isUser ? 'items-end' : 'items-start w-full'}`}>
       
-      <div className={isUser ? 'text-[#fafafa]' : 'text-[#fafafa] w-full'}>
-        {isUser ? message.content : isError ? <span className="text-red-400">{message.content}</span> : <MarkdownRenderer content={message.content} />}
-      </div>
-
-      {!isUser && !isError && (
-        <div className="mt-2 flex items-center justify-start">
-          <button 
-            onClick={handleCopy}
-            className="flex items-center gap-1.5 p-1.5 rounded-md text-[#a1a1aa] hover:text-[#fafafa] hover:bg-white/5 transition-colors text-xs"
-            title="Copy response"
-          >
-            {copied ? <Check className="w-3.5 h-3.5 text-green-400" /> : <Copy className="w-3.5 h-3.5" />}
-            <span>Copy</span>
-          </button>
+      {/* PDF Attachments */}
+      {isUser && message.attachments?.length > 0 && (
+        <div className="flex flex-wrap gap-2 mb-2 justify-end max-w-[80%]">
+          {message.attachments.map((name, i) => (
+            <div 
+              key={i} 
+              className="flex items-center gap-2 text-sm px-3 py-1.5 rounded-lg border bg-white/10 border-white/10 text-white"
+            >
+              <svg className="w-4 h-4 text-blue-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z" />
+                <polyline points="14 2 14 8 20 8" />
+                <line x1="16" y1="13" x2="8" y2="13" />
+                <line x1="16" y1="17" x2="8" y2="17" />
+                <line x1="10" y1="9" x2="8" y2="9" />
+              </svg>
+              <span className="truncate max-w-[80px]">{name}</span>
+            </div>
+          ))}
         </div>
       )}
+
+      {/* Message Bubble */}
+      <div className={`p-4 rounded-2xl ${isUser ? 'bg-white/10 max-w-[80%] w-fit border border-white/5 text-[#fafafa]' : 'bg-transparent w-full px-2'}`}>
+        <div className={isUser ? 'text-[#fafafa]' : 'text-[#fafafa] w-full'}>
+          {isUser ? message.content : isError ? <span className="text-red-400">{message.content}</span> : <MarkdownRenderer content={message.content} />}
+        </div>
+
+        {!isUser && !isError && (
+          <div className="mt-2 flex items-center justify-start">
+            <button 
+              onClick={handleCopy}
+              className="flex items-center gap-1.5 p-1.5 rounded-md text-[#a1a1aa] hover:text-[#fafafa] hover:bg-white/5 transition-colors text-xs"
+              title="Copy response"
+            >
+              {copied ? <Check className="w-3.5 h-3.5 text-green-400" /> : <Copy className="w-3.5 h-3.5" />}
+              <span>Copy</span>
+            </button>
+          </div>
+        )}
+      </div>
     </div>
   );
 });
@@ -179,10 +199,14 @@ function MainContent({ setThreads }) {
     const { message: newMessage, webSearch, attachments } = messageData;
 
     // Optimistic UI Update
+    const userMsg = { role: 'user', content: newMessage };
+    if (attachments?.length > 0) {
+      userMsg.attachments = attachments.map(a => a.name);
+    }
+
     setMessages(prev => [
       ...prev,
-      { role: 'user', content: newMessage },
-      // { role: 'assistant', content: '' } // Placeholder for stream
+      userMsg,
     ]);
 
     const activeThreadId = threadId || `${auth.user.id}_${Date.now()}`;
@@ -332,7 +356,7 @@ function MainContent({ setThreads }) {
             {loadingResponse && messages[messages.length - 1]?.role !== 'assistant' && !messages.some(m => m.isPdfProcessing) && (
               <ChatMessage message={{ isThinking: true }} />
             )}
-            <div ref={messagesEndRef} className="h-4 w-full" />
+            <div ref={messagesEndRef} />
           </div>
         )}
       </div>

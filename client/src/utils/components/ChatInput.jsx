@@ -272,14 +272,14 @@ const ChatInput = ({ threadId, onMessageSent, loading, onStop }) => {
                 {att.status === 'verifying' ? (
                   <>
                     <Loader2 className="w-4 h-4 animate-spin text-blue-400" />
-                    <span className="text-[#a1a1aa] truncate max-w-[160px]">
+                    <span className="text-[#a1a1aa] truncate max-w-[80px]">
                       Verifying... {att.file.name}
                     </span>
                   </>
                 ) : att.status === 'error' ? (
                   <>
                     <FileText className="w-4 h-4 text-red-400" />
-                    <span className="truncate max-w-[160px]" title={att.error}>{att.file.name}</span>
+                    <span className="truncate max-w-[80px]" title={att.error}>{att.file.name}</span>
                     <button 
                       onClick={() => removeAttachment(att.id)}
                       className="p-0.5 hover:bg-white/20 rounded-full transition-colors ml-1"
@@ -290,7 +290,7 @@ const ChatInput = ({ threadId, onMessageSent, loading, onStop }) => {
                 ) : (
                   <>
                     <FileText className="w-4 h-4 text-blue-400" />
-                    <span className="truncate max-w-[160px]">{att.file.name}</span>
+                    <span className="truncate max-w-[80px]">{att.file.name}</span>
                     <button 
                       onClick={() => removeAttachment(att.id)}
                       className="p-0.5 hover:bg-white/20 rounded-full transition-colors ml-1"

@@ -31,6 +31,11 @@ export const Attachment = sequelize.define(
       allowNull: true,
       defaultValue: 0,
     },
+    messageIndex: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      defaultValue: 0,
+    },
   },
   {
     tableName: "attachments",

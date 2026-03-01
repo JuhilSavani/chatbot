@@ -170,9 +170,15 @@ export const chatWithModelStream = async (req, res) => {
       return; // Stop here! The 'finally' block below will take care of [DONE] and res.end()
     }
 
+    const state = await workflow.getState({ configurable: { thread_id: threadId } });
+    const chatMessages = state.values?.messages || [];
+
     // 3. Handle NEW PDF attachments — extract text & store in DB
     if (attachments?.length > 0) {
       res.write(`data: ${JSON.stringify({ type: "pdf_processing" })}\n\n`);
+
+      // Compute the message index for these attachments
+      let messageIndex = chatMessages.filter(m => m._getType() === 'human').length;
 
       for (const att of attachments) {
         try {
@@ -207,6 +213,7 @@ export const chatWithModelStream = async (req, res) => {
             name: att.name,
             content: text,
             tokenCount: att.tokenCount || 0,
+            messageIndex,
           });
           console.log(`[PDF] Stored attachment "${att.name}" for thread ${threadId}`);
         } catch (err) {
@@ -218,20 +225,18 @@ export const chatWithModelStream = async (req, res) => {
     }
 
     // 4. Load all attachments for this thread & select relevant ones
-    const attachments = await Attachment.findAll({
+    const attachmentsData = await Attachment.findAll({
       where: { threadId },
       attributes: ["publicId", "name", "content"],
     });
 
     let relevantDocuments = [];
-    if (attachments.length > 0) {
+    if (attachmentsData.length > 0) {
       // Get last 6 turns (12 messages) from LangGraph state for context
       let recentHistory = [];
       try {
-        const state = await workflow.getState({ configurable: { thread_id: threadId } });
-        const allMsgs = state.values?.messages || [];
         // Filter to only human and AI text messages (skip tool calls and tool results)
-        const conversationalMsgs = allMsgs.filter(m => {
+        const conversationalMsgs = chatMessages.filter(m => {
           const type = m._getType();
           if (type === 'human') return true;
           if (type === 'ai' && m.content && !m.tool_calls?.length) return true;
@@ -245,10 +250,10 @@ export const chatWithModelStream = async (req, res) => {
         console.error("Failed to load history for doc selection:", err.message);
       }
 
-      const selectedIds = await selectRelevantDocuments(message, recentHistory, attachments);
+      const selectedIds = await selectRelevantDocuments(message, recentHistory, attachmentsData);
 
       // Filter to selected docs and build context string
-      relevantDocuments = attachments.filter(a => selectedIds.includes(a.publicId));
+      relevantDocuments = attachmentsData.filter(a => selectedIds.includes(a.publicId));
       console.log(`[DocContext] Injecting ${relevantDocuments.length} doc(s) into context`);
     }
 
@@ -274,10 +279,10 @@ export const chatWithModelStream = async (req, res) => {
       configurable: { 
         thread_id: threadId, 
         signal: controller.signal,
-        webSearch,
-        userProfile,
-        pendingMemories,
-        relevantDocuments,
+        webSearch,          // Pass tools forcing here (boolean)
+        userProfile,        // Pass profile here
+        pendingMemories,    // Pass pending memories here
+        relevantDocuments,  // Pass relevant documents here
       },
       version: "v2",
     });
@@ -374,21 +379,33 @@ export const loadChatHistory = async (req, res) => {
     if (!thread || thread.userId !== req.user.id) 
       return res.status(403).json({ message: "Forbidden: You don't have access to this thread." });
 
-    const config = { configurable: { thread_id: threadId } };
-
     // Get the current state of the thread
-    const state = await workflow.getState(config);
+    const state = await workflow.getState({ configurable: { thread_id: threadId } });
 
     if (!state.values || !state.values.messages) 
       return res.json({ messages: [], threadName: thread.title });
 
-    // Format messages for the client
+    const chatMessages = state.values.messages || [];
     const history = [];
-    const messages = state.values.messages || [];
+
+    // Fetch thread attachments and group by messageIndex for O(1) lookups
+    const attachmentsData = await Attachment.findAll({
+      where: { threadId },
+      attributes: ["publicId", "name", "messageIndex"],
+      order: [["createdAt", "ASC"]],
+    });
+
+    const attachmentsByIndex = new Map();
+    for (const att of attachmentsData) {
+      if (!attachmentsByIndex.has(att.messageIndex)) {
+        attachmentsByIndex.set(att.messageIndex, []);
+      }
+      attachmentsByIndex.get(att.messageIndex).push(att.name);
+    }
 
     // Pre-map tool messages by their ID for O(1) lookup
     const toolOutputs = new Map(
-      messages
+      chatMessages
         .filter(m => m._getType() === 'tool')
         .map(m => {
           const { tool_call_id, status, name, content } = m;
@@ -396,12 +413,23 @@ export const loadChatHistory = async (req, res) => {
         })
     );
 
-    for (const msg of messages) {
+    let userMsgIndex = 0;
+
+    for (const msg of chatMessages) {
       const type = msg._getType();
 
       // 1. Handle Regular User Messages
       if (type === 'human') {
-        history.push({ role: 'user', content: msg.content });
+        const historyItem = { role: 'user', content: msg.content };
+        
+        // Attach PDF names if this message had any (O(1) lookup)
+        const matchingAtts = attachmentsByIndex.get(userMsgIndex);
+        if (matchingAtts?.length > 0) {
+          historyItem.attachments = matchingAtts;
+        }
+        
+        history.push(historyItem);
+        userMsgIndex++;
       } 
       
       // 2. Handle AI Messages (could be text OR tool calls)

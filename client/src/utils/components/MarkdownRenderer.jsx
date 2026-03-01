@@ -44,17 +44,17 @@ export default function MarkdownRenderer({ content }) {
           },
           // Paragraphs
           p({ children }) {
-             return <p className="mb-6 leading-7 last:mb-0 text-[#d4d4d8]">{children}</p>;
+             return <p className="mt-3 leading-7 last:mb-0 text-[#d4d4d8]">{children}</p>;
           },
           // Lists
           ul({ children }) {
-            return <ul className="list-disc list-outside pl-6 mb-4 space-y-2 text-[#d4d4d8]">{children}</ul>;
+            return <ul className="list-disc list-outside pl-6 mb-4 space-y-1 text-[#d4d4d8]">{children}</ul>;
           },
           ol({ children }) {
-            return <ol className="list-decimal list-outside pl-10 mb-4 space-y-2 text-[#d4d4d8]">{children}</ol>;
+            return <ol className="list-decimal list-outside pl-5 mb-4 space-y-1 text-[#d4d4d8]">{children}</ol>;
           },
           li({ children }) {
-            return <li className="mb-1">{children}</li>;
+            return <li>{children}</li>;
           },
           // Blockquote
           blockquote({ children }) {
