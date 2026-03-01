@@ -24,6 +24,8 @@ export async function uploadPdfToCloudinary(file) {
   formData.append("folder", folder);
   formData.append("use_filename", "true");
   formData.append("unique_filename", "true");
+  formData.append("type", "authenticated");
+  formData.append("access_mode", "authenticated");
 
   // 3. Upload directly to Cloudinary (raw = non-image/video files like PDFs)
   const cloudinaryUrl = `https://api.cloudinary.com/v1_1/${cloudName}/raw/upload`;

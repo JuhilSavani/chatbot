@@ -4,6 +4,8 @@ import { Thread } from "../models/thread.models.js";
 import { sequelize } from "../config/sequelize.config.js";
 import { QueryTypes } from 'sequelize';
 import { supermemory, bufferMemory, getPendingMemories } from "../config/supermemory.config.js";
+import { extractText, getDocumentProxy } from "unpdf";
+import cloudinary from "../config/cloudinary.config.js";
 
 export const loadChatThreads = async (req, res) => {
   try {
@@ -127,7 +129,7 @@ export const chatWithModel = async (req, res) => {
  * Sends token-by-token updates to the client in real-time
  */
 export const chatWithModelStream = async (req, res) => {
-  const { message, threadId, web_search } = req.body;
+  const { message, threadId, web_search, attachments } = req.body;
   const userId = req.user.id;
 
   // Validation
@@ -163,6 +165,46 @@ export const chatWithModelStream = async (req, res) => {
     if (!isNewThread && thread.userId !== userId) {
       res.write(`data: ${JSON.stringify({ type: "error", val: "Forbidden: You don't have access to this thread." })}\n\n`);
       return; // Stop here! The 'finally' block below will take care of [DONE] and res.end()
+    }
+
+    // 2.25 Handle PDF attachments if present
+    if (attachments?.length > 0) {
+      res.write(`data: ${JSON.stringify({ type: "pdf_processing" })}\n\n`);
+
+      for (const att of attachments) {
+        try {
+
+          const signedUrl = cloudinary.utils.private_download_url(
+            att.public_id, 
+            "",
+            {
+              resource_type: "raw",   // Must match /raw/upload endpoint
+              type: "authenticated",  // Must match upload type
+              expires_at: Math.floor(Date.now() / 1000) + 300, // Link valid for 5 mins
+              attachment: false       // 'false' ensures we can stream it, not force "Save As"
+            }
+          );
+
+          console.log(`[PDF] Fetching "${att.name}" from: ${signedUrl}`);
+          const pdfResponse = await fetch(signedUrl);
+
+          if (!pdfResponse.ok) {
+            throw new Error(`Failed to fetch PDF: ${pdfResponse.status} ${pdfResponse.statusText}`);
+          }
+
+          const buffer = await pdfResponse.arrayBuffer();
+          console.log(`[PDF] Buffer size: ${buffer.byteLength} bytes`);
+          
+          const pdf = await getDocumentProxy(new Uint8Array(buffer));
+          const { text } = await extractText(pdf, { mergePages: true });
+
+          res.write(`data: ${JSON.stringify({ type: "token", val: `\n\n**${att.name}**:\n\n${text}\n` })}\n\n`);
+        } catch (err) {
+          console.error(`Failed to process PDF "${att.name}":`, err.message);
+          res.write(`data: ${JSON.stringify({ type: "error", val: `Failed to process "${att.name}"` })}\n\n`);
+        }
+      }
+      return; // Skip the LangGraph workflow — the finally block will send [DONE] and res.end()
     }
 
     // 2.5 Fetch User Profile

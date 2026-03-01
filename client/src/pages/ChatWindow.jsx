@@ -65,6 +65,18 @@ const ChatMessage = React.memo(({ message }) => {
     );
   }
 
+  // 1.5 Handle "PDF Processing" State
+  if (message.isPdfProcessing) {
+    return (
+      <div className="mb-6 p-4 rounded-2xl bg-white/5 w-full border border-white/5 animate-pulse">
+        <div className="flex items-center gap-3 text-[#a1a1aa] text-sm">
+          <div className="w-4 h-4 border-2 border-blue-400 border-t-transparent rounded-full animate-spin" />
+          <span>Processing PDFs...</span>
+        </div>
+      </div>
+    );
+  }
+
   // 2. Handle Tool Calls
   if (message.role === 'tool_call') {
     const { tool, input, output, status } = message.content;
@@ -192,7 +204,8 @@ function MainContent({ setThreads }) {
       const { stream, abort } = streamChatAction({
         threadId: activeThreadId,
         message: newMessage,
-        web_search: webSearch
+        web_search: webSearch,
+        attachments
       })
       
       // Store abort function for stop button
@@ -248,6 +261,8 @@ function MainContent({ setThreads }) {
           
         } else if (event.type === 'threadName') {
            setThreads(prev => prev.map(t => t.threadId === activeThreadId ? { ...t, threadName: event.val } : t));
+        } else if (event.type === 'pdf_processing') {
+          setMessages(prev => [...prev, { isPdfProcessing: true }]);
         }
       }
     } catch (err) {

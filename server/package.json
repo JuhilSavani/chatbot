@@ -36,6 +36,7 @@
     "pg": "^8.16.3",
     "sequelize": "^6.37.7",
     "supermemory": "^4.11.1",
+    "unpdf": "^1.4.0",
     "zod": "^4.3.6"
   },
   "devDependencies": {

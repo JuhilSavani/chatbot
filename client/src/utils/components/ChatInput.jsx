@@ -189,8 +189,20 @@ const ChatInput = ({ threadId, onMessageSent, loading, onStop }) => {
           })
         );
         console.log('[ChatInput] All uploads complete:', uploadResults);
+
+        // Extract attachment URLs from Cloudinary response
+        const attachmentUrls = uploadResults.map(r => ({
+          public_id: r.public_id,
+          name: r.original_filename,
+        }));
+
+        onMessageSent?.({
+          message: userMessage,
+          webSearch: isSearchEnabled,
+          attachments: attachmentUrls,
+        });
         clearAllAttachments();
-        return; // Stop here for now — we'll wire onMessageSent later
+        return;
       } catch (err) {
         console.error('[ChatInput] Cloudinary upload failed:', err);
         setError('Failed to upload PDF: ' + err.message);

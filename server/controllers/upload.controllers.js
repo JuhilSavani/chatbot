@@ -14,7 +14,7 @@ export const generateUploadSignature = (req, res) => {
 
     // Sign only the params that Cloudinary requires for validation
     const signature = cloudinary.utils.api_sign_request(
-      { folder, timestamp, use_filename: true, unique_filename: true },
+      { folder, timestamp, use_filename: true, unique_filename: true, type: 'authenticated', access_mode: 'authenticated' },
       process.env.CLOUDINARY_API_SECRET
     );
 
