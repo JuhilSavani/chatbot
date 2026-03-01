@@ -50,6 +50,11 @@ Setting up Sidekick takes just a few minutes:
     GOOGLE_CLIENT_SECRET=[YOUR_CLIENT_SECRET]
     GOOGLE_REDIRECT_URI=http://localhost:4000/api/authorize/google/callback
     
+    # Cloudinary
+    CLOUDINARY_CLOUD_NAME=
+    CLOUDINARY_API_KEY= 
+    CLOUDINARY_API_SECRET= 
+
     # AI Providers
     TAVILY_API_KEY=[YOUR_TAVILY_KEY]
     GITHUB_TOKEN=[YOUR_GITHUB_TOKEN]
@@ -93,7 +98,11 @@ Setting up Sidekick takes just a few minutes:
 
 **Backend:** Node.js & Express (The standard go-to for building backends in JavaScript).
 
-**The Brain:** LangGraph (This is what handles the "agent" logic and state).
+**Agentic Orchestration:** LangGraph (This is what handles the "agent" logic and state).
+
+**Memory:** Supermemory (To store and retrieve user profiles and conversation history).
+
+**File Storage:** Cloudinary (To store and retrieve files).
 
 **Database:** Supabase / PostgreSQL (To keep track of all those chat sessions).
 
@@ -135,9 +144,18 @@ Live-streaming tool execution was definitely the biggest pain. Parsing the input
 The real struggle was the **disconnect** between the live stream and the saved history. While developing the parser, I found that the shape of a "live" tool call (serialized, event-based) is totally different from a "saved" tool call (static, persisted). I was getting raw, serialized events buried deep in `kwargs` during the stream, but a completely different, finalized structure from the database. I had to write a custom **normalization layer** on the frontend to ensure that the UI wouldn't break when transitioning from a live stream to a reloaded page.
 
 ### 6. Frontend Tool Control
-I implemented a way to **force tool usage** directly from the UI. Usually, you just let the agent decide what to do autonomously, but I wanted to see how to override that when a user wants a specific tool to run immediately without waiting for the LLM to "decide" it's time.
+I learned a way to trigger tools directly from the UI, **bypassing the LLM's standard reasoning loop** to give the user "override" power when they know the exact operation they need. Instead of relying on the LLM to infer intent, the frontend sends a pre-formatted tool request, **forcing the agent to act deterministically** and reducing unnecessary latency.
 
-It really helped me figure out how to balance the agent’s autonomy with manual frontend overrides, giving the steering wheel to the user when they know exactly what they want, rather than making them wait for the LLM’s decision-making loop.
+### 7. The "Memory" Architecture
+I wanted the agent to actually **know the user**, making it remember user details across sessions by integrating a **long-term memory layer**. However I didn't want to just plug in a library without understanding the "magic", so I went down a rabbit hole learning **how agentic memory actually works:**
+  - I learned that building a memory layer isn't just about saving memories upfront. In reality, a memory layer requires to instruct the LLM to inspect the user's message, compare it against existing context, and extract only new facts.
+  - For this, I found a **boolean deduplication method** that uses structured outputs (Zod models) to force the LLM to return an `isNew` boolean flag alongside the memory text. This ensures we only trigger a write only if the information is actually novel, preventing duplicate entries.
+
+However, after learning the internals, I decided to simply use a **third-party memory layer solution named Supermemory** instead of reinventing the wheel.
+
+While using it, I discovered that Supermemory has an **indexing delay of about 30 seconds**. If a user mentioned their name and immediately started a new session, the agent would have **temporary amnesia** because the vector database hadn't finished indexing the new memory yet.
+
+To solve this, I built a local **Write-Through Buffer** with a custom **90-second TTL (Time-To-Live)**. Now, when an interaction happens, it simultaneously caches the interaction in the local buffer for 90 seconds while delegating it to Supermemory for indexing. Because of this, the agent now has access to very recent interactions without waiting for new memory to be indexed, ensuring the user feels **remembered** instantly while new memories are being created from these interactions and indexed in the background.
 
 ---
 
