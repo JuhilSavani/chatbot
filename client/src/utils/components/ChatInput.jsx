@@ -197,11 +197,11 @@ const ChatInput = ({ threadId, onMessageSent, loading, onStop }) => {
         const attachmentUrls = uploadResults.map((r, i) => ({
           public_id: r.public_id,
           name: r.original_filename,
-          tokenCount: doneAttachments[i]?.tokenCount || 0,
+          tokenCount: doneAttachments[i].tokenCount || 0,
         }));
 
         setMessage('');
-        onMessageSent?.({
+        onMessageSent({
           message: userMessage,
           webSearch: isSearchEnabled,
           attachments: attachmentUrls,
@@ -209,15 +209,15 @@ const ChatInput = ({ threadId, onMessageSent, loading, onStop }) => {
         clearAllAttachments();
         return;
       } catch (err) {
-        console.error('[ChatInput] Cloudinary upload failed:', err);
-        setError('Failed to upload PDF: ' + err.message);
+        console.error('[ChatInput] Failed to process PDFs:', err);
+        setError('Failed to process PDF: ' + err.message);
         setIsSending(false);
         return;
       }
     }
 
     setMessage('');
-    onMessageSent?.({ 
+    onMessageSent({ 
       message: userMessage, 
       webSearch: isSearchEnabled,
     });

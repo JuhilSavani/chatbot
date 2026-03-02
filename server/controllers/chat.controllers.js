@@ -89,6 +89,9 @@ export const chatWithModel = async (req, res) => {
     if(!isNewThread && thread.userId !== userId) 
       return res.status(403).json({ message: "Forbidden: You don't have access to this thread." });
 
+    // Understand if it's the very first message by checking if the title is still the default
+    const isFirstMessage = isNewThread || thread.title === "Untitled Chat";
+
     // 4. Run the graph
     const inputs = { messages: [new HumanMessage(message)] };
     const result = await workflow.invoke(inputs, config);
@@ -97,7 +100,7 @@ export const chatWithModel = async (req, res) => {
     const lastMessage = result.messages[result.messages.length - 1];
 
     // 6. Update thread name if it's a new thread
-    if (isNewThread) {
+    if (isFirstMessage) {
       thread.title = await generateThreadName(message, lastMessage.content);
       await thread.save();
     } else {
@@ -123,12 +126,96 @@ export const chatWithModel = async (req, res) => {
   }
 }
 
+export const ingestDocuments = async (req, res) => {
+  const { threadId, attachments } = req.body;
+  const userId = req.user.id;
+
+  if (!threadId || !attachments || !Array.isArray(attachments)) {
+    return res.status(400).json({ message: "threadId and an array of attachments are required" });
+  }
+
+  try {
+    // 1. Thread setup/verification
+    let thread = await Thread.findOne({ where: { threadId } });
+    
+    const isNewThread = !thread;
+    if (isNewThread) {
+      thread = await Thread.create({ threadId, userId });
+    }
+
+    if (thread.userId !== userId) {
+      return res.status(403).json({ message: "Forbidden: You don't have access to this thread." });
+    }
+
+    // 2. Compute message index for these attachments
+    const state = await workflow.getState({ configurable: { thread_id: threadId } });
+    const chatMessages = state.values?.messages || [];
+    let messageIndex = chatMessages.filter(m => m._getType() === 'human').length;
+
+    // 3. Process each PDF
+    const ingestedDocs = [];
+    for (const att of attachments) {
+      try {
+        const signedUrl = cloudinary.utils.private_download_url(
+          att.public_id, 
+          "",
+          {
+            resource_type: "raw",
+            type: "authenticated",
+            expires_at: Math.floor(Date.now() / 1000) + 300,
+            attachment: false
+          }
+        );
+
+        console.log(`[PDF Ingest] Fetching "${att.name}" from: ${signedUrl}`);
+        const pdfResponse = await fetch(signedUrl);
+
+        if (!pdfResponse.ok) {
+          throw new Error(`Failed to fetch PDF: ${pdfResponse.status} ${pdfResponse.statusText}`);
+        }
+
+        const buffer = await pdfResponse.arrayBuffer();
+        console.log(`[PDF Ingest] Buffer size: ${buffer.byteLength} bytes`);
+        
+        const pdf = await getDocumentProxy(new Uint8Array(buffer));
+        const { text } = await extractText(pdf, { mergePages: true });
+
+        // Save to DB
+        const attachmentRecord = await Attachment.create({
+          threadId,
+          publicId: att.public_id,
+          name: att.name,
+          content: text,
+          tokenCount: att.tokenCount || 0,
+          messageIndex,
+        });
+
+        console.log(`[PDF Ingest] Stored attachment "${att.name}" for thread ${threadId}`);
+        ingestedDocs.push(attachmentRecord);
+      } catch (err) {
+        console.error(`Failed to ingest PDF "${att.name}":`, err.message);
+        // We could fail the whole request or just this file. Let's return a partial error if needed, 
+        // but for now, we'll continue and let the client know what succeeded.
+      }
+    }
+
+    res.status(200).json({ 
+      message: "Documents ingested successfully",
+      count: ingestedDocs.length 
+    });
+
+  } catch (error) {
+    console.error("Ingest Documents Error:", error.stack);
+    res.status(500).json({ message: "Internal Server Error during ingestion." });
+  }
+};
+
 /**
  * SSE Streaming endpoint using LangGraph's streamEvents
  * Sends token-by-token updates to the client in real-time
  */
 export const chatWithModelStream = async (req, res) => {
-  const { message, threadId, webSearch, attachments } = req.body;
+  const { message, threadId, webSearch } = req.body;
   const userId = req.user.id;
 
   // Validation
@@ -156,12 +243,12 @@ export const chatWithModelStream = async (req, res) => {
     // 2. Thread setup (same as non-streaming)
     let thread = await Thread.findOne({ where: { threadId } });
     
-    const isNewThread = !thread;
-    if (isNewThread) {
+    const isNewThreadRecord = !thread;
+    if (isNewThreadRecord) {
       thread = await Thread.create({ threadId, userId });
     }
 
-    if (!isNewThread && thread.userId !== userId) {
+    if (!isNewThreadRecord && thread.userId !== userId) {
       res.write(`data: ${JSON.stringify({ type: "error", val: "Forbidden: You don't have access to this thread." })}\n\n`);
       return; // Stop here! The 'finally' block below will take care of [DONE] and res.end()
     }
@@ -169,65 +256,17 @@ export const chatWithModelStream = async (req, res) => {
     const state = await workflow.getState({ configurable: { thread_id: threadId } });
     const chatMessages = state.values?.messages || [];
 
-    // 3. Handle NEW PDF attachments — extract text & store in DB
-    if (attachments?.length > 0) {
-      res.write(`data: ${JSON.stringify({ type: "pdf_processing" })}\n\n`);
-
-      // Compute the message index for these attachments
-      let messageIndex = chatMessages.filter(m => m._getType() === 'human').length;
-
-      for (const att of attachments) {
-        try {
-          const signedUrl = cloudinary.utils.private_download_url(
-            att.public_id, 
-            "",
-            {
-              resource_type: "raw",
-              type: "authenticated",
-              expires_at: Math.floor(Date.now() / 1000) + 300,
-              attachment: false
-            }
-          );
-
-          console.log(`[PDF] Fetching "${att.name}" from: ${signedUrl}`);
-          const pdfResponse = await fetch(signedUrl);
-
-          if (!pdfResponse.ok) {
-            throw new Error(`Failed to fetch PDF: ${pdfResponse.status} ${pdfResponse.statusText}`);
-          }
-
-          const buffer = await pdfResponse.arrayBuffer();
-          console.log(`[PDF] Buffer size: ${buffer.byteLength} bytes`);
-          
-          const pdf = await getDocumentProxy(new Uint8Array(buffer));
-          const { text } = await extractText(pdf, { mergePages: true });
-
-          // Save to DB
-          await Attachment.create({
-            threadId,
-            publicId: att.public_id,
-            name: att.name,
-            content: text,
-            tokenCount: att.tokenCount || 0,
-            messageIndex,
-          });
-          console.log(`[PDF] Stored attachment "${att.name}" for thread ${threadId}`);
-        } catch (err) {
-          console.error(`Failed to process PDF "${att.name}":`, err.message);
-          res.write(`data: ${JSON.stringify({ type: "error", val: `Failed to process "${att.name}"` })}\n\n`);
-        }
-      }
-      res.write(`data: ${JSON.stringify({ type: "pdf_done" })}\n\n`);
-    }
+    // Understand if it's the very first message
+    const isFirstMessage = chatMessages.length === 0;
 
     // 4. Load all attachments for this thread & select relevant ones
-    const attachmentsData = await Attachment.findAll({
+    const attachmentRecord = await Attachment.findAll({
       where: { threadId },
       attributes: ["publicId", "name", "content"],
     });
 
     let relevantDocuments = [];
-    if (attachmentsData.length > 0) {
+    if (attachmentRecord.length > 0) {
       // Get last 6 turns (12 messages) from LangGraph state for context
       let recentHistory = [];
       try {
@@ -246,10 +285,10 @@ export const chatWithModelStream = async (req, res) => {
         console.error("Failed to load history for doc selection:", err.message);
       }
 
-      const selectedIds = await selectRelevantDocuments(message, recentHistory, attachmentsData);
+      const selectedIds = await selectRelevantDocuments(message, recentHistory, attachmentRecord);
 
       // Filter to selected docs and build context string
-      relevantDocuments = attachmentsData.filter(a => selectedIds.includes(a.publicId));
+      relevantDocuments = attachmentRecord.filter(a => selectedIds.includes(a.publicId));
       console.log(`[DocContext] Injecting ${relevantDocuments.length} doc(s) into context`);
     }
 
@@ -319,7 +358,7 @@ export const chatWithModelStream = async (req, res) => {
 
     // 8. Update thread name for new threads
     try {
-      if (isNewThread && fullResponse) {
+      if (isFirstMessage && fullResponse) {
         thread.title = await generateThreadName(message, fullResponse);
         await thread.save();
         // Send thread name to client
@@ -381,14 +420,14 @@ export const loadChatHistory = async (req, res) => {
     const history = [];
 
     // Fetch thread attachments and group by messageIndex for O(1) lookups
-    const attachmentsData = await Attachment.findAll({
+    const attachmentRecord = await Attachment.findAll({
       where: { threadId },
       attributes: ["publicId", "name", "messageIndex"],
       order: [["createdAt", "ASC"]],
     });
 
     const attachmentsByIndex = new Map();
-    for (const att of attachmentsData) {
+    for (const att of attachmentRecord) {
       if (!attachmentsByIndex.has(att.messageIndex)) {
         attachmentsByIndex.set(att.messageIndex, []);
       }

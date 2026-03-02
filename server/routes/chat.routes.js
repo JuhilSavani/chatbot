@@ -3,6 +3,7 @@ import {
   loadChatThreads, 
   chatWithModel, 
   chatWithModelStream,
+  ingestDocuments,
   loadChatHistory,
 
   setPinStatus,
@@ -34,6 +35,12 @@ router.post("/message", chatWithModel);
  * @desc    Stream a response from the AI model token-by-token via SSE
  */
 router.post("/stream", chatWithModelStream);
+
+/**
+ * @route   POST /api/chat/ingest
+ * @desc    Ingest PDF documents and extract text before chatting
+ */
+router.post("/ingest", ingestDocuments);
 
 /**
  * @route   PUT /api/chat/pin/:threadId/:action

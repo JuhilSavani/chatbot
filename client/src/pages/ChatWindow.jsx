@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button"
 import ChatInput from '@/utils/components/ChatInput'
 import ChatSidebar from '@/utils/components/ChatSidebar'
 import { useAuth } from '@/utils/hooks/useAuth'
-import { loadChatHistoryAction, loadChatThreadsAction, streamChatAction } from '@/utils/actions/chat.actions'
+import { loadChatHistoryAction, loadChatThreadsAction, streamChatAction, ingestDocumentsAction } from '@/utils/actions/chat.actions'
 import MarkdownRenderer from '@/utils/components/MarkdownRenderer';
 import ToolCall from '@/utils/components/ToolCall';
 import { parseToolInput, parseToolOutput } from '@/utils/toolParsing';
@@ -225,11 +225,22 @@ function MainContent({ setThreads }) {
     setLoadingResponse(true)
     
     try {
+      if (attachments?.length > 0) {
+        setMessages(prev => [...prev, { isPdfProcessing: true }]);
+        const ingestResult = await ingestDocumentsAction(activeThreadId, attachments);
+        setMessages(prev => prev.filter(m => !m.isPdfProcessing));
+        
+        if (ingestResult.error) {
+           setError(ingestResult.error);
+           setLoadingResponse(false);
+           return;
+        }
+      }
+
       const { stream, abort } = streamChatAction({
         threadId: activeThreadId,
         message: newMessage,
         webSearch,
-        attachments
       })
       
       // Store abort function for stop button
@@ -284,10 +295,6 @@ function MainContent({ setThreads }) {
           setMessages(prev => [...prev, { role: 'error', content: event.val }]);
         } else if (event.type === 'threadName') {
            setThreads(prev => prev.map(t => t.threadId === activeThreadId ? { ...t, threadName: event.val } : t));
-        } else if (event.type === 'pdf_processing') {
-          setMessages(prev => [...prev, { isPdfProcessing: true }]);
-        } else if (event.type === 'pdf_done') {
-          setMessages(prev => prev.filter(m => !m.isPdfProcessing));
         }
       }
     } catch (err) {

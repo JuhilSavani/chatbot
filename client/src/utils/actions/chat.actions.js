@@ -96,6 +96,24 @@ export async function deleteThreadAction(threadId) {
 }
 
 /**
+ * Ingests documents into a thread.
+ * Server returns: { message, count }
+ */
+export async function ingestDocumentsAction(threadId, attachments) {
+  try {
+    if (!threadId || !attachments || attachments.length === 0) {
+      return handleAxiosError(null, "Your request failed because parameters are missing.");
+    }
+
+    const response = await axios.post(`/chat/ingest`, { threadId, attachments });
+    return response.data;
+  } catch (error) {
+    console.error("Ingest Documents Error:", error);
+    return handleAxiosError(error, "Failed to ingest documents.");
+  }
+}
+
+/**
  * Streams a chat response using Server-Sent Events (SSE).
  * Returns an object with stream (async iterable) and abort controller.
  * 
@@ -105,7 +123,7 @@ export async function deleteThreadAction(threadId) {
  *     if (event.type === 'token') console.log(event.val);
  *   }
  */
-export function streamChatAction({ threadId, message, webSearch, attachments }) {
+export function streamChatAction({ threadId, message, webSearch }) {
   const controller = new AbortController();
 
   // 1. Define the generator function
@@ -118,7 +136,7 @@ export function streamChatAction({ threadId, message, webSearch, attachments }) 
           "Content-Type": "application/json",
         },
         credentials: "include",
-        body: JSON.stringify({ message, threadId, webSearch, attachments }),
+        body: JSON.stringify({ message, threadId, webSearch }),
         signal: controller.signal,
       });
 
