@@ -19,4 +19,5 @@ export default defineConfig({
   optimizeDeps: {
     include: ['pdfjs-dist', 'js-tiktoken'],
   },
+  worker: { format: 'es' }
 })
