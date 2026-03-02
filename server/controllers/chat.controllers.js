@@ -167,7 +167,7 @@ export const ingestDocuments = async (req, res) => {
           }
         );
 
-        console.log(`[PDF Ingest] Fetching "${att.name}" from: ${signedUrl}`);
+        console.log(`[PDF Ingest] Fetching "${att.name}"`);
         const pdfResponse = await fetch(signedUrl);
 
         if (!pdfResponse.ok) {

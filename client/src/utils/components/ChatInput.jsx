@@ -188,11 +188,11 @@ const ChatInput = ({ threadId, onMessageSent, loading, onStop }) => {
           doneAttachments.map(async (att) => {
             console.log(`[ChatInput] Uploading "${att.file.name}" to Cloudinary...`);
             const result = await uploadPdfToCloudinary(att.file);
-            console.log(`[ChatInput] Upload complete for "${att.file.name}":`, result);
+            console.log(`[ChatInput] Upload complete for "${att.file.name}"`);
             return result;
           })
         );
-        console.log('[ChatInput] All uploads complete:', uploadResults);
+        console.log('[ChatInput] All uploads complete');
 
         const attachmentUrls = uploadResults.map((r, i) => ({
           public_id: r.public_id,
