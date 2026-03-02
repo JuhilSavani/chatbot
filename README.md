@@ -147,7 +147,7 @@ The real struggle was the **disconnect** between the live stream and the saved h
 I learned a way to trigger tools directly from the UI, **bypassing the LLM's standard reasoning loop** to give the user "override" power when they know the exact operation they need. Instead of relying on the LLM to infer intent, the frontend sends a pre-formatted tool request, **forcing the agent to act deterministically** and reducing unnecessary latency.
 
 ### 7. The "Memory" Architecture
-I wanted the agent to actually **know the user**, making it remember user details across sessions by integrating a **long-term memory layer**. However I didn't want to just plug in a library without understanding the "magic", so I went down a rabbit hole learning **how agentic memory actually works:**
+I wanted the agent to actually **know the user**, making it remember user details across sessions by integrating a **long-term memory layer**. However I didn't want to just plug in a library without understanding the "magic" behind it, so I went down a rabbit hole learning **how agentic memory actually works:**
   - I learned that building a memory layer isn't just about saving memories upfront. In reality, a memory layer requires to instruct the LLM to inspect the user's message, compare it against existing context, and extract only new facts.
   - For this, I found a **boolean deduplication method** that uses structured outputs (Zod models) to force the LLM to return an `isNew` boolean flag alongside the memory text. This ensures we only trigger a write only if the information is actually novel, preventing duplicate entries.
 
@@ -155,7 +155,7 @@ However, after learning the internals, I decided to simply use a **third-party m
 
 While using it, I discovered that Supermemory has an **indexing delay of about 30 seconds**. Due this, if a user mentioned their name and immediately started a new session, the agent would have **temporary amnesia** as Supermemory hadn't finished indexing the new memories yet.
 
-To solve this, I experimented with a **local Write-Through Buffer** with a custom **90-second TTL (Time-To-Live)** for caching recent interactions in memory. However, I eventually decided to rely solely on Supermemory, avoiding any memory footprint/overhead at scale.
+To solve this, I experimented with a **local Write-Through Buffer** with a custom **90-second TTL (Time-To-Live)** for caching recent interactions in memory. However, I eventually decided to rely solely on Supermemory, avoiding any memory overhead at scale.
 
 ---
 
