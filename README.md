@@ -148,14 +148,54 @@ I learned a way to trigger tools directly from the UI, **bypassing the LLM's sta
 
 ### 7. The "Memory" Architecture
 I wanted the agent to actually **know the user**, making it remember user details across sessions by integrating a **long-term memory layer**. However I didn't want to just plug in a library without understanding the "magic" behind it, so I went down a rabbit hole learning **how agentic memory actually works:**
-  - I learned that building a memory layer isn't just about saving memories upfront. In reality, a memory layer requires to instruct the LLM to inspect the user's message, compare it against existing context, and extract only new facts.
-  - For this, I found a **boolean deduplication method** that uses structured outputs (Zod models) to force the LLM to return an `isNew` boolean flag alongside the memory text. This ensures we only trigger a write only if the information is actually novel, preventing duplicate entries.
 
-However, after learning the internals, I decided to simply use a **third-party memory layer solution named Supermemory** instead of reinventing the wheel.
+I learned that building a memory layer isn't just about saving memories upfront. In reality, a memory layer requires to instruct the LLM to inspect the user's message, compare it against existing context, and extract only new facts.
+  
+For this, I found a **boolean deduplication method** that uses structured outputs (Zod models) to force the LLM to return an `isNew` boolean flag alongside the memory text. This ensures we only trigger a write only if the information is actually novel, preventing duplicate entries.
+
+However, after learning these internals, I decided to simply use a **third-party memory layer solution named Supermemory** instead of reinventing the wheel.
 
 While using it, I discovered that Supermemory has an **indexing delay of about 30 seconds**. Due this, if a user mentioned their name and immediately started a new session, the agent would have **temporary amnesia** as Supermemory hadn't finished indexing the new memories yet.
 
 To solve this, I experimented with a **local Write-Through Buffer** with a custom **90-second TTL (Time-To-Live)** for caching recent interactions in memory. However, I eventually decided to rely solely on Supermemory, avoiding any memory overhead at scale.
+
+### 8. The Document Pipeline (Why I skipped standard RAG)
+When adding PDF uploads, the immediate instinct anyone could get is to build a standard RAG (Retrieval-Augmented Generation) pipeline: parse the text, chunk it up, embed it, and shove it into a vector database like Pinecone.
+
+But standard RAG has a fatal flaw: it is fundamentally a **retrieval** system, not a **reading** system. It is great for "needle-in-a-haystack" queries (e.g., *"What is the termination clause?"*), but the moment a user asks *"Summarize this document"* or *"What's the overall tone?"*, **RAG falls apart.** It just retrieves 5 somewhat-random chunks of text and hallucinates a summary from fragments. 
+
+To fix this, the "industry standard" path is **Map-Reduce Summarization**—retrieving every chunk, summarizing them individually, and then synthesizing a final summary. But doing that on-demand is a nightmare. A 50-page PDF could spawn over 100 LLM calls, costing thousands of tokens and taking 30+ seconds just to start streaming. It tanks the UX.
+
+I decided to move away from the Map-Reduce entirely and rethink the pipeline around a simple reality–**modern LLMs have massive 1M+ token context windows.** Why chunk the text at all when the model can just read the whole thing? 
+
+Instead of a complex backend RAG architecture, I built a **Token-Gated Full-Context Pipeline**:
+- **The Frontend Gate:** Before a file even touches Cloudinary, a Web Worker parses the PDF on the client side and checks its token count. I enforce a strict limit (e.g., 32k tokens per doc, max 5 docs per chat). By gating at the frontend, the backend is shielded from massive files that could break the context window. 
+- **Raw Text Ingestion:** Once verified, the frontend uploads documents directly to Cloudinary using a signed URL. It then triggers the chat stream with the returned `public_id`s. 
+The backend takes over from there: it fetches the files using recieved `public_id`s, extracts the text using `unpdf`, and dumps the raw content straight into a PostgreSQL column—bypassing embeddings entirely.
+- **Intelligent Selection:** Before generating a response, the backend retrieves the text of all chat-related attachments and fires off a cheap, lightweight structured LLM call (via Zod). It looks at the context of the last 6 conversations and the *content* of the uploaded PDFs, and dynamically decides which documents are actually relevant to the current question. 
+- **The Context Dump:** Once identified, the backend fetches the full raw text of only those selected documents from the database and inject them directly into the LangGraph prompt array. 
+
+By providing the "full story" rather than disconnected fragments, the model can deliver coherent, whole-document answers in a single streaming response.
+
+## 9. Client-Side Token Gating
+To avoid hitting context limits and **prevent oversized PDFs from piling up in Cloudinary,** I needed to verify token counts of PDFs *before* they ever touched the server. It sounded simple on paper, but doing it entirely in the browser without getting frontend freezed turned into a real headache.
+
+- **The PDF Parsing Problem:** 
+  I initially tried `react-pdftotext`, but parsing large files on the main thread would freeze the entire UI. To fix this, I moved the parsing logic into a background Web Worker. But when I moved the logic to a **Web Worker,** it crashed immediately. Because workers don’t have access to DOM primitives and `react-pdftotext` relies heavily on DOM primitives—the library failed silently with a "Setting up fake worker" error, halting execution completely.
+
+  Now to solve this, I ripped out the React wrapper and rewrote the worker using the core pure-JS based library `pdfjs-dist` instead. This allowed the worker to process the `ArrayBuffer` in the background without needing a DOM, keeping the interface perfectly fluid while the "heavy lifting" happened behind the scenes.
+
+- **The Token Counting Problem:** 
+  Once I had the raw text, I had to count the tokens. The standard `tiktoken` WASM version had constant compatibility issues inside the worker environment. To fix this, I switched to `js-tiktoken` (a pure JS implementation) and set it up to **lazy-load** inside the worker.
+
+  This kept the main bundle light and the UI responsive. The app now silently validates the 32k token limit in the background, uploading the PDF only if once the token gating is complete and the context is safe.
+
+### 10. The Document Ingestion Timeout Problem
+I initially tried to handle PDF extraction directly inside the chat stream. **Big mistake.** I quickly realized that fetching a raw PDF, generating signed Cloudinary URLs, and running `unpdf` was too much "heavy lifting" for a streming request. Because of this, large PDFs would often cause the streamed HTTP connection to time out before the LLM even had a chance to start streaming its first token.
+
+To fix this, I figured out a way that **splits the operation into two** distinct requests. Now, the frontend hits an `/api/ingest` endpoint first to handle the "heavy lifting"—loading documents, extracting the text and saving it to the database—before sending back a "ready" signal.
+
+Only after that signal is received does the frontend trigger the actual `/api/chat` request. Since the text is already sitting in the database, the **TTFB (Time-To-First-Byte)** is nearly instant. It’s a much cleaner architecture than trying to "stream" a file download and an AI response at the same time.
 
 ---
 
