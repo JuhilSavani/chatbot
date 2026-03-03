@@ -177,7 +177,7 @@ The backend takes over from there: it fetches the files using recieved `public_i
 
 By providing the "full story" rather than disconnected fragments, the model can deliver coherent, whole-document answers in a single streaming response.
 
-## 9. Client-Side Token Gating
+### 9. Client-Side Token Gating
 To avoid hitting context limits and **prevent oversized PDFs from piling up in Cloudinary,** I needed to verify token counts of PDFs *before* they ever touched the server. It sounded simple on paper, but doing it entirely in the browser without getting frontend freezed turned into a real headache.
 
 - **The PDF Parsing Problem:** 
