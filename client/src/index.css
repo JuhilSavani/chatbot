@@ -5,6 +5,10 @@
 @custom-variant dark (&:is(.dark *));
 
 @layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+
   :root {
     @apply font-sans font-normal leading-relaxed antialiased;
     font-family: "Inter", sans-serif;
