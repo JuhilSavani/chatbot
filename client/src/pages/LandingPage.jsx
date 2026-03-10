@@ -98,39 +98,145 @@ export default function LandingPage() {
         </div>
 
         {/* Preview Image / Abstract Visual */}
-        <div className="mt-20 max-w-5xl mx-auto rounded-xl border border-white/10 bg-black/50 backdrop-blur-sm p-2 shadow-2xl relative">
-          <div className="absolute inset-0 bg-linear-to-t from-[#09090b] via-transparent to-transparent z-10"></div>
-          <div className="bg-[#18181b] rounded-lg aspect-[16/9] w-full flex overflow-hidden border border-white/5">
-            {/* Sidebar Mock */}
-            <div className="w-64 border-r border-white/5 bg-[#09090b] hidden md:flex flex-col p-4 gap-4">
-              <div className="h-8 w-3/4 bg-white/5 rounded"></div>
-              <div className="space-y-2 mt-4">
-                <div className="h-4 w-full bg-white/5 rounded opacity-60"></div>
-                <div className="h-4 w-5/6 bg-white/5 rounded opacity-40"></div>
-                <div className="h-4 w-4/6 bg-white/5 rounded opacity-30"></div>
-              </div>
-            </div>
-            {/* Chat Area Mock */}
-            <div className="flex-1 flex flex-col">
-              <div className="flex-1 p-8 space-y-6">
-                <div className="flex gap-4">
-                  <div className="w-8 h-8 rounded bg-white/10 flex-shrink-0"></div>
-                  <div className="space-y-2 flex-1">
-                    <div className="h-4 w-1/3 bg-white/10 rounded"></div>
-                    <div className="h-16 w-3/4 bg-white/5 rounded"></div>
-                  </div>
+        <div className="mt-20 max-w-5xl mx-auto rounded-xl border border-white/10 p-2 shadow-2xl relative">
+          {/* Bottom fade-blur overlay */}
+          <div className="absolute bottom-0 left-0 right-0 h-[65%] bg-linear-to-t from-[#09090b] via-[#09090b]/10 to-transparent z-30 pointer-events-none rounded-b-xl"></div>
+          
+          <div className="bg-[#09090b] rounded-lg h-[620px] md:h-[650px] w-full flex overflow-hidden border border-white/5 relative z-20 shadow-[0_0_50px_rgba(0,0,0,0.5)]">
+             {/* Sidebar Mock */}
+             <div className="w-64 border-r border-[#27272a]/20 bg-[#09090b] hidden md:flex flex-col flex-shrink-0 text-[#fafafa]">
+                 {/* Sidebar Header */}
+                <div className="p-4 pb-0">
+                     <div className="flex items-center gap-3 font-bold text-xl tracking-tight text-[#fafafa] mb-6 px-2">
+                        <div className="w-8 h-8 rounded-lg bg-linear-to-br from-white to-zinc-400 shadow-[0_0_15px_rgba(255,255,255,0.6)]"></div>
+                        <span className="font-semibold text-2xl tracking-tight">Sidekick</span>
+                    </div>
+                    <div className="w-full flex items-center justify-center gap-2 bg-[#18181b]/50 text-[#fafafa] hover:bg-white/5 border border-white/5 h-10 px-4 rounded-md transition-all text-sm font-medium mb-4">
+                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-[#a1a1aa]"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
+                         <span className="opacity-80">New Chat</span>
+                    </div>
+                    <div className="relative group px-1 mb-2 text-left">
+                        <div className="w-full bg-transparent pl-8 py-2 text-sm border-b border-white/5 transition-all outline-none text-[#52525b] opacity-80">Search chats...</div>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="absolute left-3 top-1/2 -translate-y-1/2 text-[#52525b] opacity-80"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+                    </div>
                 </div>
-                <div className="flex gap-4 flex-row-reverse">
-                  <div className="w-8 h-8 rounded bg-[#fafafa]/20 flex-shrink-0"></div>
-                  <div className="space-y-2 flex-1">
-                    <div className="h-12 w-1/2 bg-[#fafafa]/10 rounded ml-auto"></div>
-                  </div>
+                {/* Sidebar Items */}
+                <div className="flex-1 overflow-hidden px-2 py-2 flex flex-col pointer-events-none select-none">
+                     <div className="px-4 py-2 text-xs font-semibold text-[#52525b] uppercase tracking-wider text-left">Recent</div>
+                     <div className="w-full flex items-start gap-3 px-4 py-2 rounded-md bg-zinc-800 text-white">
+                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mt-0.5 shrink-0 opacity-80"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                         <div className="flex flex-col gap-1 min-w-0 flex-1 text-left">
+                             <span className="truncate font-medium text-sm text-white">Transformer Architecture</span>
+                             <span className="text-xs text-zinc-400 truncate">Just now</span>
+                         </div>
+                     </div>
+                     <div className="w-full flex items-start gap-3 px-4 py-2 rounded-md text-zinc-400">
+                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mt-0.5 shrink-0 opacity-80"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                         <div className="flex flex-col gap-1 min-w-0 flex-1 text-left">
+                             <span className="truncate font-medium text-sm text-zinc-300">System Architecture v3</span>
+                             <span className="text-xs text-zinc-500 truncate">Yesterday</span>
+                         </div>
+                     </div>
+                     <div className="w-full flex items-start gap-3 px-4 py-2 rounded-md text-zinc-400">
+                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mt-0.5 shrink-0 opacity-80"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                         <div className="flex flex-col gap-1 min-w-0 flex-1 text-left">
+                             <span className="truncate font-medium text-sm text-zinc-300">Database Migration Plan</span>
+                             <span className="text-xs text-zinc-500 truncate">10/02/2026</span>
+                         </div>
+                     </div>
                 </div>
-              </div>
-              <div className="p-4 border-t border-white/5">
-                <div className="h-12 w-full bg-white/5 rounded-lg border border-white/10 mx-auto max-w-2xl"></div>
-              </div>
-            </div>
+                {/* Sidebar Footer */}
+                <div className="p-2 border-t border-white/5 mt-auto">
+                     <div className="flex items-center justify-between mx-2 mb-2 pt-2 px-2">
+                        <div className="flex items-center gap-3 overflow-hidden">
+                            <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center shrink-0 border border-white/5 text-[#fafafa] font-medium text-sm">JS</div>
+                            <span className="truncate text-sm font-medium text-[#fafafa]">juhilsavani</span>
+                        </div>
+                     </div>
+                </div>
+             </div>
+
+             {/* Chat Area Mock */}
+             <div className="flex-1 flex flex-col bg-[#09090b] min-w-0 relative">
+                 {/* Chat Header */}
+                 <div className="flex h-16 shrink-0 items-center gap-2 border-b border-white/5 px-6 bg-[#09090b]/80 backdrop-blur-md sticky top-0 z-10 w-full">
+                     <div className="flex items-center gap-4">
+                         <span className="h-4 w-px bg-white/10 mr-2 hidden md:block"></span>
+                         <span className="text-sm font-medium text-[#fafafa]">Transformer Architecture</span>
+                     </div>
+                 </div>
+
+                 {/* Messages */}
+                 <div className="flex-1 overflow-hidden p-4 md:p-8 w-full flex flex-col pointer-events-none select-none">
+                     <div className="flex flex-col gap-2 max-w-4xl mx-auto w-full pb-8">
+                         {/* User Message */}
+                         <div className="mb-6 p-4 rounded-2xl relative bg-white/10 ml-auto max-w-[85%] md:max-w-[80%] w-fit border border-white/5 text-[#fafafa]">
+                             <div className="text-[#fafafa] text-sm md:text-base">
+                                Can you show me a simplified implementation of a Transformer model in TensorFlow?
+                             </div>
+                         </div>
+                         
+                         {/* AI Message */}
+                         <div className="mb-6 p-4 rounded-2xl relative bg-transparent w-full px-2 lg:px-0">
+                             <div className="text-[#fafafa] w-full text-sm md:text-base">
+                                 <p className="mb-4">Here is a simplified implementation of a Multi-Head Attention layer, which is a core component of the Transformer model.</p>
+                                 
+                                 {/* Code Block Mock */}
+                                 <div className="relative rounded-lg overflow-hidden border border-white/5 bg-[#09090b] mb-4 font-mono text-sm max-w-[100%]">
+                                     <div className="flex items-center justify-between px-4 py-2 bg-[#18181b]/50 border-b border-white/5">
+                                         <span className="text-xs text-gray-400">python</span>
+                                         <div className="flex items-center gap-1.5 px-2 py-1 rounded text-gray-400 text-xs">
+                                             <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
+                                             <span>Copy</span>
+                                         </div>
+                                     </div>
+                                     <div className="p-4 overflow-x-hidden text-xs md:text-sm font-light">
+                                         <pre className="text-zinc-300">
+                                            <code>
+                                                <div><span className="text-blue-400">import</span> numpy <span className="text-blue-400">as</span> np</div>
+                                                <div><span className="text-blue-400">import</span> tensorflow <span className="text-blue-400">as</span> tf</div>
+                                                <div className="h-4"></div>
+                                                <div><span className="text-green-500"># Define multi-head attention layer</span></div>
+                                                <div><span className="text-blue-400">class</span> <span className="text-teal-300">MultiHeadAttention</span>(tf.keras.layers.Layer):</div>
+                                                <div>    <span className="text-blue-400">def</span> <span className="text-blue-300">__init__</span>(self, d_model, num_heads):</div>
+                                                <div>        <span className="text-purple-400">super</span>(MultiHeadAttention, self).__init__()</div>
+                                                <div>        self.num_heads = num_heads</div>
+                                                <div>        self.d_model = d_model</div>
+                                            </code>
+                                         </pre>
+                                     </div>
+                                 </div>
+                             </div>
+                         </div>
+                     </div>
+                 </div>
+
+                 {/* Input Area Mock */}
+                 <div className="shrink-0 w-full p-4 bg-[#09090b] border-t border-white/5 absolute bottom-0 left-0 right-0 pointer-events-none select-none">
+                     <div className="max-w-4xl mx-auto">
+                          <div className="w-full bg-[#18181b]/50 backdrop-blur-xl rounded-2xl p-4 border border-white/5 relative flex flex-col shadow-[0_0_0_1px_rgba(255,255,255,0.05)]">
+                             <div className="grow mb-2">
+                                 <div className="w-full bg-transparent text-[#52525b] text-[16px] leading-relaxed select-none">Send a message to Sidekick...</div>
+                             </div>
+                             <div className="flex items-end justify-between pt-2 px-1 border-t border-white/5 mt-2">
+                                 <div className="flex items-center gap-2">
+                                      <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border border-transparent bg-white/5 text-[#a1a1aa]">
+                                         <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/></svg>
+                                         <span>Search</span>
+                                      </div>
+                                      <div className="h-6 w-px bg-white/10 mx-1"></div>
+                                      <div className="p-1.5 text-[#52525b] rounded-lg">
+                                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.57a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
+                                      </div>
+                                 </div>
+                                 <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-white/10 text-[#52525b]">
+                                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m5 12 7-7 7 7"/><path d="M12 19V5"/></svg>
+                                 </div>
+                             </div>
+                          </div>
+                     </div>
+                 </div>
+             </div>
           </div>
         </div>
       </main>
@@ -169,7 +275,7 @@ export default function LandingPage() {
 
               {/* Terminal Body */}
               <div className="bg-[#09090b] rounded-b-lg p-6 font-mono text-sm text-[#d4d4d4] overflow-hidden">
-                <span className="text-[#ce9178]">"project_status"</span>: {'{'}<br/>
+                {'{'}<br/>
                 {'\u00A0\u00A0'}<span className="text-[#9cdcfe]">"phase"</span>: <span className="text-[#ce9178]">"active_development"</span>,<br/>
                 {'\u00A0\u00A0'}<span className="text-[#9cdcfe]">"current_version"</span>: <span className="text-[#b5cea8]">1.0.0</span>,<br/>
                 {'\u00A0\u00A0'}<span className="text-[#9cdcfe]">"open_source"</span>: <span className="text-[#569cd6]">true</span>,<br/>
@@ -294,21 +400,21 @@ export default function LandingPage() {
 
       {/* Footer */}
       <footer className="py-12 px-6 border-t border-white/5 bg-[#09090b] text-sm text-[#a1a1aa]">
-        <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-8">
-          <div className="space-y-2">
-            <div className="flex items-center gap-2">
-              <div className="w-6 h-6 rounded bg-linear-to-br from-white to-zinc-400 shadow-[0_0_15px_rgba(255,255,255,0.6)]"></div>
+        <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-start md:items-center gap-10 md:gap-8">
+          <div className="space-y-4">
+            <div className="flex items-center gap-2.75">
+              <div className="w-6 h-6 rounded-md bg-linear-to-br from-white to-zinc-400 shadow-[0_0_15px_rgba(255,255,255,0.6)]"></div>
               <span className="font-bold text-white text-xl">Sidekick</span>
             </div>
-            <p>Agentic conversational AI built for learning purposes.</p>
+            <p className="md:whitespace-nowrap leading-relaxed">Agentic conversational AI built for learning purposes.</p>
           </div>
 
-          <div className="flex gap-8 font-medium">
+          <div className="flex flex-col sm:flex-row gap-4 sm:gap-8 font-medium">
             <a href="https://github.com/JuhilSavani/chatbot" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">Github Repository</a>
             <a href="mailto:savanijuhil@gmail.com" className="hover:text-white transition-colors">Contact Developer</a>
           </div>
 
-          <div className="text-center md:text-right">
+          <div className="text-left md:text-right">
             <p>© 2026 Sidekick. Open Source Project.</p>
           </div>
         </div>
