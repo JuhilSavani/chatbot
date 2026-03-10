@@ -4,10 +4,12 @@ import { useForm } from "react-hook-form";
 import { useAuth } from "@/utils/hooks/useAuth";
 import { loginAction } from "@/utils/actions/authorize.actions";
 import { useGoogleOAuth } from "@/utils/hooks/useGoogleOAuth";
+import { Eye, EyeOff } from "lucide-react";
 
 function Login() {
   const [loginError, setLoginError] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const googleOAuthUrl = useGoogleOAuth();
 
   const { register, handleSubmit, formState: { errors } } = useForm();
@@ -98,12 +100,21 @@ function Login() {
                           <label htmlFor="password" className="text-sm font-medium leading-none block">Password</label>
                           <a href="#" className="text-xs text-[#a1a1aa] hover:text-[#fafafa] transition-colors">Forgot password?</a>
                       </div>
-                      <input 
-                        type="password" 
-                        id="password" 
-                        {...passwordField}
-                        className="flex h-10 w-full rounded-md border border-[#27272a] bg-white/5 px-3 py-2 text-sm placeholder:text-[#a1a1aa] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#fafafa] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 transition-all hover:bg-white/10 ring-offset-[#09090b]" 
-                      />
+                      <div className="relative">
+                        <input 
+                          type={showPassword ? "text" : "password"} 
+                          id="password" 
+                          {...passwordField}
+                          className="flex h-10 w-full rounded-md border border-[#27272a] bg-white/5 px-3 py-2 pr-10 text-sm placeholder:text-[#a1a1aa] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#fafafa] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 transition-all hover:bg-white/10 ring-offset-[#09090b]" 
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowPassword(!showPassword)}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-[#a1a1aa] hover:text-[#fafafa] transition-colors"
+                        >
+                          {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                        </button>
+                      </div>
                       {errors.password && <span className="text-xs text-red-500 block">{errors.password.message}</span>}
                   </div>
 

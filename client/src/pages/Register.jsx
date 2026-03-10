@@ -3,11 +3,14 @@ import { Link } from "react-router-dom"
 import { useForm } from "react-hook-form";
 import { registerAction } from "@/utils/actions/authorize.actions";
 import { useGoogleOAuth } from "@/utils/hooks/useGoogleOAuth";
+import { Eye, EyeOff } from "lucide-react";
 
 function Register() {
   const [registerError, setRegisterError] = useState(null);
   const [registerMessage, setRegisterMessage] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const googleOAuthUrl = useGoogleOAuth();
 
   const { register, handleSubmit, watch, formState: { errors } } = useForm();
@@ -137,23 +140,41 @@ function Register() {
                 
                 <div className="space-y-2">
                     <label htmlFor="password" className="text-sm font-medium leading-none block">Password</label>
-                    <input 
-                      type="password" 
-                      id="password" 
-                      {...passwordField}
-                      className="flex h-10 w-full rounded-md border border-[#27272a] bg-white/5 px-3 py-2 text-sm placeholder:text-[#a1a1aa] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#fafafa] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 transition-all hover:bg-white/10 ring-offset-[#09090b]" 
-                    />
+                    <div className="relative">
+                      <input 
+                        type={showPassword ? "text" : "password"} 
+                        id="password" 
+                        {...passwordField}
+                        className="flex h-10 w-full rounded-md border border-[#27272a] bg-white/5 px-3 py-2 pr-10 text-sm placeholder:text-[#a1a1aa] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#fafafa] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 transition-all hover:bg-white/10 ring-offset-[#09090b]" 
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-[#a1a1aa] hover:text-[#fafafa] transition-colors"
+                      >
+                        {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                      </button>
+                    </div>
                     {errors.password && <span className="text-xs text-red-500 block">{errors.password.message}</span>}
                 </div>
 
                 <div className="space-y-2">
                     <label htmlFor="confirm-password" class="text-sm font-medium leading-none block">Confirm Password</label>
-                    <input 
-                      type="password" 
-                      id="confirm-password" 
-                      {...confirmPasswordField}
-                      className="flex h-10 w-full rounded-md border border-[#27272a] bg-white/5 px-3 py-2 text-sm placeholder:text-[#a1a1aa] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#fafafa] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 transition-all hover:bg-white/10 ring-offset-[#09090b]" 
-                    />
+                    <div className="relative">
+                      <input 
+                        type={showConfirmPassword ? "text" : "password"} 
+                        id="confirm-password" 
+                        {...confirmPasswordField}
+                        className="flex h-10 w-full rounded-md border border-[#27272a] bg-white/5 px-3 py-2 pr-10 text-sm placeholder:text-[#a1a1aa] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#fafafa] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 transition-all hover:bg-white/10 ring-offset-[#09090b]" 
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-[#a1a1aa] hover:text-[#fafafa] transition-colors"
+                      >
+                        {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                      </button>
+                    </div>
                      {errors.confirmPassword && <span className="text-xs text-red-500 block">{errors.confirmPassword.message}</span>}
                 </div>
 
