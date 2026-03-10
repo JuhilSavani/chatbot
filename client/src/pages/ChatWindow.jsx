@@ -99,7 +99,7 @@ const ChatMessage = React.memo(({ message }) => {
       
       {/* PDF Attachments */}
       {isUser && message.attachments?.length > 0 && (
-        <div className="flex flex-wrap gap-2 mb-2 justify-end max-w-[80%]">
+        <div className="flex flex-wrap gap-2 mb-2 justify-end max-w-[95%] md:max-w-[80%]">
           {message.attachments.map((name, i) => (
             <div 
               key={i} 
@@ -119,7 +119,7 @@ const ChatMessage = React.memo(({ message }) => {
       )}
 
       {/* Message Bubble */}
-      <div className={`p-4 rounded-2xl ${isUser ? 'bg-white/10 max-w-[80%] w-fit border border-white/5 text-[#fafafa]' : 'bg-transparent w-full px-2'}`}>
+      <div className={`p-4 rounded-2xl ${isUser ? 'bg-white/10 max-w-[95%] md:max-w-[80%] w-fit border border-white/5 text-[#fafafa]' : 'bg-transparent w-full px-2'}`}>
         <div className={isUser ? 'text-[#fafafa]' : 'text-[#fafafa] w-full'}>
           {isUser ? message.content : isError ? <span className="text-red-400">{message.content}</span> : <MarkdownRenderer content={message.content} />}
         </div>
@@ -142,7 +142,7 @@ const ChatMessage = React.memo(({ message }) => {
 });
 
 function MainContent({ setThreads }) {
-  const { open, toggleSidebar } = useSidebar()
+  const { open, toggleSidebar, isMobile } = useSidebar()
   const { threadId } = useParams()
   const navigate = useNavigate()
   const { auth } = useAuth()
@@ -318,22 +318,22 @@ function MainContent({ setThreads }) {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
   }, [loadingResponse, loadingChat])
 
-  const contentStateClasses = open 
+  const contentStateClasses = (!isMobile && open) 
     ? "bg-[#09090b] my-2 mr-2 rounded-2xl border-white/5 shadow-2xl" 
     : "bg-[#09090b] m-0 rounded-none border-transparent";
 
   const isNewChat = messages.length === 0 && !loadingChat;
 
   return (
-    <SidebarInset className={`transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] flex flex-col overflow-hidden border ${contentStateClasses} ${open ? 'h-[calc(100vh-1rem)]' : 'h-screen'}`}>
-      <header className="flex h-16 shrink-0 items-center gap-2 border-b border-white/5 px-6 bg-[#09090b]/80 backdrop-blur-md sticky top-0 z-10 w-full">
-        <div className={`transition-all duration-300 ${open ? 'w-0 overflow-hidden opacity-0' : 'w-auto opacity-100'}`}>
+    <SidebarInset className={`transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] flex flex-col overflow-hidden border ${contentStateClasses} ${(!isMobile && open) ? 'h-[calc(100dvh-1rem)]' : 'h-[100dvh]'}`}>
+      <header className="flex h-16 shrink-0 items-center gap-2 border-b border-white/5 px-4 md:px-6 bg-[#09090b]/80 backdrop-blur-md sticky top-0 z-10 w-full">
+        <div className={`transition-all duration-300 ${(!isMobile && open) ? 'w-0 overflow-hidden opacity-0' : 'w-auto opacity-100'}`}>
           <Button variant="ghost" size="icon" onClick={toggleSidebar} className="-ml-2 h-8 w-8 text-[#a1a1aa] hover:text-[#fafafa] hover:bg-white/5">
             <SidebarInactiveIcon />
           </Button>
         </div>
         <div className="flex items-center gap-4">
-          {!open && <span className="h-4 w-px bg-white/10 mr-2" />}
+          {(!isMobile && !open) && <span className="h-4 w-px bg-white/10 mr-2" />}
           <span className="text-sm font-medium text-[#fafafa]">{isNewChat ? "New Conversation" : "Chat"}</span>
         </div>
       </header>
@@ -368,7 +368,7 @@ function MainContent({ setThreads }) {
         )}
       </div>
 
-      <div className="shrink-0 w-full p-4 bg-[#09090b] border-t border-white/5">
+      <div className="shrink-0 w-full p-2 md:p-4 bg-[#09090b] border-t border-white/5">
         <div className="max-w-4xl mx-auto">
           <ChatInput 
             threadId={currentChatThreadId} 

@@ -73,7 +73,7 @@ export default function ToolCall({
   const OutputComponent = TOOL_RENDERERS[tool] || DefaultOutput;
 
   return (
-    <div className="w-full max-w-[85%] my-4 font-sans text-sm">
+    <div className="w-full max-w-full md:max-w-[85%] my-4 font-sans text-sm">
       {/* Header Bar */}
       <div
         className={`

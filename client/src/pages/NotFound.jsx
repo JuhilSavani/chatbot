@@ -2,7 +2,7 @@ import { Link } from "react-router-dom"
 
 function NotFound() {
   return (
-    <div className="antialiased min-h-screen flex flex-col items-center justify-center relative overflow-hidden bg-[#09090b] text-[#fafafa] font-sans">
+    <div className="antialiased min-h-dvh flex flex-col items-center justify-center relative overflow-hidden bg-[#09090b] text-[#fafafa] font-sans">
       <style>{`
         .glass-card {
             background: rgba(9, 9, 11, 0.7);

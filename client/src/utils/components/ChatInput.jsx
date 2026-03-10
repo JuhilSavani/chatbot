@@ -242,7 +242,7 @@ const ChatInput = ({ threadId, onMessageSent, loading, onStop }) => {
       
       {/* Main Input Container */}
       <div 
-        className={`w-full max-w-4xl bg-[#18181b]/50 backdrop-blur-xl rounded-2xl p-4 border relative flex flex-col min-h-32 transition-all duration-200 z-10 group focus-within:shadow-[0_0_0_4px_rgba(255,255,255,0.8)] ${isDragging ? 'border-blue-500 bg-blue-500/10' : 'border-white/5'}`}
+        className={`w-full max-w-4xl bg-[#18181b]/50 backdrop-blur-xl rounded-2xl p-3 md:p-4 border relative flex flex-col min-h-32 transition-all duration-200 z-10 group focus-within:shadow-[0_0_0_4px_rgba(255,255,255,0.8)] ${isDragging ? 'border-blue-500 bg-blue-500/10' : 'border-white/5'}`}
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
@@ -308,7 +308,7 @@ const ChatInput = ({ threadId, onMessageSent, loading, onStop }) => {
         <div className="grow mb-2">
           <textarea
             ref={textareaRef}
-            className="w-full bg-transparent text-[#fafafa] text-[16px] leading-relaxed placeholder-[#52525b] resize-none outline-none overflow-hidden min-h-14 px-2 py-1 font-normal font-sans"
+            className="w-full bg-transparent text-[#fafafa] text-[16px] leading-relaxed placeholder-[#52525b] resize-none outline-none overflow-hidden min-h-10 md:min-h-14 px-2 py-1 font-normal font-sans"
             placeholder="Send a message to Sidekick..."
             value={message}
             onChange={(e) => setMessage(e.target.value)}

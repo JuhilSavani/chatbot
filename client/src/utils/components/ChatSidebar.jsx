@@ -18,7 +18,6 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar"
 import { Button } from "@/components/ui/button"
-import { Separator } from "@/components/ui/separator"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -57,7 +56,7 @@ const SidebarActiveIcon = ({ className = "w-4 h-5" }) => (
 );
 
 export default function ChatSidebar({ threads = [], isLoading = false, setThreads }) {
-  const { toggleSidebar, open, setOpen, isMobile } = useSidebar()
+  const { toggleSidebar, isMobile, setOpenMobile } = useSidebar()
   const { auth } = useAuth()
   const { logout, logoutLoading } = useLogout()
   const navigate = useNavigate()
@@ -88,6 +87,7 @@ export default function ChatSidebar({ threads = [], isLoading = false, setThread
         
         if (threadToDelete.threadId === threadId) {
           navigate('/chat')
+          if (isMobile) setOpenMobile(false)
         }
       }
     } catch (error) {
@@ -104,10 +104,12 @@ export default function ChatSidebar({ threads = [], isLoading = false, setThread
     // Navigate to base chat route - thread will be created on first message
     navigate('/chat')
     setSearchQuery("")
+    if (isMobile) setOpenMobile(false)
   }
 
   const handleThreadClick = (thread) => {
     navigate(`/chat/${thread.threadId}`)
+    if (isMobile) setOpenMobile(false)
   }
 
   // Filter first

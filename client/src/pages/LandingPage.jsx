@@ -23,7 +23,7 @@ export default function LandingPage() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#09090b] text-[#fafafa] font-sans antialiased">
+    <div className="min-h-dvh flex flex-col bg-[#09090b] text-[#fafafa] font-sans antialiased">
       <style>{`
         .glass-nav {
             background: rgba(9, 9, 11, 0.7);
