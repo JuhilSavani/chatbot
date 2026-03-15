@@ -106,12 +106,12 @@ export default function LandingPage() {
              {/* Sidebar Mock */}
              <div className="w-64 border-r border-[#27272a]/20 bg-[#09090b] hidden md:flex flex-col flex-shrink-0 text-[#fafafa]">
                  {/* Sidebar Header */}
-                <div className="p-4 pb-0">
+                <div className="p-4 pb-0 pointer-events-none select-none">
                      <div className="flex items-center gap-3 font-bold text-xl tracking-tight text-[#fafafa] mb-6 px-2">
                         <div className="w-8 h-8 rounded-lg bg-linear-to-br from-white to-zinc-400 shadow-[0_0_15px_rgba(255,255,255,0.6)]"></div>
                         <span className="font-semibold text-2xl tracking-tight">Sidekick</span>
                     </div>
-                    <div className="w-full flex items-center justify-center gap-2 bg-[#18181b]/50 text-[#fafafa] hover:bg-white/5 border border-white/5 h-10 px-4 rounded-md transition-all text-sm font-medium mb-4">
+                    <div className="w-full flex items-center justify-center gap-2 bg-[#18181b]/50 text-[#fafafa] border border-white/5 h-10 px-4 rounded-md transition-all text-sm font-medium mb-4">
                          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-[#a1a1aa]"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
                          <span className="opacity-80">New Chat</span>
                     </div>
@@ -198,10 +198,10 @@ export default function LandingPage() {
                                                 <div className="h-4"></div>
                                                 <div><span className="text-green-500"># Define multi-head attention layer</span></div>
                                                 <div><span className="text-blue-400">class</span> <span className="text-teal-300">MultiHeadAttention</span>(tf.keras.layers.Layer):</div>
-                                                <div>    <span className="text-blue-400">def</span> <span className="text-blue-300">__init__</span>(self, d_model, num_heads):</div>
-                                                <div>        <span className="text-purple-400">super</span>(MultiHeadAttention, self).__init__()</div>
-                                                <div>        self.num_heads = num_heads</div>
-                                                <div>        self.d_model = d_model</div>
+                                                <div>    <span className="text-blue-400">def</span> <span className="text-blue-300">__init__</span>(<span className="text-orange-300">self</span>, d_model, num_heads):</div>
+                                                <div>        <span className="text-purple-400">super</span>(<span className="text-teal-300">MultiHeadAttention</span>, <span className="text-orange-300">self</span>).<span className="text-blue-300">__init__</span>()</div>
+                                                <div>        <span className="text-orange-300">self</span>.num_heads = num_heads</div>
+                                                <div>        <span className="text-orange-300">self</span>.d_model = d_model</div>
                                             </code>
                                          </pre>
                                      </div>
