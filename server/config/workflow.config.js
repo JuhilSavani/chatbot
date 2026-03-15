@@ -63,10 +63,26 @@ async function callAgent(state, config) {
   const userProfileContext = userProfile.static.length ? userProfile.static.map((f) => `- ${f}`).join("\n") : "No long-term profile yet.";
   const crossSessionContext = userProfile.dynamic.length ? userProfile.dynamic.map((c) => `- ${c}`).join("\n") : "No recent context.";
 
+  const hasDocuments = config.configurable?.hasDocuments === true;
+  const relevantDocs = config.configurable?.relevantDocuments || [];
+
+  // Documents section — placed FIRST for highest priority
+  const documentContext = relevantDocs.length > 0 ? `
+## Referenced Documents (THIS conversation — HIGHEST PRIORITY)
+The user has uploaded the following documents in THIS conversation. When the user refers to "the document", "the pdf", "the file", "this paper", or "attached", they ALWAYS mean the documents listed here.
+Use the content below to answer their questions accurately. NEVER confuse these with documents mentioned in User Context & Memory.
+
+${relevantDocs.map(doc => `### Document: ${doc.name}\n${doc.content}`).join("\n\n")}
+` : (hasDocuments ? `
+## Note on Uploaded Documents
+The user has uploaded documents in this conversation, but none were selected as relevant to this specific query. If the user asks about "the document" or "the pdf", let them know you can help — just ask them to clarify what they'd like to know.
+` : "");
+
+  // Memory section — placed AFTER documents, with explicit scoping
   const personalizedContext = `
-## User Context & Memory
-You have access to the user's profile and recent history. 
-Use this to personalize your responses and avoid asking for information you already know.
+## User Context & Memory (from past conversations — LOWER PRIORITY than Referenced Documents)
+This is background context from the user's past conversations. Use it to personalize responses.
+IMPORTANT: Do NOT treat any document or file references in this section as documents uploaded in the current conversation. Only the "Referenced Documents" section above contains documents from this chat.
  
 ### User Profile (Long-term facts)
 ${userProfileContext}
@@ -74,13 +90,6 @@ ${userProfileContext}
 ### Recent Context (Dynamic history)
 ${crossSessionContext}
 `;
-
-  const documentContext = config.configurable?.relevantDocuments?.length > 0 ? `
-## Referenced Documents
-The user has uploaded documents in this conversation. Use the content below to answer their questions accurately.
-
-${config.configurable.relevantDocuments.map(doc => `### Document: ${doc.name}\n${doc.content}`).join("\n\n")}
-` : "";
 
   if (shouldForceSearch) {
     // 🔴 FORCE MODE
@@ -105,8 +114,8 @@ Today's date is ${new Date().toDateString()}.
 You must use the search tool to answer the user's request. 
 Generate the best search query for it.
 Always cite your sources if the search tool provides links.
-${personalizedContext}
 ${documentContext}
+${personalizedContext}
 `,
     };
   } else {
@@ -124,8 +133,8 @@ Today's date is ${new Date().toDateString()}.
 If a user asks about current events, specific data you don't know, or 
 information from 2025-2026, use the search tool to provide accurate info.
 Always cite your sources if the search tool provides links.
-${personalizedContext}
 ${documentContext}
+${personalizedContext}
 `,
     };
   }

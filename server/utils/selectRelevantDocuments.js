@@ -42,7 +42,12 @@ ${docList}
 ## Current Query
 ${query}
 
-Return the public_ids of ALL documents that are relevant to answering this query. If none are relevant, return an empty array. When in doubt, include the document.`;
+## Rules
+- You MUST select at least one document. Only omit a document if you are absolutely certain it is completely unrelated to the query.
+- If the user refers to "the document", "the pdf", "the file", "this paper", "attached", or any similar phrasing, select ALL documents.
+- Never return an empty array. The user uploaded these documents for a reason — when in doubt, include everything.
+
+Return the public_ids of the selected documents.`;
 
   try {
     const result = await structuredModel.invoke(prompt);

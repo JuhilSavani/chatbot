@@ -315,6 +315,7 @@ export const chatWithModelStream = async (req, res) => {
         webSearch,          // Pass tools forcing here (boolean)
         userProfile,        // Pass profile here
         relevantDocuments,  // Pass relevant documents here
+        hasDocuments: attachmentRecord.length > 0, // Flag: does this thread have any uploads?
       },
       version: "v2",
     });
