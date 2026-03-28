@@ -1,7 +1,7 @@
 import express from "express";
 import cors from "cors";
 import cookieParser from "cookie-parser";
-import { connectPostgres, createPersistenceTables } from "./config/sequelize.config.js";
+import { connectPostgres } from "./config/sequelize.config.js";
 import { authenticateJWT, configPassport } from "./config/passport.config.js";
 import authorizeRoutes from "./routes/authorize.routes.js";
 import chatRoutes from "./routes/chat.routes.js";
@@ -17,7 +17,6 @@ const CLIENT_APP_ORIGIN_URL = process.env.CLIENT_APP_ORIGIN_URL || "http://local
 
 // Configs
 connectPostgres();
-createPersistenceTables();
 configPassport();
 
 // Middlewares
