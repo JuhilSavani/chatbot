@@ -9,14 +9,25 @@ export const sequelize = new Sequelize(
   SUPABASE_PG_URI,
   {
     dialect: "postgres",
-    pool: { max: 20, min: 2, acquire: 30000, idle: 2000, maxUses: 7500 },
+    /* SERVERLESS POOL STRATEGY: 
+       We use a very small pool because each Vercel instance 
+       only handles ONE request at a time.
+    */
+   pool: { 
+      max: 1,       // One instance = One connection. Simple.
+      min: 0,       // Don't keep connections open if the function is idle.
+      idle: 0,      // Release the connection to Supavisor immediately after the request ends.
+      acquire: 5000 // If we can't get a connection in 5s, fail (don't hang).
+    },
     dialectOptions: {
-      ssl: IS_PROD ? {
+      ssl: {
         require: true,             // force SSL usage
         rejectUnauthorized: false, // skip cert validation
-      } : false,
+      },
+      prepareThreshold: 0, // CRITICAL for Supavisor Transaction Mode:
     },
-    logging: IS_PROD ? false : console.log, // show queries in dev
+    // logging: IS_PROD ? false : console.log, // show queries in dev
+    logging: false
   }
 );
 
@@ -35,20 +46,12 @@ export const connectPostgres = async () => {
 };
 
 export const pgPool = new Pool({
-  // --- Connection String ---
   connectionString: SUPABASE_PG_URI,
-
-  // --- Pool Sizing ---
-  min: 2,
-  max: 20, 
-
-  // --- Timeouts ---
-  connectionTimeoutMillis: 2000,   // 2 sec
-  idleTimeoutMillis: 30000,   // 30 sec
-  
-  // --- Security & Maintenance ---
-  ssl: IS_PROD ? { rejectUnauthorized: false } : false,
-  maxUses: 7500 
+  max: 1, // Again, one is enough per Lambda instance
+  ssl: { rejectUnauthorized: false },
+  // Let Supavisor handle the "staying alive" part, not your code.
+  idleTimeoutMillis: 1000, 
+  connectionTimeoutMillis: 5000,
 });
 
 export const checkpointer = new PostgresSaver(pgPool);
