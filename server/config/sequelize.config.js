@@ -55,14 +55,3 @@ export const pgPool = new Pool({
 });
 
 export const checkpointer = new PostgresSaver(pgPool);
-
-export async function createPersistenceTables() {
-  try {
-    // This creates the 'checkpoints' and 'writes' tables if they are missing.
-    // It uses "CREATE TABLE IF NOT EXISTS", so it is safe to run on every restart.
-    await checkpointer.setup();
-    console.log("✅ Supabase persistence tables ready.");
-  } catch (error) {
-    console.error("❌ Failed to setup persistence tables:", error.message);
-  }
-}

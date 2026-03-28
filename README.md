@@ -61,19 +61,26 @@ Setting up Sidekick takes just a few minutes:
     SUPERMEMORY_API_KEY=[YOUR_SUPERMEMORY_API_KEY]
     ```
 
-4. **Start the server application:**
+4. **Set up the persistence tables (one-time only):** <br/>
+    Before starting the server for the first time, run this script to create the LangGraph persistence tables (`checkpoints` and `writes`) in your Supabase database:
+    ```bash
+    node --env-file=.env scripts/createPersistenceTables.js
+    ```
+    > You only need to do this once. It's safe to re-run — it uses `CREATE TABLE IF NOT EXISTS`.
+
+5. **Start the server application:**
     ```bash
     npm run dev
     ```
 
-5. **Set up the client application:** <br/>
+6. **Set up the client application:** <br/>
     Open a new terminal window:
     ```bash
     cd client
     npm install
     ```
     
-4. **Configure your client environment:** <br/>
+7. **Configure your client environment:** <br/>
     Create a `.env` file in the `client` folder. You can copy the structure from `.env.example`:
     ```env
     # Google OAuth
@@ -82,7 +89,7 @@ Setting up Sidekick takes just a few minutes:
     VITE_GOOGLE_REDIRECT_URI=http://localhost:4000/api/authorize/google/callback
     ```
     
-6. **Start the client application:**
+8. **Start the client application:**
     ```bash
     npm run dev
     ```
@@ -191,7 +198,7 @@ To avoid hitting context limits and **prevent oversized PDFs from piling up in C
   This kept the main bundle light and the UI responsive. The app now silently validates the 32k token limit in the background, uploading the PDF only if once the token gating is complete and the context is safe.
 
 ### 10. The Document Ingestion Timeout Problem
-I initially tried to handle PDF extraction directly inside the chat stream. **Big mistake.** I quickly realized that fetching a raw PDF, generating signed Cloudinary URLs, and running `unpdf` was too much "heavy lifting" for a streming request. Because of this, large PDFs would often cause the streamed HTTP connection to time out before the LLM even had a chance to start streaming its first token.
+I initially tried to handle PDF extraction directly inside the chat stream. **Big mistake.** I quickly realized that fetching a raw PDF, generating signed Cloudinary URLs, and running `unpdf` was too much "heavy lifting" for a streaming request. Because of this, large PDFs would often cause the streamed HTTP connection to time out before the LLM even had a chance to start streaming its first token.
 
 To fix this, I figured out a way that **splits the operation into two** distinct requests. Now, the frontend hits an `/api/ingest` endpoint first to handle the "heavy lifting"—loading documents, extracting the text and saving it to the database—before sending back a "ready" signal.
 
