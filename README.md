@@ -198,7 +198,7 @@ To avoid hitting context limits and **prevent oversized PDFs from piling up in C
   This kept the main bundle light and the UI responsive. The app now silently validates the 32k token limit in the background, uploading the PDF only if once the token gating is complete and the context is safe.
 
 ### 10. The Document Ingestion Timeout Problem
-I initially tried to handle PDF extraction directly inside the chat stream. **Big mistake.** I quickly realized that fetching a raw PDF, generating signed Cloudinary URLs, and running `unpdf` was too much "heavy lifting" for a streaming request. Because of this, large PDFs would often cause the streamed HTTP connection to time out before the LLM even had a chance to start streaming its first token.
+I initially tried to handle PDF extraction directly inside the chat stream. **Big mistake.** I quickly realized that fetching a raw PDF, generating signed Cloudinary URLs, and running `unpdf` was too much "heavy lifting" for a streaming request. Because the chatbot is deployed as a serverless function, the gateway has a hard response-initiation window — if nothing is written to the stream within that window, it kills the connection entirely. Meaning, large PDFs could cause the stream to time out before the LLM even had a chance to start streaming its first token.
 
 To fix this, I figured out a way that **splits the operation into two** distinct requests. Now, the frontend hits an `/api/ingest` endpoint first to handle the "heavy lifting"—loading documents, extracting the text and saving it to the database—before sending back a "ready" signal.
 
