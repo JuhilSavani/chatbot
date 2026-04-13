@@ -13,6 +13,10 @@ node_modules
 dist
 dist-ssr
 *.local
+TODOS.md
+notes/*
+landing_previews/*
+.agents/*
 
 # Editor directories and files
 .vscode/*
