@@ -11,8 +11,16 @@ import axios from "../axios";
  * @returns {Promise<{secure_url, public_id, ...}>} Cloudinary response
  */
 export async function uploadPdfToCloudinary(file) {
-  // 1. Get signature from our backend
-  const { data: signData } = await axios.post("/upload/sign");
+  let signData;
+  try {
+    const response = await axios.post("/upload/sign");
+    signData = response.data;
+  } catch (error) {
+    if (error.response && error.response.status === 429) {
+      throw new Error(error.response.data?.message || "Monthly free limit reached.");
+    }
+    throw error;
+  }
   const { signature, timestamp, folder, apiKey, cloudName } = signData;
 
   // 2. Build FormData for Cloudinary's upload API

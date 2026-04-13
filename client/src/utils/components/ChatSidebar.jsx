@@ -71,6 +71,7 @@ export default function ChatSidebar({ threads = [], isLoading = false, setThread
   const [threadToDelete, setThreadToDelete] = useState(null)
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
+  const [isLogoutDialogOpen, setIsLogoutDialogOpen] = useState(false)
 
   const confirmDelete = async () => {
     if (!threadToDelete) return
@@ -290,7 +291,7 @@ export default function ChatSidebar({ threads = [], isLoading = false, setThread
             <Button
               variant="ghost"
               size="icon"
-              onClick={logout}
+              onClick={() => setIsLogoutDialogOpen(true)}
               disabled={logoutLoading}
               className="h-8 w-8 text-[#a1a1aa] hover:text-red-400 hover:bg-white/5"
               title="Logout"
@@ -320,6 +321,30 @@ export default function ChatSidebar({ threads = [], isLoading = false, setThread
             className="bg-gray-300 hover:bg-gray-200 text-zinc-800 border-none"
           >
             {isDeleting ? "Deleting..." : "Delete"}
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+
+    <AlertDialog open={isLogoutDialogOpen} onOpenChange={setIsLogoutDialogOpen}>
+      <AlertDialogContent className="bg-[#09090b] border-white/10 text-[#fafafa] sm:rounded-2xl shadow-2xl">
+        <AlertDialogHeader>
+          <AlertDialogTitle>Confirm Logout</AlertDialogTitle>
+          <AlertDialogDescription className="text-[#a1a1aa]">
+            Are you sure you want to log out of your account?
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel className="bg-transparent border-white/10 hover:bg-white/5 hover:text-[#fafafa] text-[#fafafa]">Cancel</AlertDialogCancel>
+          <AlertDialogAction 
+            onClick={() => {
+              setIsLogoutDialogOpen(false);
+              logout();
+            }}
+            disabled={logoutLoading}
+            className="bg-gray-300 hover:bg-gray-200 text-zinc-800 border-none"
+          >
+            {logoutLoading ? "Logging out..." : "Logout"}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>

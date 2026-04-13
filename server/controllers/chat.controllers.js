@@ -111,6 +111,7 @@ export const chatWithModel = async (req, res) => {
     res.json({ 
       threadName: thread.title,
       response: lastMessage.content,
+      usage: req.ratelimit || null,
     });
 
     // 7. Store interaction in Supermemory (Fire & Forget)
@@ -122,6 +123,9 @@ export const chatWithModel = async (req, res) => {
 
   } catch (error) {
     console.error("Error in chat endpoint:", error.stack);
+    if (error.status === 401 || (error.message && error.message.includes('401'))) {
+      return res.status(503).json({ message: "Our AI systems are currently under high load. Please try again in a few moments." });
+    }
     res.status(500).json({ message: "Internal Server Error" });
   }
 }
@@ -236,6 +240,15 @@ export const chatWithModelStream = async (req, res) => {
   res.on('close', () => {
     controller.abort();
   });
+
+  // Immediately stream an event payload with initialized status and usage remaining
+  const initResponse = {
+    type: 'run_init',
+    payload: { 
+      usage: req.ratelimit || null
+    }
+  };
+  res.write(`data: ${JSON.stringify(initResponse)}\n\n`);
 
   let fullResponse = "";
 
@@ -382,9 +395,15 @@ export const chatWithModelStream = async (req, res) => {
       return; // Exit cleanly
     }
     console.error("Stream Error:", error.stack);
+    
+    let userFriendlyError = "An internal server error occurred during generation.";
+    if (error.status === 401 || (error.message && error.message.includes('401'))) {
+      userFriendlyError = "Our AI systems are currently under high load. Please try again in a few moments.";
+    }
+
     res.write(`data: ${JSON.stringify({ 
       type: "error", 
-      val: "An internal server error occurred during generation." 
+      val: userFriendlyError 
     })}\n\n`);
   } finally {
     // 9. Signal end of stream

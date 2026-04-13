@@ -83,7 +83,8 @@ export const login = async (req, res) => {
         email: user.email,
         roles: user.roles,
         createdAt: user.createdAt
-      }, 
+      },
+      exp: data.session.expires_at
     }); 
   } catch (error) {
     console.error(error.stack);

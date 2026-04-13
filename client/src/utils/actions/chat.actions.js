@@ -53,6 +53,9 @@ export async function loadChatHistoryAction(threadId, signal) {
     // We must RE-THROW this so the useEffect knows to ignore it.
     if (axios.isCancel(error)) throw error; 
 
+    if (error.response && error.response.status === 403) {
+      return { error: "This conversation is private or it belongs to another account. You don't have access to view it." };
+    }
     console.error("Load History Error:", error);
     return handleAxiosError(error, "Failed to load chat history!");
   }
@@ -140,8 +143,17 @@ export function streamChatAction({ threadId, message, webSearch }) {
         signal: controller.signal,
       });
 
-      
-      if (!response.ok) throw new Error(`Request failed! status: ${response.status}`);
+      if (!response.ok) {
+        if (response.status === 429) {
+          const resetHeader = response.headers.get("X-RateLimit-Reset");
+          const errorData = await response.json().catch(() => ({}));
+          const err = new Error(errorData.error || "Monthly free limit reached. 0 usages remaining.");
+          err.isLimit = true;
+          err.reset = resetHeader ? parseInt(resetHeader) : Date.now() + 2592000000;
+          throw err;
+        }
+        throw new Error(`Request failed! status: ${response.status}`);
+      }
       if (!response.body) throw new Error("No response body received");
 
       // 2. The Transformer (SSE Parser)
@@ -184,7 +196,12 @@ export function streamChatAction({ threadId, message, webSearch }) {
     } catch (error) {
       if (error.name !== 'AbortError') {
         // Yield error so the UI can display it
-        yield { type: 'error', val: error.message || "Network error" };
+        yield { 
+          type: 'error', 
+          val: error.message || "Network error",
+          isLimit: error.isLimit,
+          reset: error.reset 
+        };
       }
     }
   }
@@ -202,7 +219,7 @@ function handleAxiosError(error, defaultMessage) {
   if (error.response) {
     // Server responded with a status code that falls out of the range of 2xx
     // We prioritize the server's specific error message if it exists
-    const serverMessage = error.response.data?.message;
+    const serverMessage = error.response.data?.message || error.response.data?.error;
     return { error: serverMessage || defaultMessage };
   } 
   

@@ -24,17 +24,19 @@ router.get("/threads", loadChatThreads);
  */
 router.get("/:threadId", loadChatHistory);
 
+import { chatQueryRateLimiter } from "../middlewares/rateLimiter.middlewares.js";
+
 /**
  * @route   POST /api/chat/message
  * @desc    Send a message to the AI model within a specific thread
  */
-router.post("/message", chatWithModel);
+router.post("/message", chatQueryRateLimiter, chatWithModel);
 
 /**
  * @route   POST /api/chat/stream
  * @desc    Stream a response from the AI model token-by-token via SSE
  */
-router.post("/stream", chatWithModelStream);
+router.post("/stream", chatQueryRateLimiter, chatWithModelStream);
 
 /**
  * @route   POST /api/chat/ingest

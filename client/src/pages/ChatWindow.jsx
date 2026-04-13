@@ -7,6 +7,7 @@ import ChatInput from '@/utils/components/ChatInput'
 import ChatSidebar from '@/utils/components/ChatSidebar'
 import { useAuth } from '@/utils/hooks/useAuth'
 import { loadChatHistoryAction, loadChatThreadsAction, streamChatAction, ingestDocumentsAction } from '@/utils/actions/chat.actions'
+import { getUsage, saveUsage } from '@/utils/indexedDB';
 import MarkdownRenderer from '@/utils/components/MarkdownRenderer';
 import ToolCall from '@/utils/components/ToolCall';
 import { parseToolInput, parseToolOutput } from '@/utils/toolParsing';
@@ -151,6 +152,13 @@ function MainContent({ setThreads }) {
   const [loadingChat, setLoadingChat] = useState(false)
   const [loadingResponse, setLoadingResponse] = useState(false)
   const [error, setError] = useState(null)
+  const [usage, setUsage] = useState(null)
+
+  useEffect(() => {
+    if (auth?.user?.id) {
+      getUsage(auth.user.id).then(data => { if (data) setUsage(data); });
+    }
+  }, [auth?.user?.id]);
 
   const currentChatThreadId = useRef(null);
   const abortRef = useRef(null)
@@ -264,6 +272,12 @@ function MainContent({ setThreads }) {
             content: { tool: event.tool, input: event.input, status: 'loading' }
           }]);
 
+        } else if (event.type === 'run_init') {
+          if (event.payload?.usage) {
+            setUsage(event.payload.usage);
+            if (auth?.user?.id) saveUsage(auth.user.id, event.payload.usage);
+          }
+
         } else if (event.type === 'tool_end') {
           // This code block is responsible for finding the specific "loading" tool bubble in chat history 
           // and updating it with the final results (the blue links).
@@ -292,6 +306,11 @@ function MainContent({ setThreads }) {
           });
 
         } else if (event.type === 'error') {
+          if (event.isLimit) {
+            const newUsage = { remaining: 0, reset: event.reset || Date.now() + 2592000000 };
+            setUsage(newUsage);
+            if (auth?.user?.id) saveUsage(auth.user.id, newUsage);
+          }
           setMessages(prev => [...prev, { role: 'error', content: event.val }]);
         } else if (event.type === 'threadName') {
            setThreads(prev => prev.map(t => t.threadId === activeThreadId ? { ...t, threadName: event.val } : t));
@@ -332,9 +351,32 @@ function MainContent({ setThreads }) {
             <SidebarInactiveIcon />
           </Button>
         </div>
-        <div className="flex items-center gap-4">
-          {(!isMobile && !open) && <span className="h-4 w-px bg-white/10 mr-2" />}
-          <span className="text-sm font-medium text-[#fafafa]">{isNewChat ? "New Conversation" : "Chat"}</span>
+        <div className="flex items-center justify-between w-full">
+          <div className="flex items-center gap-4">
+            {(!isMobile && !open) && <span className="h-4 w-px bg-white/10 mr-2" />}
+            <span className="text-sm font-medium text-[#fafafa]">{isNewChat ? "New Conversation" : "Chat"}</span>
+          </div>
+
+          {(() => {
+            const remaining = usage ? usage.remaining : 5;
+            const reset = usage?.reset;
+            const isLoaded = !!usage;
+            return (
+              <div className="flex flex-col items-end">
+                <div className={`flex items-center gap-2 px-3 py-1.5 bg-[#18181b]/80 border border-white/10 rounded-full`}>
+                  <div className={`w-2 h-2 rounded-full shadow-[0_0_8px] ${remaining > 0 ? "bg-green-500 shadow-green-500/50" : "bg-red-500 shadow-red-500/50"}`}></div>
+                  <span className="text-[12px] font-medium text-[#fafafa] whitespace-nowrap">
+                    {remaining} / 5 usages left
+                  </span>
+                </div>
+                {isLoaded && remaining === 0 && reset && (
+                  <div className="text-[10px] text-[#71717a] mt-1 px-2 whitespace-nowrap absolute top-12 right-6">
+                    Resets: {new Date(reset).toLocaleDateString()}
+                  </div>
+                )}
+              </div>
+            );
+          })()}
         </div>
       </header>
 
@@ -370,12 +412,24 @@ function MainContent({ setThreads }) {
 
       <div className="shrink-0 w-full p-2 md:p-4 bg-[#09090b] border-t border-white/5">
         <div className="max-w-4xl mx-auto">
-          <ChatInput 
-            threadId={currentChatThreadId} 
-            onMessageSent={handleMessageSent} 
-            loading={loadingResponse}
-            onStop={handleStop}
-          />
+          {usage && usage.remaining <= 0 ? (
+            <div className="flex flex-col items-center justify-center p-6 border border-red-500/20 bg-[#18181b] rounded-xl">
+              <h2 className="text-lg font-medium text-red-400 mb-1">Monthly Limit Reached</h2>
+              <p className="text-[#a1a1aa] text-sm text-center">
+                You've used your free queries for this month. Your limit will reset on{' '}
+                <span className="text-[#fafafa] font-medium">
+                  {new Date(usage.reset).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
+                </span>.
+              </p>
+            </div>
+          ) : (
+            <ChatInput 
+              threadId={currentChatThreadId} 
+              onMessageSent={handleMessageSent} 
+              loading={loadingResponse}
+              onStop={handleStop}
+            />
+          )}
         </div>
       </div>
     </SidebarInset>
