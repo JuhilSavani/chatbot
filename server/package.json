@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "nodemon --require dotenv/config index.js",
     "start": "node index.js",
+    "rateLimits:reset": "node scripts/resetUpstashRateLimits.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],

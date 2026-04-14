@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>System Reset | Sidekick AI</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #09090b;
+            --card-bg: #18181b;
+            --border: rgba(255, 255, 255, 0.1);
+            --text-primary: #fafafa;
+            --text-secondary: #a1a1aa;
+            --accent: #ffffff;
+            --danger: #ef4444;
+            --danger-hover: #dc2626;
+            --success: #22c55e;
+            --radius-base: 0.625rem;
+            --radius-2xl: 1.125rem;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', -apple-system, sans-serif;
+        }
+
+        ::selection {
+            background: rgba(255, 255, 255, 0.2);
+            color: #fff;
+        }
+
+        body {
+            background-color: var(--bg);
+            color: var(--text-primary);
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            background-image: 
+                radial-gradient(circle at 50% -20%, rgba(255,255,255,0.03) 0%, transparent 50%),
+                radial-gradient(circle at 0% 100%, rgba(255,255,255,0.01) 0%, transparent 30%);
+        }
+
+        .background-blob {
+            position: absolute;
+            width: 400px;
+            height: 400px;
+            background: rgba(255, 255, 255, 0.02);
+            filter: blur(100px);
+            z-index: -1;
+            border-radius: 50%;
+        }
+
+        .blob-1 { top: -100px; right: -100px; }
+        .blob-2 { bottom: -100px; left: -100px; }
+
+        .card {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            padding: 2rem;
+            border-radius: var(--radius-2xl);
+            width: 100%;
+            max-width: 540px;
+            text-align: center;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+            animation: fadeIn 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .icon-wrapper {
+            width: 64px;
+            height: 64px;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-base);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 1.5rem;
+            transition: all 0.3s ease;
+        }
+
+        .card:hover .icon-wrapper {
+            border-color: rgba(255, 255, 255, 0.2);
+            transform: scale(1.05);
+        }
+
+        .icon {
+            width: 28px;
+            height: 28px;
+            color: var(--text-primary);
+        }
+
+        h1 {
+            font-size: 1.875rem;
+            font-weight: 700;
+            margin-bottom: 0.75rem;
+            letter-spacing: -0.025em;
+        }
+
+        p {
+            color: var(--text-secondary);
+            font-size: 0.9375rem;
+            line-height: 1.625;
+            margin-bottom: 2.5rem;
+        }
+
+        .button-group {
+            display: flex;
+            flex-direction: row;
+            gap: 0.75rem;
+        }
+
+        .btn {
+            height: 2.75rem;
+            flex: 1;
+            padding: 0 1.5rem;
+            border-radius: var(--radius-base);
+            font-size: 0.9375rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            border: 1px solid transparent;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+
+        .btn-primary {
+            background-color: var(--text-primary);
+            color: var(--bg);
+        }
+
+        .btn-primary:hover {
+            background-color: #e4e4e7; /* Zinc 200 - equivalent to subtle darkening of zinc 50 */
+        }
+
+        .btn-outline {
+            background-color: transparent;
+            border-color: var(--border);
+            color: var(--text-secondary);
+        }
+
+        .btn-outline:hover {
+            color: var(--text-primary);
+            background-color: rgba(255, 255, 255, 0.05);
+            border-color: rgba(255, 255, 255, 0.15);
+        }
+
+        #status {
+            margin-top: 1.5rem;
+            font-size: 0.8125rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            opacity: 0;
+            transform: translateY(10px);
+        }
+
+        #status.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .success { color: var(--success); }
+        .error { color: var(--danger); }
+        .warning { color: #fbbf24; }
+
+        /* Custom Meteor Effect for Status */
+        .loader {
+            width: 100%;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, #3b82f6, transparent);
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            transform: translateX(-100%);
+            display: none;
+        }
+
+        .loading .loader {
+            display: block;
+            animation: meteor 1.5s infinite linear;
+        }
+
+        @keyframes meteor {
+            from { transform: translateX(-100%); }
+            to { transform: translateX(100%); }
+        }
+    </style>
+</head>
+<body>
+    <div class="background-blob blob-1"></div>
+    <div class="background-blob blob-2"></div>
+
+    <div class="card" id="mainCard">
+        <div class="icon-wrapper">
+            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+                <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
+                <line x1="12" y1="22.08" x2="12" y2="12"></line>
+            </svg>
+        </div>
+        
+        <h1>System Reset</h1>
+        <p>This will wipe your local Rate Limit cache and session database. Only use this for troubleshooting or fresh testing cycles.</p>
+
+        <div class="button-group">
+            <button class="btn btn-outline" onclick="window.location.href='/chat'">Return to App</button>
+            <button class="btn btn-primary" id="resetBtn">Wipe Local Storage</button>
+        </div>
+
+        <div id="status"></div>
+        <div class="loader"></div>
+    </div>
+
+    <script>
+        const DB_NAME = 'ChatbotDB';
+        const btn = document.getElementById('resetBtn');
+        const status = document.getElementById('status');
+        const card = document.getElementById('mainCard');
+
+        btn.addEventListener('click', async () => {
+            // Disable button & Show state
+            btn.disabled = true;
+            status.textContent = "Processing System Purge...";
+            status.className = "visible";
+            card.classList.add('loading');
+
+            try {
+                // 1. Clear Standard Storages
+                localStorage.clear();
+                sessionStorage.clear();
+                
+                // 2. Clear All Cookies (Optional but thorough)
+                document.cookie.split(";").forEach(function(c) { 
+                    document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/"); 
+                });
+
+                // 3. Delete IndexedDB
+                const deleteRequest = indexedDB.deleteDatabase(DB_NAME);
+
+                deleteRequest.onerror = () => {
+                    showError("Reset encountered a standard error.");
+                };
+
+                deleteRequest.onsuccess = () => {
+                    setTimeout(() => {
+                        status.textContent = "System Purged Successfully";
+                        status.className = "visible success";
+                        card.classList.remove('loading');
+                        btn.textContent = "Refresh Required";
+                        btn.onclick = () => window.location.href = '/chat';
+                        btn.disabled = false;
+                    }, 1000);
+                };
+
+                deleteRequest.onblocked = () => {
+                   status.textContent = "Action Blocked: Close other tabs.";
+                   status.className = "visible warning";
+                   card.classList.remove('loading');
+                   btn.disabled = false;
+                };
+
+            } catch (e) {
+                showError("Fatal error during reset.");
+            }
+        });
+
+        function showError(msg) {
+            status.textContent = msg;
+            status.className = "visible error";
+            card.classList.remove('loading');
+            btn.disabled = false;
+        }
+    </script>
+</body>
+</html>
