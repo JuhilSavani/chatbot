@@ -197,7 +197,6 @@ export { Sidebar, SidebarContent, SidebarProvider, useSidebar }
 
 // Action functions - named exports
 export async function loadChatThreadsAction() { }
-export async function chatWithModelAction({ threadId, message }) { }
 
 // Contexts - mixed exports
 export const AuthContext = createContext(null)  // Named
@@ -212,16 +211,13 @@ export default AuthProvider                     // Default
 // chat.actions.js
 import axios from "../axios"
 
-export async function chatWithModelAction({ threadId, message }) {
+export async function loadChatThreadsAction() {
   try {
-    if (!message || !threadId) {
-      return handleAxiosError(null, "message and threadId required")
-    }
-    const response = await axios.post("/chat/message", { message, threadId })
-    return response.data
+    const response = await axios.get("/chat/threads");
+    return response.data; 
   } catch (error) {
-    console.error("Chat Action Error:", error)
-    return handleAxiosError(error, "Failed to send message!")
+    console.error("Load Threads Error:", error);
+    return handleAxiosError(error, "Failed to load chat threads!");
   }
 }
 
@@ -343,7 +339,6 @@ router.get("/me", authenticateJWT, (req, res) => {
 const router = express.Router()
 router.get("/threads", loadChatThreads)              // GET  /api/chat/threads
 router.get("/:threadId", loadChatHistory)            // GET  /api/chat/:threadId
-router.post("/message", chatWithModel)               // POST /api/chat/message
 router.post("/stream", chatWithModelStream)          // POST /api/chat/stream (SSE)
 router.put("/pin/:threadId/:action", setPinStatus)   // PUT  /api/chat/pin/:threadId/:action
 router.delete("/:threadId", deleteThread)            // DELETE /api/chat/:threadId
