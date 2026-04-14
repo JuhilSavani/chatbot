@@ -2,8 +2,6 @@
  * One-time database setup script.
  * Run this once before starting the server for the first time.
  *
- * Usage: node --env-file=.env scripts/setup-db.js
- *
  * What it does:
  * - Creates the LangGraph checkpointer persistence tables
  *   (`checkpoints` and `writes`) in your Supabase PostgreSQL database.
