@@ -193,7 +193,10 @@ function MainContent({ setThreads }) {
         }
       })
       .catch(err => {
-        if (err.name !== 'AbortError') setError('Failed to load history')
+        // Ignore both native AbortError and Axios CanceledError
+        if (err.name === 'AbortError' || err.name === 'CanceledError' || axios.isCancel(err)) return;
+        
+        setError(err.response?.data?.message || err.message || 'Failed to load history');
       })
       .finally(() => {
         if (!controller.signal.aborted) setLoadingChat(false)

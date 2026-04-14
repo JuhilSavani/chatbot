@@ -427,7 +427,10 @@ export const loadChatHistory = async (req, res) => {
 
     // Check whether the thread belongs to the user
     const thread = await Thread.findOne({ where: { threadId } });
-    if (!thread || thread.userId !== req.user.id) 
+    if (!thread) 
+      return res.status(404).json({ message: "This conversation does not exist. It may have been deleted." });
+
+    if (thread.userId !== req.user.id) 
       return res.status(403).json({ message: "Forbidden: You don't have access to this thread." });
 
     // Get the current state of the thread

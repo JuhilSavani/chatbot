@@ -53,9 +53,13 @@ export async function loadChatHistoryAction(threadId, signal) {
     // We must RE-THROW this so the useEffect knows to ignore it.
     if (axios.isCancel(error)) throw error; 
 
-    if (error.response && error.response.status === 403) {
-      return { error: "This conversation is private or it belongs to another account. You don't have access to view it." };
+    if (error.response) {
+      if (error.response.status === 403) 
+        return { error: "This conversation is private and belongs to another account. You don't have access to view it." };
+      if (error.response.status === 404) 
+        return { error: "This conversation does not exist. It may have been deleted or the URL is incorrect." };
     }
+    
     console.error("Load History Error:", error);
     return handleAxiosError(error, "Failed to load chat history!");
   }
