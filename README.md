@@ -59,12 +59,16 @@ Setting up Sidekick takes just a few minutes:
     TAVILY_API_KEY=[YOUR_TAVILY_KEY]
     GITHUB_TOKEN=[YOUR_GITHUB_TOKEN]
     SUPERMEMORY_API_KEY=[YOUR_SUPERMEMORY_API_KEY]
+    
+    # Upstash (Rate Limiting)
+    UPSTASH_REDIS_REST_URL=[YOUR_UPSTASH_REDIS_REST_URL]
+    UPSTASH_REDIS_REST_TOKEN=[YOUR_UPSTASH_REDIS_REST_TOKEN]
     ```
 
 4. **Set up the persistence tables (one-time only):** <br/>
     Before starting the server for the first time, run this script to create the LangGraph persistence tables (`checkpoints` and `writes`) in your Supabase database:
     ```bash
-    node --env-file=.env scripts/createPersistenceTables.js
+    npm run persistence:init
     ```
     > You only need to do this once. It's safe to re-run — it uses `CREATE TABLE IF NOT EXISTS`.
 
@@ -94,6 +98,17 @@ Setting up Sidekick takes just a few minutes:
     npm run dev
     ```
     **You're live!** Open [http://localhost:3000](http://localhost:3000) to see it in action.
+    
+---
+
+## 🛠️ Dev Tools
+
+### 1. Resetting Rate Limits
+Testing rate limits can be a pain without a way to reset them, so I've included a couple of utilities to make "fresh starts" easier:
+
+**Reset Server Limits:** Run `npm run rateLimits:reset` in the `server` folder to wipe the Upstash Redis cache and reset all user quotas.
+
+**Purge Local Data:** Navigate to `http://localhost:3000/reset-rate-limit-storage.html` in your browser. I built a dedicated "System Purge" page that wipes your local IndexedDB, cookies, and session storage in one click.
 
 ---
 
@@ -114,6 +129,9 @@ Setting up Sidekick takes just a few minutes:
 **Database:** Supabase / PostgreSQL (To keep track of all those chat sessions).
 
 **Auth:** Supabase Auth (Because life is too short to keep rebuilding sign-in and sign-up flows from scratch).
+
+**Rate Limiting:** Upstash Redis (Because the app is using free-teir GitHub API for LLM calls).
+
 
 ---
 
