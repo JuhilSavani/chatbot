@@ -4,6 +4,8 @@ import Register from "./pages/Register";
 import UnAuth from "./pages/UnAuth"
 import NotFound from "./pages/NotFound";
 import ChatWindow from "./pages/ChatWindow";
+import ForgotPassword from "./pages/ForgotPassword";
+import ResetPassword from "./pages/ResetPassword";
 import AuthProvider from "./utils/contexts/AuthProvider";
 import LandingPage from "./pages/LandingPage";
 import Loading from "./pages/Loading";
@@ -33,6 +35,8 @@ const router = createBrowserRouter(
         <Route index element={<LandingPage />} />
         <Route path="login" element={<Login />} />
         <Route path="register" element={<Register />} />
+        <Route path="forgot-password" element={<ForgotPassword />} />
+        <Route path="reset-password" element={<ResetPassword />} />
         
         {/* Protected Routes */}
         <Route 
