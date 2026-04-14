@@ -14,7 +14,7 @@ export const loadChatThreads = async (req, res) => {
   try {
     const userId = req.user?.id;
     if (!userId) 
-      return res.status(401).json({ message: "Unauthorized: User not authenticated" });
+      return res.status(401).json({ message: "User not authenticated" });
 
     const threads = await Thread.findAll({
       where: { userId },
@@ -40,102 +40,12 @@ export const loadChatThreads = async (req, res) => {
   }
 };
 
-export const chatWithModel = async (req, res) => {
-  try {
-    const { message, threadId } = req.body;
-    
-    // We are sure that user is authenticated because of the auth middleware
-    const userId = req.user.id;
-
-    if (!message || !threadId) 
-      return res.status(400).json({ message: "message and threadId are required" });
-
-    // 1. Define configuration for persistence
-    // Fetch User Profile from Supermemory
-    let userProfile = { static: [], dynamic: [] };
-    try {
-      const profileData = await supermemory.profile({ containerTag: userId });
-      if (profileData && profileData.profile) {
-        userProfile = {
-          static: profileData.profile.static || [],
-          dynamic: profileData.profile.dynamic || []
-        };
-      }
-    } catch (err) {
-      console.error("Failed to fetch user profile:", err.message);
-    }
-    
-    const config = { 
-      configurable: { 
-        thread_id: threadId,
-        userProfile
-      } 
-    };
-
-    // 2. Check if this is the first message (or if thread exists in DB)
-    // We'll trust our DB. If it's not in DB, it's effectively new for us.
-    let thread = await Thread.findOne({ where: { threadId } });
-    
-    // Create if not exists (handling the case where user starts a fresh chat)
-    const isNewThread = !thread;
-    if (isNewThread) {
-      thread = await Thread.create({
-        threadId,
-        userId
-      });
-    }
-
-    // 3. Check whether the thread belongs to the user
-    if(!isNewThread && thread.userId !== userId) 
-      return res.status(403).json({ message: "Forbidden: You don't have access to this thread." });
-
-    // Understand if it's the very first message by checking if the title is still the default
-    const isFirstMessage = isNewThread || thread.title === "Untitled Chat";
-
-    // 4. Run the graph
-    const inputs = { messages: [new HumanMessage(message)] };
-    const result = await workflow.invoke(inputs, config);
-
-    // 5. Extract the last AI response
-    const lastMessage = result.messages[result.messages.length - 1];
-
-    // 6. Update thread name if it's a new thread
-    if (isFirstMessage) {
-      thread.title = await generateThreadName(message, lastMessage.content);
-      await thread.save();
-    } else {
-      thread.changed('updatedAt', true); // Force update timestamp
-      await thread.save();
-    }
-
-    res.json({ 
-      threadName: thread.title,
-      response: lastMessage.content,
-      usage: req.ratelimit || null,
-    });
-
-    // 7. Store interaction in Supermemory (Fire & Forget)
-    const memoryContent = `User: ${message}\nAssistant: ${lastMessage.content}`;
-    await supermemory.add({
-      content: memoryContent,
-      containerTag: userId
-    }).catch(err => console.error("Failed to save memory:", err.message));
-
-  } catch (error) {
-    console.error("Error in chat endpoint:", error.stack);
-    if (error.status === 401 || (error.message && error.message.includes('401'))) {
-      return res.status(503).json({ message: "Our AI systems are currently under high load. Please try again in a few moments." });
-    }
-    res.status(500).json({ message: "Internal Server Error" });
-  }
-}
-
 export const ingestDocuments = async (req, res) => {
   const { threadId, attachments } = req.body;
   const userId = req.user.id;
 
   if (!threadId || !attachments || !Array.isArray(attachments)) {
-    return res.status(400).json({ message: "threadId and an array of attachments are required" });
+    return res.status(400).json({ message: "Provide threadId and an array of attachments to ingest" });
   }
 
   try {
@@ -148,7 +58,7 @@ export const ingestDocuments = async (req, res) => {
     }
 
     if (thread.userId !== userId) {
-      return res.status(403).json({ message: "Forbidden: You don't have access to this thread." });
+      return res.status(403).json({ message: "You don't have access to this conversation" });
     }
 
     // 2. Compute message index for these attachments
@@ -224,7 +134,7 @@ export const chatWithModelStream = async (req, res) => {
 
   // Validation
   if (!message || !threadId) {
-    return res.status(400).json({ message: "message and threadId are required" });
+    return res.status(400).json({ message: "Provide threadId and message to conversation" });
   }
 
   // 1. Set SSE Headers
@@ -262,7 +172,7 @@ export const chatWithModelStream = async (req, res) => {
     }
 
     if (!isNewThreadRecord && thread.userId !== userId) {
-      res.write(`data: ${JSON.stringify({ type: "error", val: "Forbidden: You don't have access to this thread." })}\n\n`);
+      res.write(`data: ${JSON.stringify({ type: "error", val: "You don't have access to this conversation" })}\n\n`);
       return; // Stop here! The 'finally' block below will take care of [DONE] and res.end()
     }
 
@@ -428,10 +338,10 @@ export const loadChatHistory = async (req, res) => {
     // Check whether the thread belongs to the user
     const thread = await Thread.findOne({ where: { threadId } });
     if (!thread) 
-      return res.status(404).json({ message: "This conversation does not exist. It may have been deleted." });
+      return res.status(404).json({ message: "This conversation not exist or may have been deleted" });
 
     if (thread.userId !== req.user.id) 
-      return res.status(403).json({ message: "Forbidden: You don't have access to this thread." });
+      return res.status(403).json({ message: "You don't have access to this conversation" });
 
     // Get the current state of the thread
     const state = await workflow.getState({ configurable: { thread_id: threadId } });
@@ -527,13 +437,13 @@ export const setPinStatus = async (req, res) => {
     const userId = req.user.id;
 
     if (!['pin', 'unpin'].includes(action)) {
-      return res.status(400).json({ message: "Invalid action. Use 'pin' or 'unpin'." });
+      return res.status(400).json({ message: "Invalid action. Use 'pin' or 'unpin'" });
     }
 
     const thread = await Thread.findOne({ where: { threadId, userId } });
 
     if (!thread) {
-      return res.status(404).json({ message: "Thread not found or unauthorized." });
+      return res.status(404).json({ message: "This conversation not exist or may have been deleted" });
     }
 
     thread.isPinned = (action === 'pin');
@@ -571,7 +481,7 @@ export const deleteThread = async (req, res) => {
 
     if (!thread) {
       await t.rollback();
-      return res.status(404).json({ message: "Thread not found or unauthorized." });
+      return res.status(404).json({ message: "This conversation not exist or may have been deleted" });
     }
 
     // 2. Clear LangGraph history tables

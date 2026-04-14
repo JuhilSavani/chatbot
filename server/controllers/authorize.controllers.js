@@ -10,7 +10,7 @@ export const register = async (req, res) => {
   const { username, email, password } = req.body;
   if (!username || !email || !password) 
     return res.status(400).json({
-      message: "Please provide all registration details.",
+      message: "Provide complete details to register",
     });
 
   try {    
@@ -19,7 +19,7 @@ export const register = async (req, res) => {
     });
 
     if (existingUser) 
-      return res.status(409).json({ message: "Username already taken." });
+      return res.status(409).json({ message: "Username already taken" });
 
     const { data, error } = await supabase.auth.signUp({ 
       email, 
@@ -50,7 +50,7 @@ export const login = async (req, res) => {
   const { username, password } = req.body;
   if (!username || !password)
     return res.status(400).json({
-      message: "Please, provide complete credentials to login.",
+      message: "Provide complete credentials to login",
     });
   try {
     const user = await User.findOne({
@@ -58,15 +58,15 @@ export const login = async (req, res) => {
     });
 
     if (!user) 
-      return res.status(404).json({ message: "User not found." });
+      return res.status(404).json({ message: "User not found" });
 
     const { data, error } = await supabase.auth.signInWithPassword({ email: user.email, password });
     
     if (error?.message === "Email not confirmed")
-      return res.status(401).json({ message: "Please verify your email first." });
+      return res.status(401).json({ message: "Verify your email address to login" });
 
     if (error || !data.session) 
-      return res.status(401).json({ message: "Invalid credentials." });
+      return res.status(401).json({ message: "Incorrect username or password" });
   
     res.cookie("authJwt", data.session.access_token, {
       httpOnly: true,
@@ -108,7 +108,7 @@ export const logout = (req, res) => {
 
 export const googleCallback = async (req, res) => {
   const code = req.query.code;
-  if (!code) return res.status(400).json({ message: "No code provided." });
+  if (!code) return res.status(400).json({ message: "Authorization Code is missing" });
 
   try {
     // 🔑 Exchange authorization code for Google tokens
