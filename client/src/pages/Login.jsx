@@ -22,7 +22,16 @@ function Login() {
   const from = location.state?.from?.pathname || "/chat";
 
   const usernameField = register("username", {
-    required: "Username is required"
+    required: "Username or email is required",
+    validate: (value) => {
+      if (!value.trim()) return true;
+      const isEmail = value.includes("@");
+      if (isEmail) {
+        const emailRegex = /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i;
+        return emailRegex.test(value) || "Invalid email address";
+      }
+      return true;
+    }
   });
 
   const passwordField = register("password", {
@@ -72,7 +81,7 @@ function Login() {
           <div className="glass-card rounded-xl p-8 shadow-2xl">
               <div className="text-center mb-6">
                   <h1 className="text-2xl font-bold tracking-tight">Welcome back</h1>
-                  <p className="text-sm text-[#a1a1aa] mt-2">Enter your username to sign in</p>
+                  <p className="text-sm text-[#a1a1aa] mt-2">Enter your username or email to sign in</p>
               </div>
 
               {loginError && (
@@ -84,13 +93,13 @@ function Login() {
 
               <form className="space-y-4" onSubmit={handleSubmit(onSubmit)} noValidate>
                   <div className="space-y-2">
-                      <label htmlFor="username" className="text-sm font-medium leading-none block">Username</label>
+                      <label htmlFor="username" className="text-sm font-medium leading-none block">Username or Email</label>
                       <input 
                         type="text" 
                         id="username" 
                         {...usernameField}
                         className="flex h-10 w-full rounded-md border border-[#27272a] bg-white/5 px-3 py-2 text-sm placeholder:text-[#a1a1aa] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#fafafa] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 transition-all hover:bg-white/10 ring-offset-[#09090b]" 
-                        placeholder="johndoe" 
+                        placeholder="username or email@example.com" 
                       />
                       {errors.username && <span className="text-xs text-red-500 block">{errors.username.message}</span>}
                   </div>
@@ -98,7 +107,7 @@ function Login() {
                   <div className="space-y-2">
                       <div className="flex items-center justify-between">
                           <label htmlFor="password" className="text-sm font-medium leading-none block">Password</label>
-                          <a href="#" className="text-xs text-[#a1a1aa] hover:text-[#fafafa] transition-colors">Forgot password?</a>
+                          <Link to="/forgot-password" className="text-xs text-[#a1a1aa] hover:text-[#fafafa] transition-colors">Forgot password?</Link>
                       </div>
                       <div className="relative">
                         <input 

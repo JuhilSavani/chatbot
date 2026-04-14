@@ -1,10 +1,24 @@
 import crypto from "crypto";
+import jwt from "jsonwebtoken";
+import jwksClient from "jwks-rsa";
 import { fn, col, where } from "sequelize";
 import { User } from "../models/user.models.js";
 import { supabase } from "../clients/supabase.clients.js";
 import { oauth2Client } from "../clients/googleoauth2.clients.js";
 
 const IS_PROD = process.env.NODE_ENV !== "development";
+
+const client = jwksClient({
+  jwksUri: `${process.env.SUPABASE_PROJECT_URL}/auth/v1/.well-known/jwks.json`,
+});
+
+const getKey = (header, callback) => {
+  client.getSigningKey(header.kid, (err, key) => {
+    if (err) return callback(err);
+    const signingKey = key.getPublicKey();
+    callback(null, signingKey);
+  });
+};
 
 export const register = async (req, res) => {
   const { username, email, password } = req.body;
@@ -53,8 +67,13 @@ export const login = async (req, res) => {
       message: "Provide complete credentials to login",
     });
   try {
+    const identifier = username.toLowerCase().trim();
+    const isEmail = identifier.includes("@");
+
     const user = await User.findOne({
-      where: where(fn("LOWER", col("username")), "=", username.toLowerCase()),
+      where: isEmail
+        ? where(fn("LOWER", col("email")), "=", identifier)
+        : where(fn("LOWER", col("username")), "=", identifier),
     });
 
     if (!user) 
@@ -155,5 +174,57 @@ export const googleCallback = async (req, res) => {
   } catch (error) {
     console.error(error.stack);
     res.status(500).json({ message: "Google sign-in failed. Please try again." });
+  }
+};
+
+export const forgotPassword = async (req, res) => {
+  const { email } = req.body;
+  if (!email) 
+    return res.status(400).json({ message: "Provide email address to reset password" });
+
+  try {
+    await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${process.env.CLIENT_APP_ORIGIN_URL || "http://localhost:3000"}/reset-password`,
+    });
+    return res.status(200).json({ message: `We have sent a password reset link at ${email}` });
+  } catch (error) {
+    console.error(error.stack);
+    return res.status(500).json({ message: "Failed to send password reset link" });
+  }
+};
+
+export const resetPassword = async (req, res) => {
+  const { access_token, new_password } = req.body;
+  if (!access_token || !new_password)
+    return res.status(400).json({ message: "Missing token or new password" });
+
+  try {
+    const decoded = await new Promise((resolve, reject) => {
+      jwt.verify(
+        access_token,
+        getKey,
+        { algorithms: ["ES256"] },
+        (err, decoded) => {
+          if (err) reject(err);
+          else resolve(decoded);
+        }
+      );
+    });
+
+    const userId = decoded.sub;
+    if (!userId) 
+      return res.status(401).json({ message: "Failed to reset password" });
+
+    const { error } = await supabase.auth.admin.updateUserById(userId, {
+      password: new_password,
+    });
+
+    if (error)
+      return res.status(400).json({ message: error.message || "Failed to reset password" });
+
+    return res.status(200).json({ message: "Password updated successfully" });
+  } catch (error) {
+    console.error("Token verification failed:", error);
+    return res.status(401).json({ message: "Invalid or expired token" });
   }
 };
