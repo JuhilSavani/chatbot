@@ -1,6 +1,6 @@
 # Agent Guidelines
 
-This document provides comprehensive guidelines for AI coding agents working on this codebase. Follow these patterns and conventions to produce consistent, high-quality code.
+> This document provides comprehensive guidelines for AI coding agents working on this codebase. Follow these patterns and conventions to produce consistent, high-quality code.
 
 ---
 
@@ -10,11 +10,10 @@ This is a **full-stack AI chatbot application** built as a monorepo with:
 
 - **Frontend**: React 19 + Vite 7 + TailwindCSS v4 + shadcn/ui
 - **Backend**: Express 5 + PostgreSQL (Supabase) + Sequelize ORM
-- **AI Engine**: LangGraph with OpenAI GPT-4o-mini (via GitHub Models API)
+- **Orchestration**: LangGraph with OpenAI GPT-4o-mini (via GitHub Models API)
 - **Authentication**: Supabase Auth + Passport.js JWT + HTTP-only cookies
 - **File Storage**: Cloudinary (signed uploads)
-
----
+- **Usage Limits**: Upstash Redis (monthly query & upload quotas)
 
 ## Project Structure
 
@@ -36,7 +35,9 @@ chatbot/
 │   │       ├── contexts/            # React contexts (AuthProvider)
 │   │       ├── hooks/               # Custom hooks (useAuth, useLogout)
 │   │       ├── workers/             # Web Workers (countTokensWorker.js)
-│   │       └── ...                  # Other utility files (axios.jsx, toolParsing.js)
+│   │       └── ...                  # Other utility files (axios.jsx, toolParsing.js, indexedDB.js)
+│   ├── public/
+│   │   └── reset-rate-limit-storage.html  # Dev utility to wipe local caches
 │   ├── package.json
 │   ├── vite.config.js
 │   ├── eslint.config.js
@@ -56,23 +57,26 @@ chatbot/
 │   │   ├── chat.routes.js           # Authenticated chat routes
 │   │   └── upload.routes.js         # Cloudinary upload signature route
 │   ├── controllers/
-│   │   ├── authorize.controllers.js # Auth logic
-│   │   ├── chat.controllers.js      # Chat/thread logic
-│   │   └── upload.controllers.js    # Cloudinary upload logic
+│   │   ├── authorize.controllers.js    # Auth logic
+│   │   ├── chat.controllers.js         # Chat/thread logic
+│   │   └── upload.controllers.js       # Cloudinary upload logic
+│   ├── middlewares/                 
+│   │   └── rateLimiter.middlewares.js  # Upstash Redis rate limiting
 │   ├── models/
-│   │   ├── user.models.js           # User Sequelize model
-│   │   └── thread.models.js         # Thread model + associations
+│   │   ├── user.models.js              # User Sequelize model
+│   │   └── thread.models.js            # Thread model + associations
 │   ├── clients/
-│   │   ├── supabase.clients.js      # Supabase admin client
-│   │   └── googleoauth2.clients.js  # Google OAuth client
-│   └── tools/                       # Tools for AI agent
+│   │   ├── supabase.clients.js         # Supabase admin client
+│   │   └── googleoauth2.clients.js     # Google OAuth client
+│   ├── scripts/                        # One-time setup and maintenance scripts
+│   │   ├── createPersistenceTables.js
+│   │   └── resetUpstashRateLimits.js
+│   └── tools/                          # Tools for AI agent
 │
 ├── .gitignore
-├── AGENTS.md                        # This file
+├── AGENTS.md                           # This file
 └── README.md
 ```
-
----
 
 ## Build and Test Commands
 
@@ -104,6 +108,10 @@ npm run dev              # Start with nodemon + dotenv (auto-reload)
 
 # Production
 npm run start            # Start production server
+
+# Utilities
+npm run persistence:init # Setup LangGraph persistence tables (checkpoints, writes)
+npm run rateLimits:reset # Reset Upstash Redis rate limit cache
 ```
 
 ### Quick Start (Full Stack)
@@ -142,9 +150,9 @@ CLOUDINARY_API_SECRET=
 GITHUB_TOKEN=
 TAVILY_API_KEY=
 SUPERMEMORY_API_KEY=
+UPSTASH_REDIS_REST_URL=
+UPSTASH_REDIS_REST_TOKEN=
 ```
-
----
 
 ## Frontend Code Guidelines
 
@@ -293,7 +301,6 @@ const CLIENT_APP_ORIGIN_URL = process.env.CLIENT_APP_ORIGIN_URL || "http://local
 
 // Configs
 connectPostgres()
-createPersistenceTables()
 configPassport()
 
 // Middlewares
@@ -376,17 +383,6 @@ export const loadChatThreads = async (req, res) => {
   }
 }
 ```
-
-### Error Response Conventions
-
-| Status | Use Case | Response |
-|--------|----------|----------|
-| 400 | Bad Request | `{ message: "Please provide all required fields." }` |
-| 401 | Unauthorized | `{ message: "Unauthorized", reason: "..." }` |
-| 403 | Forbidden | `{ message: "Forbidden: You don't have access." }` |
-| 404 | Not Found | `{ message: "Resource not found." }` |
-| 409 | Conflict | `{ message: "Username already taken." }` |
-| 500 | Server Error | `{ message: "Internal Server Error" }` |
 
 ### Sequelize Model Patterns
 
@@ -504,8 +500,6 @@ export const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY
 )
 ```
-
----
 
 ## Common Patterns Summary
 
