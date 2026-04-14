@@ -21,6 +21,19 @@ function Register() {
     minLength: {
       value: 3,
       message: "Username must be at least 3 characters long"
+    },
+    maxLength: {
+      value: 30,
+      message: "Username cannot exceed 20 characters"
+    },
+    pattern: {
+      value: /^[a-zA-Z0-9_]+$/,
+      message: "Username can only contain letters, numbers, and underscores"
+    },
+    validate: (value) => {
+      if (/__/.test(value))
+        return "Username cannot contain consecutive underscores";
+      return true;
     }
   });
 
