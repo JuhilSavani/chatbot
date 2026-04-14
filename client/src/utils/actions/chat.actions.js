@@ -14,28 +14,7 @@ export async function loadChatThreadsAction() {
   }
 }
 
-/**
- * Sends a message. 
- * REQUIRED: threadId (Server does not auto-generate thread IDs on POST)
- * Server returns: { threadId, threadName, response }
- */
-export async function chatWithModelAction({ threadId, message }) {
-  try {
-    if (!message || !threadId) {
-      return handleAxiosError(null, "Your request failed because no user input or thread ID was included.");
-    }
 
-    const response = await axios.post("/chat/message", { 
-      message, 
-      threadId 
-    });
-    
-    return response.data;
-  } catch (error) {
-    console.error("Chat Action Error:", error);
-    return handleAxiosError(error, "Failed to send message!");
-  }
-}
 
 /**
  * Loads history for a specific thread.

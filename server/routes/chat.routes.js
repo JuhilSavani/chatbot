@@ -1,7 +1,6 @@
 import express from "express";
 import { 
   loadChatThreads, 
-  chatWithModel, 
   chatWithModelStream,
   ingestDocuments,
   loadChatHistory,
@@ -26,11 +25,6 @@ router.get("/:threadId", loadChatHistory);
 
 import { chatQueryRateLimiter } from "../middlewares/rateLimiter.middlewares.js";
 
-/**
- * @route   POST /api/chat/message
- * @desc    Send a message to the AI model within a specific thread
- */
-router.post("/message", chatQueryRateLimiter, chatWithModel);
 
 /**
  * @route   POST /api/chat/stream
