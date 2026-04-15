@@ -1,9 +1,12 @@
-import { chatModel } from "../config/workflow.config.js";
+import { getChatModel } from "../config/workflow.config.js";
 import { HumanMessage } from "@langchain/core/messages";
 
 // Helper function to generate a thread name based on the first message
 export async function generateThreadName(userMessage, aiResponse) {
   try {
+    // Use default mini model for title generation
+    const titleModel = getChatModel("openai/gpt-4o-mini");
+
     // Option 1: Use a simple LLM call to generate a concise title
     const titlePrompt = `
       Based on this conversation, generate a short, descriptive title (max 6 words):
@@ -14,7 +17,7 @@ export async function generateThreadName(userMessage, aiResponse) {
       Generate only the title, nothing else.
     `;
 
-    const titleResult = await chatModel.invoke([ new HumanMessage(titlePrompt) ]);
+    const titleResult = await titleModel.invoke([ new HumanMessage(titlePrompt) ]);
 
     const title = titleResult.content
       .trim()

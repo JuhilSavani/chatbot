@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { chatModel } from "../config/workflow.config.js";
+import { getChatModel } from "../config/workflow.config.js";
 
 // Schema for structured output
 const DocumentSelectionSchema = z.object({
@@ -21,6 +21,8 @@ export async function selectRelevantDocuments(query, recentHistory, attachments)
     return [attachments[0].publicId];
   }
 
+  // Use default mini model for document selection
+  const chatModel = getChatModel("openai/gpt-4o-mini");
   const structuredModel = chatModel.withStructuredOutput(DocumentSelectionSchema);
 
   const historyText = recentHistory
