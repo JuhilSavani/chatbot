@@ -1,35 +1,32 @@
-import { Pool } from 'pg';
+import { Pool } from "pg";
 import { Sequelize } from "sequelize";
 import { PostgresSaver } from "@langchain/langgraph-checkpoint-postgres";
 
 const IS_PROD = process.env.NODE_ENV !== "development";
 const SUPABASE_PG_URI = process.env.SUPABASE_PG_URI;
 
-export const sequelize = new Sequelize(
-  SUPABASE_PG_URI,
-  {
-    dialect: "postgres",
-    /* SERVERLESS POOL STRATEGY: 
+export const sequelize = new Sequelize(SUPABASE_PG_URI, {
+  dialect: "postgres",
+  /* SERVERLESS POOL STRATEGY: 
        We use a very small pool because each Vercel instance 
        only handles ONE request at a time.
     */
-   pool: { 
-      max: 1,       // One instance = One connection. Simple.
-      min: 0,       // Don't keep connections open if the function is idle.
-      idle: 0,      // Release the connection to Supavisor immediately after the request ends.
-      acquire: 5000 // If we can't get a connection in 5s, fail (don't hang).
+  pool: {
+    max: 1, // One instance = One connection. Simple.
+    min: 0, // Don't keep connections open if the function is idle.
+    idle: 0, // Release the connection to Supavisor immediately after the request ends.
+    acquire: 5000, // If we can't get a connection in 5s, fail (don't hang).
+  },
+  dialectOptions: {
+    ssl: {
+      require: true, // force SSL usage
+      rejectUnauthorized: false, // skip cert validation
     },
-    dialectOptions: {
-      ssl: {
-        require: true,             // force SSL usage
-        rejectUnauthorized: false, // skip cert validation
-      },
-      prepareThreshold: 0, // CRITICAL for Supavisor Transaction Mode:
-    },
-    // logging: IS_PROD ? false : console.log, // show queries in dev
-    logging: false
-  }
-);
+    prepareThreshold: 0, // CRITICAL for Supavisor Transaction Mode:
+  },
+  // logging: IS_PROD ? false : console.log, // show queries in dev
+  logging: false,
+});
 
 export const connectPostgres = async () => {
   try {
@@ -50,8 +47,15 @@ export const pgPool = new Pool({
   max: 1, // Again, one is enough per Lambda instance
   ssl: { rejectUnauthorized: false },
   // Let Supavisor handle the "staying alive" part, not your code.
-  idleTimeoutMillis: 1000, 
+  idleTimeoutMillis: 1000,
   connectionTimeoutMillis: 5000,
+});
+
+pgPool.on("error", (error) => {
+  console.error("❌ Postgres pool error:", error.message);
+  console.error(
+    "The database connection dropped or timed out. Check SUPABASE_PG_URI, network access, and Supabase pooler status.",
+  );
 });
 
 export const checkpointer = new PostgresSaver(pgPool);
