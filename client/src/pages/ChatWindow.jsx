@@ -1,54 +1,98 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
-import { SidebarProvider, SidebarInset, useSidebar } from "@/components/ui/sidebar"
-import { ArrowRight, StopCircle, Copy, Check } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import ChatInput from '@/utils/components/ChatInput'
-import ChatSidebar from '@/utils/components/ChatSidebar'
-import { useAuth } from '@/utils/hooks/useAuth'
-import { loadChatHistoryAction, loadChatThreadsAction, streamChatAction, ingestDocumentsAction } from '@/utils/actions/chat.actions'
-import { getUsage, saveUsage } from '@/utils/indexedDB';
-import MarkdownRenderer from '@/utils/components/MarkdownRenderer';
-import ToolCall from '@/utils/components/ToolCall';
-import { parseToolInput, parseToolOutput } from '@/utils/toolParsing';
+import React, { useState, useEffect, useRef, useCallback } from "react";
+import { useParams, useNavigate } from "react-router-dom";
+import {
+  SidebarProvider,
+  SidebarInset,
+  useSidebar,
+} from "@/components/ui/sidebar";
+import { ArrowRight, StopCircle, Copy, Check } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import ChatInput from "@/utils/components/ChatInput";
+import ChatSidebar from "@/utils/components/ChatSidebar";
+import { useAuth } from "@/utils/hooks/useAuth";
+import {
+  loadChatHistoryAction,
+  loadChatThreadsAction,
+  streamChatAction,
+  ingestDocumentsAction,
+} from "@/utils/actions/chat.actions";
+import { getUsage, saveUsage } from "@/utils/indexedDB";
+import MarkdownRenderer from "@/utils/components/MarkdownRenderer";
+import ToolCall from "@/utils/components/ToolCall";
+import { parseToolInput, parseToolOutput } from "@/utils/toolParsing";
 
 const SidebarInactiveIcon = ({ className = "w-5 h-5" }) => (
-  <svg viewBox="0 0 20 20" fill="none" xmlns="[http://www.w3.org/2000/svg](http://www.w3.org/2000/svg)" className={className}>
-    <rect height="12" width="14" x="3" y="4" rx="3" ry="3" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
-    <line x1="8" y1="4" x2="8" y2="16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+  <svg
+    viewBox="0 0 20 20"
+    fill="none"
+    xmlns="[http://www.w3.org/2000/svg](http://www.w3.org/2000/svg)"
+    className={className}
+  >
+    <rect
+      height="12"
+      width="14"
+      x="3"
+      y="4"
+      rx="3"
+      ry="3"
+      fill="none"
+      stroke="currentColor"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth="2"
+    />
+    <line
+      x1="8"
+      y1="4"
+      x2="8"
+      y2="16"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
   </svg>
 );
 
 export default function ChatWindow() {
-  const { auth } = useAuth()
-  const [threads, setThreads] = useState([])
-  const [threadsLoading, setThreadsLoading] = useState(false)
+  const { auth } = useAuth();
+  const [threads, setThreads] = useState([]);
+  const [threadsLoading, setThreadsLoading] = useState(false);
 
   useEffect(() => {
     if (!auth.isAuthenticated) return;
     let mounted = true;
     (async () => {
-      setThreadsLoading(true)
+      setThreadsLoading(true);
       try {
-        const result = await loadChatThreadsAction()
+        const result = await loadChatThreadsAction();
         if (mounted && !result.error) {
-          setThreads(result.threads || [])
+          setThreads(result.threads || []);
         }
       } catch (error) {
-        console.error('Error loading threads:', error)
+        console.error("Error loading threads:", error);
       } finally {
-        if (mounted) setThreadsLoading(false)
+        if (mounted) setThreadsLoading(false);
       }
     })();
-    return () => { mounted = false; }
-  }, [auth.isAuthenticated])
+    return () => {
+      mounted = false;
+    };
+  }, [auth.isAuthenticated]);
 
   return (
-    <SidebarProvider style={{"--sidebar-width": "18rem"}} className="bg-[#09090b] text-[#fafafa] overflow-hidden">
-      <ChatSidebar threads={threads} isLoading={threadsLoading} setThreads={setThreads} />
+    <SidebarProvider
+      style={{ "--sidebar-width": "18rem" }}
+      className="bg-[#09090b] text-[#fafafa] overflow-hidden"
+    >
+      <ChatSidebar
+        threads={threads}
+        isLoading={threadsLoading}
+        setThreads={setThreads}
+      />
       <MainContent setThreads={setThreads} />
     </SidebarProvider>
-  )
+  );
 }
 
 const ChatMessage = React.memo(({ message }) => {
@@ -75,19 +119,26 @@ const ChatMessage = React.memo(({ message }) => {
   }
 
   // 3. Handle Tool Calls
-  if (message.role === 'tool_call') {
+  if (message.role === "tool_call") {
     const { tool, input, output, status } = message.content;
-    const parsedInput = parseToolInput(input);
+    const parsedInput = parseToolInput(tool, input);
     const parsedOutput = parseToolOutput(tool, output);
 
-    return <ToolCall tool={tool} input={parsedInput} output={parsedOutput} status={status} />;
+    return (
+      <ToolCall
+        tool={tool}
+        input={parsedInput}
+        output={parsedOutput}
+        status={status}
+      />
+    );
   }
 
   // 4. Handle Standard Messages
   if (!message.content) return null;
-  
-  const isUser = message.role === 'user';
-  const isError = message.role === 'error';
+
+  const isUser = message.role === "user";
+  const isError = message.role === "error";
 
   const handleCopy = () => {
     navigator.clipboard.writeText(message.content);
@@ -96,17 +147,26 @@ const ChatMessage = React.memo(({ message }) => {
   };
 
   return (
-    <div className={`mb-6 flex flex-col relative group ${isUser ? 'items-end' : 'items-start w-full'}`}>
-      
+    <div
+      className={`mb-6 flex flex-col relative group ${isUser ? "items-end" : "items-start w-full"}`}
+    >
       {/* PDF Attachments */}
       {isUser && message.attachments?.length > 0 && (
         <div className="flex flex-wrap gap-2 mb-2 justify-end max-w-[95%] md:max-w-[80%]">
           {message.attachments.map((name, i) => (
-            <div 
-              key={i} 
+            <div
+              key={i}
               className="flex items-center gap-2 text-sm px-3 py-1.5 rounded-lg border bg-white/10 border-white/10 text-white"
             >
-              <svg className="w-4 h-4 text-blue-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <svg
+                className="w-4 h-4 text-blue-400"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
                 <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z" />
                 <polyline points="14 2 14 8 20 8" />
                 <line x1="16" y1="13" x2="8" y2="13" />
@@ -120,19 +180,31 @@ const ChatMessage = React.memo(({ message }) => {
       )}
 
       {/* Message Bubble */}
-      <div className={`p-4 rounded-2xl ${isUser ? 'bg-white/10 max-w-[95%] md:max-w-[80%] w-fit border border-white/5 text-[#fafafa]' : 'bg-transparent w-full px-2'}`}>
-        <div className={isUser ? 'text-[#fafafa]' : 'text-[#fafafa] w-full'}>
-          {isUser ? message.content : isError ? <span className="text-red-400">{message.content}</span> : <MarkdownRenderer content={message.content} />}
+      <div
+        className={`p-4 rounded-2xl ${isUser ? "bg-white/10 max-w-[95%] md:max-w-[80%] w-fit border border-white/5 text-[#fafafa]" : "bg-transparent w-full px-2"}`}
+      >
+        <div className={isUser ? "text-[#fafafa]" : "text-[#fafafa] w-full"}>
+          {isUser ? (
+            message.content
+          ) : isError ? (
+            <span className="text-red-400">{message.content}</span>
+          ) : (
+            <MarkdownRenderer content={message.content} />
+          )}
         </div>
 
         {!isUser && !isError && (
           <div className="mt-2 flex items-center justify-start">
-            <button 
+            <button
               onClick={handleCopy}
               className="flex items-center gap-1.5 p-1.5 rounded-md text-[#a1a1aa] hover:text-[#fafafa] hover:bg-white/5 transition-colors text-xs"
               title="Copy response"
             >
-              {copied ? <Check className="w-3.5 h-3.5 text-green-400" /> : <Copy className="w-3.5 h-3.5" />}
+              {copied ? (
+                <Check className="w-3.5 h-3.5 text-green-400" />
+              ) : (
+                <Copy className="w-3.5 h-3.5" />
+              )}
               <span>Copy</span>
             </button>
           </div>
@@ -143,82 +215,90 @@ const ChatMessage = React.memo(({ message }) => {
 });
 
 function MainContent({ setThreads }) {
-  const { open, toggleSidebar, isMobile } = useSidebar()
-  const { threadId } = useParams()
-  const navigate = useNavigate()
-  const { auth } = useAuth()
+  const { open, toggleSidebar, isMobile } = useSidebar();
+  const { threadId } = useParams();
+  const navigate = useNavigate();
+  const { auth } = useAuth();
 
-  const [messages, setMessages] = useState([])
-  const [loadingChat, setLoadingChat] = useState(false)
-  const [loadingResponse, setLoadingResponse] = useState(false)
-  const [error, setError] = useState(null)
-  const [usage, setUsage] = useState(null)
+  const [messages, setMessages] = useState([]);
+  const [loadingChat, setLoadingChat] = useState(false);
+  const [loadingResponse, setLoadingResponse] = useState(false);
+  const [error, setError] = useState(null);
+  const [usage, setUsage] = useState(null);
 
   useEffect(() => {
     if (auth?.user?.id) {
-      getUsage(auth.user.id).then(data => { if (data) setUsage(data); });
+      getUsage(auth.user.id).then((data) => {
+        if (data) setUsage(data);
+      });
     }
   }, [auth?.user?.id]);
 
   const currentChatThreadId = useRef(null);
-  const abortRef = useRef(null)
-  const messagesEndRef = useRef(null)
+  const abortRef = useRef(null);
+  const messagesEndRef = useRef(null);
 
   // LOAD HISTORY EFFECT
   useEffect(() => {
     // Case A: New Chat Page (No ID) -> Clear screen
     if (!threadId) {
-      setMessages([])
-      return
+      setMessages([]);
+      return;
     }
-    
+
     // Case B: We just created this thread locally -> SKIP FETCH
     if (currentChatThreadId.current === threadId) {
-      currentChatThreadId.current = null // Reset for next time
-      return
+      currentChatThreadId.current = null; // Reset for next time
+      return;
     }
 
     const controller = new AbortController();
     setLoadingChat(true);
-    
+
     // Load chat history
     loadChatHistoryAction(threadId, controller.signal)
-      .then(result => {
+      .then((result) => {
         if (result.error) {
-          setError(result.error)
-          setMessages([])
+          setError(result.error);
+          setMessages([]);
         } else {
-          setMessages(result.messages || [])
-          setError(null)
+          setMessages(result.messages || []);
+          setError(null);
         }
       })
-      .catch(err => {
+      .catch((err) => {
         // Ignore both native AbortError and Axios CanceledError
-        if (err.name === 'AbortError' || err.name === 'CanceledError' || axios.isCancel(err)) return;
-        
-        setError(err.response?.data?.message || err.message || 'Failed to load history');
+        if (
+          err.name === "AbortError" ||
+          err.name === "CanceledError" ||
+          axios.isCancel(err)
+        )
+          return;
+
+        setError(
+          err.response?.data?.message ||
+            err.message ||
+            "Failed to load history",
+        );
       })
       .finally(() => {
-        if (!controller.signal.aborted) setLoadingChat(false)
+        if (!controller.signal.aborted) setLoadingChat(false);
       });
 
     return () => controller.abort();
-  }, [threadId])
+  }, [threadId]);
 
   // SEND MESSAGE HANDLER
   const handleMessageSent = async (messageData) => {
     const { message: newMessage, attachments, selectedModel } = messageData;
 
     // Optimistic UI Update
-    const userMsg = { role: 'user', content: newMessage };
+    const userMsg = { role: "user", content: newMessage };
     if (attachments?.length > 0) {
-      userMsg.attachments = attachments.map(a => a.name);
+      userMsg.attachments = attachments.map((a) => a.name);
     }
 
-    setMessages(prev => [
-      ...prev,
-      userMsg,
-    ]);
+    setMessages((prev) => [...prev, userMsg]);
 
     const activeThreadId = threadId || `${auth.user.id}_${Date.now()}`;
     const isNewThread = !threadId;
@@ -226,25 +306,31 @@ function MainContent({ setThreads }) {
     if (isNewThread) {
       currentChatThreadId.current = activeThreadId;
       navigate(`/chat/${activeThreadId}`, { replace: true });
-      setThreads(prev => [{
-        threadId: activeThreadId,
-        threadName: 'Untitled Chat',
-        updatedAt: new Date().toISOString()
-      }, ...prev]);
+      setThreads((prev) => [
+        {
+          threadId: activeThreadId,
+          threadName: "Untitled Chat",
+          updatedAt: new Date().toISOString(),
+        },
+        ...prev,
+      ]);
     }
 
-    setLoadingResponse(true)
-    
+    setLoadingResponse(true);
+
     try {
       if (attachments?.length > 0) {
-        setMessages(prev => [...prev, { isPdfProcessing: true }]);
-        const ingestResult = await ingestDocumentsAction(activeThreadId, attachments);
-        setMessages(prev => prev.filter(m => !m.isPdfProcessing));
-        
+        setMessages((prev) => [...prev, { isPdfProcessing: true }]);
+        const ingestResult = await ingestDocumentsAction(
+          activeThreadId,
+          attachments,
+        );
+        setMessages((prev) => prev.filter((m) => !m.isPdfProcessing));
+
         if (ingestResult.error) {
-           setError(ingestResult.error);
-           setLoadingResponse(false);
-           return;
+          setError(ingestResult.error);
+          setLoadingResponse(false);
+          return;
         }
       }
 
@@ -252,43 +338,49 @@ function MainContent({ setThreads }) {
         threadId: activeThreadId,
         message: newMessage,
         selectedModel,
-      })
-      
+      });
+
       // Store abort function for stop button
       abortRef.current = abort;
 
       for await (const event of stream) {
-        if (event.type === 'token') {
+        if (event.type === "token") {
           // Update the assistant's placeholder message
-          setMessages(prev => {
+          setMessages((prev) => {
             const lastMsg = prev[prev.length - 1];
-            if (lastMsg.role !== 'assistant') {
-              return [...prev, { role: 'assistant', content: event.val }];
+            if (lastMsg.role !== "assistant") {
+              return [...prev, { role: "assistant", content: event.val }];
             }
-            return [...prev.slice(0, -1), { ...lastMsg, content: lastMsg.content + event.val }];
+            return [
+              ...prev.slice(0, -1),
+              { ...lastMsg, content: lastMsg.content + event.val },
+            ];
           });
-
-        } else if (event.type === 'tool_start') {
-          setMessages(prev => [...prev, {
-            runId: event.runId,
-            role: 'tool_call',
-            content: { tool: event.tool, input: event.input, status: 'loading' }
-          }]);
-
-        } else if (event.type === 'run_init') {
+        } else if (event.type === "tool_start") {
+          setMessages((prev) => [
+            ...prev,
+            {
+              runId: event.runId,
+              role: "tool_call",
+              content: {
+                tool: event.tool,
+                input: event.input,
+                status: "loading",
+              },
+            },
+          ]);
+        } else if (event.type === "run_init") {
           if (event.payload?.usage) {
             setUsage(event.payload.usage);
             if (auth?.user?.id) saveUsage(auth.user.id, event.payload.usage);
           }
-
-        } else if (event.type === 'tool_end') {
-          // This code block is responsible for finding the specific "loading" tool bubble in chat history 
+        } else if (event.type === "tool_end") {
+          // This code block is responsible for finding the specific "loading" tool bubble in chat history
           // and updating it with the final results (the blue links).
-          setMessages(prev => {
+          setMessages((prev) => {
             // 1. Find the index
-            const index = prev.findIndex(msg => 
-              msg.role === 'tool_call' && 
-              msg.runId === event.runId
+            const index = prev.findIndex(
+              (msg) => msg.role === "tool_call" && msg.runId === event.runId,
             );
 
             // 2. Safety Check: If not found, return original state (No re-render)
@@ -298,25 +390,36 @@ function MainContent({ setThreads }) {
             const newMsgs = [...prev];
             newMsgs[index] = {
               ...newMsgs[index], // { runId, role, content: { tool, input, status: 'loading' } }
-              content: { 
+              content: {
                 ...newMsgs[index].content,
                 output: event.output,
-                status: event.status || event.output?.status || 'success',
-              }
+                status: event.status || event.output?.status || "success",
+              },
             };
-          
+
             return newMsgs;
           });
-
-        } else if (event.type === 'error') {
+        } else if (event.type === "error") {
           if (event.isLimit) {
-            const newUsage = { remaining: 0, reset: event.reset || Date.now() + 2592000000 };
+            const newUsage = {
+              remaining: 0,
+              reset: event.reset || Date.now() + 2592000000,
+            };
             setUsage(newUsage);
             if (auth?.user?.id) saveUsage(auth.user.id, newUsage);
           }
-          setMessages(prev => [...prev, { role: 'error', content: event.val }]);
-        } else if (event.type === 'threadName') {
-           setThreads(prev => prev.map(t => t.threadId === activeThreadId ? { ...t, threadName: event.val } : t));
+          setMessages((prev) => [
+            ...prev,
+            { role: "error", content: event.val },
+          ]);
+        } else if (event.type === "threadName") {
+          setThreads((prev) =>
+            prev.map((t) =>
+              t.threadId === activeThreadId
+                ? { ...t, threadName: event.val }
+                : t,
+            ),
+          );
         }
       }
     } catch (err) {
@@ -337,27 +440,41 @@ function MainContent({ setThreads }) {
   }, []);
 
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
-  }, [loadingResponse, loadingChat])
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [loadingResponse, loadingChat]);
 
-  const contentStateClasses = (!isMobile && open) 
-    ? "bg-[#09090b] my-2 mr-2 rounded-2xl border-white/5 shadow-2xl" 
-    : "bg-[#09090b] m-0 rounded-none border-transparent";
+  const contentStateClasses =
+    !isMobile && open
+      ? "bg-[#09090b] my-2 mr-2 rounded-2xl border-white/5 shadow-2xl"
+      : "bg-[#09090b] m-0 rounded-none border-transparent";
 
   const isNewChat = messages.length === 0 && !loadingChat;
 
   return (
-    <SidebarInset className={`transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] flex flex-col overflow-hidden border ${contentStateClasses} ${(!isMobile && open) ? 'h-[calc(100dvh-1rem)]' : 'h-[100dvh]'}`}>
+    <SidebarInset
+      className={`transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] flex flex-col overflow-hidden border ${contentStateClasses} ${!isMobile && open ? "h-[calc(100dvh-1rem)]" : "h-[100dvh]"}`}
+    >
       <header className="flex h-16 shrink-0 items-center gap-2 border-b border-white/5 px-4 md:px-6 bg-[#09090b]/80 backdrop-blur-md sticky top-0 z-10 w-full">
-        <div className={`transition-all duration-300 ${(!isMobile && open) ? 'w-0 overflow-hidden opacity-0' : 'w-auto opacity-100'}`}>
-          <Button variant="ghost" size="icon" onClick={toggleSidebar} className="-ml-2 h-8 w-8 text-[#a1a1aa] hover:text-[#fafafa] hover:bg-white/5">
+        <div
+          className={`transition-all duration-300 ${!isMobile && open ? "w-0 overflow-hidden opacity-0" : "w-auto opacity-100"}`}
+        >
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={toggleSidebar}
+            className="-ml-2 h-8 w-8 text-[#a1a1aa] hover:text-[#fafafa] hover:bg-white/5"
+          >
             <SidebarInactiveIcon />
           </Button>
         </div>
         <div className="flex items-center justify-between w-full">
           <div className="flex items-center gap-4">
-            {(!isMobile && !open) && <span className="h-4 w-px bg-white/10 mr-2" />}
-            <span className="text-sm font-medium text-[#fafafa]">{isNewChat ? "New Conversation" : "Chat"}</span>
+            {!isMobile && !open && (
+              <span className="h-4 w-px bg-white/10 mr-2" />
+            )}
+            <span className="text-sm font-medium text-[#fafafa]">
+              {isNewChat ? "New Conversation" : "Chat"}
+            </span>
           </div>
 
           {(() => {
@@ -366,8 +483,12 @@ function MainContent({ setThreads }) {
             const isLoaded = !!usage;
             return (
               <div className="flex flex-col items-end">
-                <div className={`flex items-center gap-2 px-3 py-1.5 bg-[#18181b]/80 border border-white/10 rounded-full`}>
-                  <div className={`w-2 h-2 rounded-full shadow-[0_0_8px] ${remaining > 0 ? "bg-green-500 shadow-green-500/50" : "bg-red-500 shadow-red-500/50"}`}></div>
+                <div
+                  className={`flex items-center gap-2 px-3 py-1.5 bg-[#18181b]/80 border border-white/10 rounded-full`}
+                >
+                  <div
+                    className={`w-2 h-2 rounded-full shadow-[0_0_8px] ${remaining > 0 ? "bg-green-500 shadow-green-500/50" : "bg-red-500 shadow-red-500/50"}`}
+                  ></div>
                   <span className="text-[12px] font-medium text-[#fafafa] whitespace-nowrap">
                     {remaining} / 5 usages left
                   </span>
@@ -383,31 +504,45 @@ function MainContent({ setThreads }) {
         </div>
       </header>
 
-      {loadingChat && <div className="relative h-[2px] w-full overflow-hidden shrink-0"><div className="meteor-effect" /></div>}
+      {loadingChat && (
+        <div className="relative h-[2px] w-full overflow-hidden shrink-0">
+          <div className="meteor-effect" />
+        </div>
+      )}
 
       <div className="flex-1 overflow-y-auto p-4 md:p-8 w-full scroll-smooth">
-        {error && <div className="text-red-400 text-center mt-10 p-4 border border-red-500/20 bg-red-500/5 rounded-lg">{error}</div>}
+        {error && (
+          <div className="text-red-400 text-center mt-10 p-4 border border-red-500/20 bg-red-500/5 rounded-lg">
+            {error}
+          </div>
+        )}
 
         {isNewChat && !error && (
-           <div className="flex h-full flex-col items-center justify-center animate-in fade-in duration-500">
-             <div className="w-16 h-16 bg-white/5 rounded-2xl flex items-center justify-center mb-6 border border-white/10 shadow-[0_0_15px_rgba(255,255,255,0.05)]">
-               <div className="w-2 h-2 bg-[#fafafa] rounded-full animate-pulse shadow-[0_0_10px_rgba(255,255,255,0.5)]" />
-             </div>
-             <h2 className="text-3xl font-bold text-[#fafafa] tracking-tight mb-2">How can I help you?</h2>
-             <p className="text-[#a1a1aa] text-center max-w-sm">Start a new conversation or select an existing one from the sidebar.</p>
-           </div>
+          <div className="flex h-full flex-col items-center justify-center animate-in fade-in duration-500">
+            <div className="w-16 h-16 bg-white/5 rounded-2xl flex items-center justify-center mb-6 border border-white/10 shadow-[0_0_15px_rgba(255,255,255,0.05)]">
+              <div className="w-2 h-2 bg-[#fafafa] rounded-full animate-pulse shadow-[0_0_10px_rgba(255,255,255,0.5)]" />
+            </div>
+            <h2 className="text-3xl font-bold text-[#fafafa] tracking-tight mb-2">
+              How can I help you?
+            </h2>
+            <p className="text-[#a1a1aa] text-center max-w-sm">
+              Start a new conversation or select an existing one from the
+              sidebar.
+            </p>
+          </div>
         )}
 
         {messages.length > 0 && (
           <div className="flex flex-col gap-2 max-w-4xl mx-auto w-full pb-8">
-            
             {messages.map((message, index) => (
               <ChatMessage key={index} message={message} />
             ))}
 
-            {loadingResponse && messages[messages.length - 1]?.role !== 'assistant' && !messages.some(m => m.isPdfProcessing) && (
-              <ChatMessage message={{ isThinking: true }} />
-            )}
+            {loadingResponse &&
+              messages[messages.length - 1]?.role !== "assistant" &&
+              !messages.some((m) => m.isPdfProcessing) && (
+                <ChatMessage message={{ isThinking: true }} />
+              )}
             <div ref={messagesEndRef} />
           </div>
         )}
@@ -417,18 +552,26 @@ function MainContent({ setThreads }) {
         <div className="max-w-4xl mx-auto">
           {usage && usage.remaining <= 0 ? (
             <div className="flex flex-col items-center justify-center p-6 border border-red-500/20 bg-[#18181b] rounded-xl">
-              <h2 className="text-lg font-medium text-red-400 mb-1">Monthly Limit Reached</h2>
+              <h2 className="text-lg font-medium text-red-400 mb-1">
+                Monthly Limit Reached
+              </h2>
               <p className="text-[#a1a1aa] text-sm text-center">
-                You've used your free queries for this month. Your limit will reset on{' '}
+                You've used your free queries for this month. Your limit will
+                reset on{" "}
                 <span className="text-[#fafafa] font-medium">
-                  {new Date(usage.reset).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
-                </span>.
+                  {new Date(usage.reset).toLocaleDateString("en-US", {
+                    month: "long",
+                    day: "numeric",
+                    year: "numeric",
+                  })}
+                </span>
+                .
               </p>
             </div>
           ) : (
-            <ChatInput 
-              threadId={currentChatThreadId} 
-              onMessageSent={handleMessageSent} 
+            <ChatInput
+              threadId={currentChatThreadId}
+              onMessageSent={handleMessageSent}
               loading={loadingResponse}
               onStop={handleStop}
             />
@@ -436,5 +579,5 @@ function MainContent({ setThreads }) {
         </div>
       </div>
     </SidebarInset>
-  )
+  );
 }

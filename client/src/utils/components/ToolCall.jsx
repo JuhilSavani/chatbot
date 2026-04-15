@@ -1,5 +1,11 @@
-import React, { useState } from 'react';
-import { ChevronDown, Wrench, CheckCircle2, Loader2, XCircle } from 'lucide-react';
+import React, { useState } from "react";
+import {
+  ChevronDown,
+  Wrench,
+  CheckCircle2,
+  Loader2,
+  XCircle,
+} from "lucide-react";
 
 // --- HELPER: Tool Renderers ---
 
@@ -14,7 +20,7 @@ const getFavicon = (url) => {
 
 const getDomain = (url) => {
   try {
-    return new URL(url).hostname.replace(/^www\./, '');
+    return new URL(url).hostname.replace(/^www\./, "");
   } catch {
     return url;
   }
@@ -48,12 +54,15 @@ const WebSearchOutput = ({ output }) => {
                   src={favicon}
                   alt=""
                   className="w-6 h-6 object-contain"
-                  onError={(e) => { e.currentTarget.style.display = 'none'; e.currentTarget.nextSibling.style.display = 'flex'; }}
+                  onError={(e) => {
+                    e.currentTarget.style.display = "none";
+                    e.currentTarget.nextSibling.style.display = "flex";
+                  }}
                 />
               ) : null}
               <span
                 className="text-[10px] font-bold text-[#71717a] uppercase leading-none"
-                style={{ display: favicon ? 'none' : 'flex' }}
+                style={{ display: favicon ? "none" : "flex" }}
               >
                 {domain.charAt(0)}
               </span>
@@ -71,7 +80,7 @@ const WebSearchOutput = ({ output }) => {
 
             {/* Index badge */}
             <span className="flex-shrink-0 text-[9px] font-bold text-[#3f3f46] group-hover:text-[#52525b] tabular-nums transition-colors">
-              {String(idx + 1).padStart(2, '0')}
+              {String(idx + 1).padStart(2, "0")}
             </span>
           </a>
         );
@@ -83,71 +92,61 @@ const WebSearchOutput = ({ output }) => {
 // Default Fallback Renderer
 const DefaultOutput = ({ output }) => {
   return (
-    <pre className="text-green-400/90 whitespace-pre-wrap text-[11px] font-mono leading-relaxed bg-[#18181b] p-3 rounded-md border border-white/5">
-      {typeof output === 'string' ? output : JSON.stringify(output, null, 2)}
+    <pre className="w-full text-green-400/90 whitespace-pre-wrap text-[11px] font-mono leading-relaxed bg-[#18181b] p-3 rounded-md border border-white/5">
+      {output}
     </pre>
   );
 };
 
-const TOOL_RENDERERS = {
-  'web_search': WebSearchOutput,
+const toolRenderers = {
+  web_search: WebSearchOutput,
 };
 
-const getToolInputSummary = (tool, input) => {
-  if (!input) return null;
-  if (tool === 'web_search' && input.query) return input.query;
-  if (typeof input === 'string') return input;
-  if (typeof input === 'object' && !Array.isArray(input)) {
-    return Object.entries(input)
-      .map(([k, v]) => `${k}: ${typeof v === 'object' ? '...' : v}`)
-      .join(', ');
-  }
-  return JSON.stringify(input);
-};
-
-export default function ToolCall({
-  tool,
-  input,
-  output,
-  status = 'loading'
-}) {
+export default function ToolCall({ tool, input, output, status = "loading" }) {
   const [isOpen, setIsOpen] = useState(false);
-  const inputSummary = getToolInputSummary(tool, input);
-  const OutputComponent = TOOL_RENDERERS[tool] || DefaultOutput;
-  const hasOutput = output || status === 'error';
+  const OutputComponent = toolRenderers[tool] || DefaultOutput;
+  const hideOutputPanel = tool === "scrape_url";
+  const hasOutput = !hideOutputPanel && (output || status === "error");
 
   return (
-    <div className="w-full max-w-full md:max-w-[85%] mt-2 mb-0.5 font-sans text-sm">
+    <div className="w-full mt-2 mb-0.5 font-sans text-sm self-stretch">
       {/* Header Bar */}
       <div
         className={`
-          flex items-center justify-between px-3 py-2.5 rounded-md border cursor-pointer transition-all select-none
-          ${status === 'loading'
-            ? 'bg-white/[0.03] border-white/5 text-[#a1a1aa]'
-            : status === 'error'
-            ? 'bg-red-500/10 border-red-500/20 text-red-400'
-            : 'bg-white/[0.03] border-white/5 hover:bg-white/[0.05] text-[#fafafa] hover:border-white/10'
+          flex items-center justify-between px-3 py-2.5 rounded-md border transition-all select-none
+          ${
+            status === "loading"
+              ? "bg-white/[0.03] border-white/5 text-[#a1a1aa]"
+              : status === "error"
+                ? "bg-red-500/10 border-red-500/20 text-red-400"
+                : "bg-white/[0.03] border-white/5 hover:bg-white/[0.05] text-[#fafafa] hover:border-white/10"
           }
+          ${hasOutput ? "cursor-pointer" : "cursor-default"}
         `}
-        onClick={() => setIsOpen(!isOpen)}
+        onClick={hasOutput ? () => setIsOpen(!isOpen) : undefined}
       >
         <div className="flex items-center gap-2.5 min-w-0">
           {/* Icon */}
-          <div className={`flex-shrink-0 p-1.5 rounded-md border border-white/5 ${status === 'error' ? 'bg-red-500/10 text-red-400' : 'bg-blue-500/10 text-blue-400'}`}>
-            <Wrench size={13} className={status === 'loading' ? 'animate-pulse' : ''} />
+          <div
+            className={`flex-shrink-0 p-1.5 rounded-md border border-white/5 ${status === "error" ? "bg-red-500/10 text-red-400" : "bg-blue-500/10 text-blue-400"}`}
+          >
+            <Wrench
+              size={13}
+              className={status === "loading" ? "animate-pulse" : ""}
+            />
           </div>
 
           {/* Label + query */}
           <div className="flex items-center gap-2 min-w-0">
             <span className="text-[#71717a] text-xs whitespace-nowrap">
-              Using tool:{' '}
+              Using tool:{" "}
               <span className="font-mono text-[#d4d4d8] bg-white/5 px-1.5 py-0.5 rounded border border-white/5 text-[11px]">
                 {tool}
               </span>
             </span>
-            {inputSummary && (
-              <span className="hidden sm:block text-[11px] text-[#52525b] truncate max-w-[220px] border-l border-white/8 pl-2 leading-tight">
-                {inputSummary}
+            {input && (
+              <span className="hidden sm:block text-[11px] text-[#52525b] truncate max-w-[620px] border-l border-white/8 pl-2 leading-tight">
+                {input}
               </span>
             )}
           </div>
@@ -155,12 +154,18 @@ export default function ToolCall({
 
         {/* Right icons */}
         <div className="flex items-center gap-2 pl-2 flex-shrink-0">
-          {status === 'loading' && <Loader2 size={14} className="animate-spin text-blue-400" />}
-          {status === 'success' && <CheckCircle2 size={14} className="text-emerald-400" />}
-          {status === 'error' && <XCircle size={14} className="text-red-400" />}
+          {status === "loading" && (
+            <Loader2 size={14} className="animate-spin text-blue-400" />
+          )}
+          {status === "success" && (
+            <CheckCircle2 size={14} className="text-emerald-400" />
+          )}
+          {status === "error" && <XCircle size={14} className="text-red-400" />}
 
           {hasOutput && (
-            <div className={`p-1 rounded-md hover:bg-white/5 transition-all duration-200 ${isOpen ? 'rotate-180' : ''}`}>
+            <div
+              className={`p-1 rounded-md hover:bg-white/5 transition-all duration-200 ${isOpen ? "rotate-180" : ""}`}
+            >
               <ChevronDown size={13} className="text-[#52525b]" />
             </div>
           )}
@@ -170,13 +175,13 @@ export default function ToolCall({
       {/* Expandable Results */}
       {hasOutput && (
         <div
-          className={`grid transition-all duration-300 ease-in-out ${isOpen ? 'grid-rows-[1fr] opacity-100 mt-1.5' : 'grid-rows-[0fr] opacity-0 mt-0'}`}
+          className={`grid transition-all duration-300 ease-in-out ${isOpen ? "grid-rows-[1fr] opacity-100 mt-1.5" : "grid-rows-[0fr] opacity-0 mt-0"}`}
         >
           <div className="overflow-hidden">
-            <div className="bg-white/[0.03] rounded-md px-3 py-3 border border-white/5">
-              {status === 'error' ? (
+            <div className="w-full bg-white/[0.03] rounded-md px-3 py-3 border border-white/5">
+              {status === "error" ? (
                 <span className="text-red-400 font-mono text-xs break-all bg-red-500/5 p-3 rounded-md border border-red-500/10 block">
-                  {typeof output === 'string' ? output : JSON.stringify(output)}
+                  {typeof output === "string" ? output : JSON.stringify(output)}
                 </span>
               ) : (
                 <OutputComponent output={output} />

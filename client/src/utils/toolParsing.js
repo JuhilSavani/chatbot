@@ -1,54 +1,97 @@
-export const parseToolInput = (rawInput) => {
-  if (!rawInput) return null;
-  if (rawInput.input && typeof rawInput.input === 'string') {
-    try {
-      return JSON.parse(rawInput.input);
-    } catch {
-      return rawInput.input;
-    }
-  }
-  return rawInput;
+// [TODO] Tool-specific input transformers
+const toolInputTransformers = {
+  web_search: (data) => {
+    if (typeof data === "string") return data;
+    if (data?.query) return data.query;
+    return data;
+  },
+  scrape_url: (data) => {
+    if (Array.isArray(data?.urls)) return data.urls.join(", ");
+    if (typeof data === "string") return data;
+    return data;
+  },
 };
 
-export const parseToolOutput = (name, content) => {
-  let parsedContent = content;
-
-  // 1. Handle Serialized LangChain Object (from stream)
-  if (content && typeof content === 'object' && content.kwargs && content.kwargs.content) {
-    parsedContent = content.kwargs.content;
+const defaultToolInputTransformer = (input) => {
+  if (!input) return null;
+  if (typeof input === "string") return input;
+  if (typeof input === "object" && !Array.isArray(input)) {
+    return Object.entries(input)
+      .map(
+        ([key, value]) =>
+          `${key}: ${typeof value === "object" ? "..." : value}`,
+      )
+      .join(", ");
   }
-  // Handle direct content property (edge case)
-  else if (content && typeof content === 'object' && content.content && typeof content.content === 'string') {
-    parsedContent = content.content;
+  return JSON.stringify(input);
+};
+
+const defaultToolOutputTransformer = (output) => {
+  if (!output) return null;
+  if (typeof output === "string") return output;
+  return JSON.stringify(output, null, 2);
+};
+
+// Tool-specific output transformers
+const toolOutputTransformers = {
+  web_search: (data) => {
+    if (!data?.results) return data;
+
+    return {
+      query: data.query,
+      items: data.results.map((item) => ({
+        title: item.title,
+        url: item.url,
+        snippet: item.content,
+      })),
+      count: data.results.length,
+    };
+  },
+};
+
+export const parseToolInput = (toolName, rawInput) => {
+  let parsedInput = rawInput;
+
+  if (rawInput.input && typeof rawInput.input === "string") {
+    try {
+      parsedInput = JSON.parse(rawInput.input);
+    } catch {
+      parsedInput = rawInput.input;
+    }
+  }
+
+  const transformer = toolInputTransformers[toolName];
+  return transformer
+    ? transformer(parsedInput)
+    : defaultToolInputTransformer(parsedInput);
+};
+
+export const parseToolOutput = (toolName, rawOutput) => {
+  let parsedOutput = rawOutput;
+
+  if (rawOutput && typeof rawOutput === "object") {
+    // Handle Serialized LangChain Object (from stream)
+    if (rawOutput.kwargs && rawOutput.kwargs.content) {
+      parsedOutput = rawOutput.kwargs.content;
+    }
+    // Handle direct content property (edge case)
+    else if (rawOutput.content && typeof rawOutput.content === "string") {
+      parsedOutput = rawOutput.content;
+    }
   }
 
   // 2. Handle JSON parsing
-  if (typeof parsedContent === 'string') {
+  if (typeof parsedOutput === "string") {
     try {
-      parsedContent = JSON.parse(parsedContent);
+      parsedOutput = JSON.parse(parsedOutput);
     } catch {
       // Keep as string if parsing fails
     }
   }
 
   // 2. Apply tool-specific transformation if it exists
-  const transformer = toolTransformers[name];
-  return transformer ? transformer(parsedContent) : parsedContent;
-};
-
-// Tool-specific transformers
-const toolTransformers = {
-  web_search: (data) => {
-    if (!data?.results) return data;
-    
-    return {
-      query: data.query,
-      items: data.results.map(item => ({
-        title: item.title,
-        url: item.url,
-        snippet: item.content
-      })),
-      count: data.results.length
-    };
-  }
+  const transformer = toolOutputTransformers[toolName];
+  return transformer
+    ? transformer(parsedOutput)
+    : defaultToolOutputTransformer(parsedOutput);
 };
