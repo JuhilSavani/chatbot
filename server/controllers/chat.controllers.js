@@ -10,6 +10,14 @@ import { Attachment } from "../models/attachment.models.js";
 import { generateThreadName } from "../utils/generateThreadName.js";
 import { selectRelevantDocuments } from "../utils/selectRelevantDocuments.js";
 
+const ALLOWED_MODELS = ["openai/gpt-4o-mini", "openai/gpt-4o"];
+const DEFAULT_MODEL = "openai/gpt-4o-mini";
+
+function validateModel(model) {
+  if (!model) return DEFAULT_MODEL;
+  return ALLOWED_MODELS.includes(model) ? model : null;
+}
+
 export const loadChatThreads = async (req, res) => {
   try {
     const userId = req.user?.id;
@@ -129,8 +137,16 @@ export const ingestDocuments = async (req, res) => {
  * Sends token-by-token updates to the client in real-time
  */
 export const chatWithModelStream = async (req, res) => {
-  const { message, threadId, webSearch } = req.body;
+  const { message, threadId, webSearch, model: requestedModel } = req.body;
   const userId = req.user.id;
+
+  // Resolve the model (validate against allowlist)
+  const selectedModel = validateModel(requestedModel);
+  if (!selectedModel) {
+    // Invalid model provided - stop early
+    return res.status(400).json({ message: "Invalid model. Allowed models: " + ALLOWED_MODELS.join(", ") });
+  }
+  console.log(`[ModelSwitch] Using model: ${selectedModel} (requested: ${requestedModel})`);
 
   // Validation
   if (!message || !threadId) {
@@ -155,7 +171,8 @@ export const chatWithModelStream = async (req, res) => {
   const initResponse = {
     type: 'run_init',
     payload: { 
-      usage: req.ratelimit || null
+      usage: req.ratelimit || null,
+      selectedModel: selectedModel,
     }
   };
   res.write(`data: ${JSON.stringify(initResponse)}\n\n`);
@@ -236,6 +253,7 @@ export const chatWithModelStream = async (req, res) => {
         thread_id: threadId, 
         signal: controller.signal,
         webSearch,          // Pass tools forcing here (boolean)
+        model: selectedModel,  // Selected model from client (validated)
         userProfile,        // Pass profile here
         relevantDocuments,  // Pass relevant documents here
         hasDocuments: attachmentRecord.length > 0, // Flag: does this thread have any uploads?

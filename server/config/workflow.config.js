@@ -11,16 +11,30 @@ const tools = [searchTool];
 // 2. Create the ToolNode
 const toolNode = new ToolNode(tools);
 
-// 3. Bind tools to the model
-export const chatModel = new ChatOpenAI({
-  configuration: { baseURL: "https://models.github.ai/inference" },
-  apiKey: process.env.GITHUB_TOKEN,
-  model: "openai/gpt-4o-mini",
-  streaming: true,
-});
+// 3. Model factory/cache
+const modelCache = new Map();
+
+export function getChatModel(modelName) {
+  if (!modelCache.has(modelName)) {
+    const model = new ChatOpenAI({
+      configuration: { baseURL: "https://models.github.ai/inference" },
+      apiKey: process.env.GITHUB_TOKEN,
+      model: modelName,
+      streaming: true,
+    });
+    modelCache.set(modelName, model);
+  }
+  return modelCache.get(modelName);
+}
 
 async function callAgent(state, config) {
   const signal = config.configurable.signal || config.signal;
+
+  // Resolve the model using factory
+  const modelName = config.configurable?.model || "openai/gpt-4o-mini";
+  const chatModel = getChatModel(modelName);
+
+  console.log(`[Agent] Using model: ${modelName}`);
 
   let modelToUse;
   let systemInstructions;
