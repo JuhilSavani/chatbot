@@ -207,7 +207,7 @@ function MainContent({ setThreads }) {
 
   // SEND MESSAGE HANDLER
   const handleMessageSent = async (messageData) => {
-    const { message: newMessage, webSearch, attachments } = messageData;
+    const { message: newMessage, webSearch, attachments, model } = messageData;
 
     // Optimistic UI Update
     const userMsg = { role: 'user', content: newMessage };
@@ -252,6 +252,7 @@ function MainContent({ setThreads }) {
         threadId: activeThreadId,
         message: newMessage,
         webSearch,
+        model,
       })
       
       // Store abort function for stop button

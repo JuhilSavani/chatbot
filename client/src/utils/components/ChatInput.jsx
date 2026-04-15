@@ -1,14 +1,21 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Paperclip, ArrowUp, Globe, Square, X, FileText, Loader2 } from 'lucide-react';
+import { Paperclip, ArrowUp, Globe, Square, X, FileText, Loader2, ChevronDown, Check } from 'lucide-react';
 import pdfjsWorkerUrl from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
 import { uploadPdfToCloudinary } from '../actions/upload.actions';
 
 const MAX_PDFS = 5;
 const MAX_TOKENS = 32768;
+const MODEL_OPTIONS = [
+  { id: 'openai/gpt-4o-mini', label: 'GPT-4o-mini' },
+  { id: 'openai/gpt-4o', label: 'GPT-4o' },
+];
+const DEFAULT_MODEL_ID = MODEL_OPTIONS[0].id;
 
 const ChatInput = ({ threadId, onMessageSent, loading, onStop }) => {
   const [message, setMessage] = useState('');
   const [isSearchEnabled, setIsSearchEnabled] = useState(false);
+  const [selectedModelId, setSelectedModelId] = useState(DEFAULT_MODEL_ID);
+  const [isModelMenuOpen, setIsModelMenuOpen] = useState(false);
   const [error, setError] = useState(null);
   const [isSending, setIsSending] = useState(false);
   
@@ -18,6 +25,7 @@ const ChatInput = ({ threadId, onMessageSent, loading, onStop }) => {
 
   const textareaRef = useRef(null);
   const fileInputRef = useRef(null);
+  const modelSelectorRef = useRef(null);
 
   useEffect(() => {
     if (textareaRef.current) {
@@ -30,6 +38,28 @@ const ChatInput = ({ threadId, onMessageSent, loading, onStop }) => {
   useEffect(() => {
     if (loading) setIsSending(false);
   }, [loading]);
+
+  useEffect(() => {
+    const handleOutsideClick = (event) => {
+      if (!modelSelectorRef.current?.contains(event.target)) {
+        setIsModelMenuOpen(false);
+      }
+    };
+
+    const handleEscape = (event) => {
+      if (event.key === 'Escape') {
+        setIsModelMenuOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleOutsideClick);
+    document.addEventListener('keydown', handleEscape);
+
+    return () => {
+      document.removeEventListener('mousedown', handleOutsideClick);
+      document.removeEventListener('keydown', handleEscape);
+    };
+  }, []);
 
   const updateAttachment = (id, updates) => {
     setAttachments(prev => prev.map(a => a.id === id ? { ...a, ...updates } : a));
@@ -172,6 +202,7 @@ const ChatInput = ({ threadId, onMessageSent, loading, onStop }) => {
 
   const doneAttachments = attachments.filter(a => a.status === 'done');
   const isBusy = attachments.some(a => a.status === 'verifying');
+  const selectedModel = MODEL_OPTIONS.find(option => option.id === selectedModelId) || MODEL_OPTIONS[0];
 
   const handleSendMessage = async () => {
     if (!message.trim() || loading || isSending || !threadId) return;
@@ -204,6 +235,7 @@ const ChatInput = ({ threadId, onMessageSent, loading, onStop }) => {
         onMessageSent({
           message: userMessage,
           webSearch: isSearchEnabled,
+          model: selectedModelId,
           attachments: attachmentUrls,
         });
         clearAllAttachments();
@@ -220,6 +252,7 @@ const ChatInput = ({ threadId, onMessageSent, loading, onStop }) => {
     onMessageSent({ 
       message: userMessage, 
       webSearch: isSearchEnabled,
+      model: selectedModelId,
     });
     
     clearAllAttachments();
@@ -313,7 +346,7 @@ const ChatInput = ({ threadId, onMessageSent, loading, onStop }) => {
             value={message}
             onChange={(e) => setMessage(e.target.value)}
             onKeyDown={handleKeyDown}
-            disabled={loading || isSending}
+            disabled={isSending}
             rows={1}
             style={{ maxHeight: '200px', overflowY: 'auto' }}
           />
@@ -325,18 +358,56 @@ const ChatInput = ({ threadId, onMessageSent, loading, onStop }) => {
           {/* Left Side: Model Selector, Search, Attachment */}
           <div className="flex items-center gap-2">
             
-            {/* TODO: Model Selector Dropdown */}
+            {/* Model Selector */}
+            <div className="relative" ref={modelSelectorRef}>
+              <button
+                type="button"
+                onClick={() => setIsModelMenuOpen(prev => !prev)}
+                disabled={isSending}
+                className={`flex items-center rounded-md border border-white/10 bg-white/5 p-1 transition-all duration-200 hover:bg-white/10`}
+              >
+                <span className="px-2 text-[10px] font-semibold tracking-[0.18em] text-[#a1a1aa]">MODEL</span>
+                <span className="flex items-center gap-1.5 rounded-md bg-[#09090b] px-2.5 py-1 text-xs text-[#fafafa] min-w-[120px] justify-between">
+                  <span>{selectedModel.label}</span>
+                  <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${isModelMenuOpen ? 'rotate-180' : ''}`} />
+                </span>
+              </button>
+
+              {isModelMenuOpen && (
+                <div className="absolute bottom-full mb-2 left-0 z-30 min-w-[190px] rounded-xl border border-white/20 bg-[#18181b]/95 p-1.5 shadow-[0_15px_30px_rgba(0,0,0,0.45)] backdrop-blur-xl">
+                  {MODEL_OPTIONS.map(option => {
+                    const isSelected = option.id === selectedModelId;
+
+                    return (
+                      <button
+                        key={option.id}
+                        type="button"
+                        onClick={() => {
+                          setSelectedModelId(option.id);
+                          setIsModelMenuOpen(false);
+                        }}
+                        className={`flex w-full items-center gap-1 mb-1.25 rounded-md px-2.5 py-2 text-left text-sm transition-colors ${isSelected ? 'bg-blue-600 text-white' : 'text-[#d4d4d8] hover:bg-white/5'}`}
+                      >
+                        <span className="w-4 flex justify-center">
+                          {isSelected && <Check className="w-3.5 h-3.5" />}
+                        </span>
+                        <span>{option.label}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
 
             {/* Search Toggle Pill */}
             <button 
               onClick={() => setIsSearchEnabled(!isSearchEnabled)}
-              disabled={loading}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-200 border border-transparent
+              disabled={isSending}
+              className={`flex items-center gap-1.5 px-3 py-2 rounded-md text-xs font-medium transition-all duration-200 border border-white/10
                 ${isSearchEnabled 
                   ? 'bg-blue-500/10 text-blue-400 border-blue-500/20' 
                   : 'bg-white/5 text-[#a1a1aa] hover:bg-white/10 hover:text-[#fafafa]'
-                }
-                ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
+                }`}
             >
               <Globe className="w-3.5 h-3.5" /> 
               <span>Search</span>
@@ -348,8 +419,8 @@ const ChatInput = ({ threadId, onMessageSent, loading, onStop }) => {
             {/* Attachment Button */}
             <button 
               onClick={() => fileInputRef.current?.click()}
-              disabled={loading || isSending || isBusy || attachments.length >= MAX_PDFS}
-              className="p-1.5 text-[#52525b] hover:text-[#fafafa] transition-colors rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
+              disabled={isSending || isBusy || attachments.length >= MAX_PDFS}
+              className="border border-white/10 text-[#a1a1aa] hover:text-[#fafafa]  bg-white/5 hover:bg-white/10 p-1.5 transition-colors rounded-md disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <Paperclip className="w-4 h-4" strokeWidth={2} />
             </button>
@@ -359,10 +430,10 @@ const ChatInput = ({ threadId, onMessageSent, loading, onStop }) => {
           <button 
             onClick={loading ? onStop : handleSendMessage}
             disabled={isSending || (!loading && !message.trim())}
-            className={`w-8 h-8 rounded-lg transition-all duration-200 flex items-center justify-center
+            className={`w-8 h-8 rounded-md transition-all duration-200 flex items-center justify-center
               ${(loading || isSending || message.trim())
                 ? 'bg-[#fafafa] text-[#18181b] hover:bg-white hover:shadow-[0_0_10px_rgba(255,255,255,0.2)]' 
-                : 'bg-white/10 text-[#52525b] cursor-not-allowed'
+                : 'border border-white/10 text-[#a1a1aa] bg-white/5 cursor-not-allowed'
               }`}
           >
             {loading ? (

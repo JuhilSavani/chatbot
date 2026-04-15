@@ -109,7 +109,7 @@ export async function ingestDocumentsAction(threadId, attachments) {
  *     if (event.type === 'token') console.log(event.val);
  *   }
  */
-export function streamChatAction({ threadId, message, webSearch }) {
+export function streamChatAction({ threadId, message, webSearch, model }) {
   const controller = new AbortController();
 
   // 1. Define the generator function
@@ -122,7 +122,7 @@ export function streamChatAction({ threadId, message, webSearch }) {
           "Content-Type": "application/json",
         },
         credentials: "include",
-        body: JSON.stringify({ message, threadId, webSearch }),
+        body: JSON.stringify({ message, threadId, webSearch, model }),
         signal: controller.signal,
       });
 
