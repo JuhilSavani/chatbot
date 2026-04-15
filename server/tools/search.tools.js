@@ -2,7 +2,6 @@ import { z } from "zod";
 import { tool } from "@langchain/core/tools";
 import { TavilySearch } from "@langchain/tavily";
 
-// You can wrap the pre-built tool or create a custom one
 export const searchTool = tool(
   async ({ query }) => {
     try {

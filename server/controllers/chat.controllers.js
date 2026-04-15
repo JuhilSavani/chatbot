@@ -137,7 +137,7 @@ export const ingestDocuments = async (req, res) => {
  * Sends token-by-token updates to the client in real-time
  */
 export const chatWithModelStream = async (req, res) => {
-  const { message, threadId, webSearch, model: requestedModel } = req.body;
+  const { message, threadId, selectedModel: requestedModel } = req.body;
   const userId = req.user.id;
 
   // Resolve the model (validate against allowlist)
@@ -146,7 +146,7 @@ export const chatWithModelStream = async (req, res) => {
     // Invalid model provided - stop early
     return res.status(400).json({ message: "Invalid model. Allowed models: " + ALLOWED_MODELS.join(", ") });
   }
-  console.log(`[ModelSwitch] Using model: ${selectedModel} (requested: ${requestedModel})`);
+  console.log(`Using model: ${selectedModel} (requested: ${requestedModel})`);
 
   // Validation
   if (!message || !threadId) {
@@ -233,11 +233,11 @@ export const chatWithModelStream = async (req, res) => {
     }
 
     // 5. Fetch User Profile
-    let userProfile = { static: [], dynamic: [] };
+    let profile = { static: [], dynamic: [] };
     try {
       const profileData = await supermemory.profile({ containerTag: userId });
       if (profileData && profileData.profile) {
-        userProfile = {
+        profile = {
           static: profileData.profile.static || [],
           dynamic: profileData.profile.dynamic || []
         };
@@ -252,9 +252,8 @@ export const chatWithModelStream = async (req, res) => {
       configurable: { 
         thread_id: threadId, 
         signal: controller.signal,
-        webSearch,          // Pass tools forcing here (boolean)
-        model: selectedModel,  // Selected model from client (validated)
-        userProfile,        // Pass profile here
+        selectedModel,      // Selected model from client (validated)
+        profile,            // Pass profile here
         relevantDocuments,  // Pass relevant documents here
         hasDocuments: attachmentRecord.length > 0, // Flag: does this thread have any uploads?
       },

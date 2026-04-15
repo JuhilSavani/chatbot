@@ -207,7 +207,7 @@ function MainContent({ setThreads }) {
 
   // SEND MESSAGE HANDLER
   const handleMessageSent = async (messageData) => {
-    const { message: newMessage, webSearch, attachments, model } = messageData;
+    const { message: newMessage, attachments, selectedModel } = messageData;
 
     // Optimistic UI Update
     const userMsg = { role: 'user', content: newMessage };
@@ -251,8 +251,7 @@ function MainContent({ setThreads }) {
       const { stream, abort } = streamChatAction({
         threadId: activeThreadId,
         message: newMessage,
-        webSearch,
-        model,
+        selectedModel,
       })
       
       // Store abort function for stop button

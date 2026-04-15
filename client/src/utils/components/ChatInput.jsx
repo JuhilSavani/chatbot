@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Paperclip, ArrowUp, Globe, Square, X, FileText, Loader2, ChevronDown, Check } from 'lucide-react';
+import { Paperclip, ArrowUp, Square, X, FileText, Loader2, ChevronDown, Check } from 'lucide-react';
 import pdfjsWorkerUrl from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
 import { uploadPdfToCloudinary } from '../actions/upload.actions';
 
@@ -13,7 +13,6 @@ const DEFAULT_MODEL_ID = MODEL_OPTIONS[0].id;
 
 const ChatInput = ({ threadId, onMessageSent, loading, onStop }) => {
   const [message, setMessage] = useState('');
-  const [isSearchEnabled, setIsSearchEnabled] = useState(false);
   const [selectedModelId, setSelectedModelId] = useState(DEFAULT_MODEL_ID);
   const [isModelMenuOpen, setIsModelMenuOpen] = useState(false);
   const [error, setError] = useState(null);
@@ -234,8 +233,7 @@ const ChatInput = ({ threadId, onMessageSent, loading, onStop }) => {
         setMessage('');
         onMessageSent({
           message: userMessage,
-          webSearch: isSearchEnabled,
-          model: selectedModelId,
+          selectedModel: selectedModelId,
           attachments: attachmentUrls,
         });
         clearAllAttachments();
@@ -251,8 +249,7 @@ const ChatInput = ({ threadId, onMessageSent, loading, onStop }) => {
     setMessage('');
     onMessageSent({ 
       message: userMessage, 
-      webSearch: isSearchEnabled,
-      model: selectedModelId,
+      selectedModel: selectedModelId,
     });
     
     clearAllAttachments();
@@ -399,20 +396,6 @@ const ChatInput = ({ threadId, onMessageSent, loading, onStop }) => {
               )}
             </div>
 
-            {/* Search Toggle Pill */}
-            <button 
-              onClick={() => setIsSearchEnabled(!isSearchEnabled)}
-              disabled={isSending}
-              className={`flex items-center gap-1.5 px-3 py-2 rounded-md text-xs font-medium transition-all duration-200 border border-white/10
-                ${isSearchEnabled 
-                  ? 'bg-blue-500/10 text-blue-400 border-blue-500/20' 
-                  : 'bg-white/5 text-[#a1a1aa] hover:bg-white/10 hover:text-[#fafafa]'
-                }`}
-            >
-              <Globe className="w-3.5 h-3.5" /> 
-              <span>Search</span>
-            </button>
-            
             {/* Divider */}
             <div className="h-6 w-0.25 bg-white/40 mx-1"></div>
 
