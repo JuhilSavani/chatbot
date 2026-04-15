@@ -3,9 +3,10 @@ import { ChatOpenAI } from "@langchain/openai";
 import { StateGraph, MessagesAnnotation } from "@langchain/langgraph";
 import { ToolNode, toolsCondition } from "@langchain/langgraph/prebuilt";
 import { searchTool } from "../tools/search.tools.js";
+import { scrapeTool } from "../tools/scrape.tools.js";
 
 // 1. Define your tools
-const tools = [searchTool];
+const tools = [searchTool, scrapeTool];
 
 // 2. Create the ToolNode
 const toolNode = new ToolNode(tools);
