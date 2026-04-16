@@ -1,11 +1,10 @@
 import { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
+import { useForm } from "react-hook-form";
 import { Eye, EyeOff } from "lucide-react";
 import { resetPasswordAction } from "@/utils/actions/authorize.actions";
 
 export default function ResetPassword() {
-  const [newPassword, setNewPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
   const [accessToken, setAccessToken] = useState("");
   const [isValidLink, setIsValidLink] = useState(true);
   const [loading, setLoading] = useState(false);
@@ -13,6 +12,27 @@ export default function ResetPassword() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [error, setError] = useState(null);
   const navigate = useNavigate();
+  const { register, handleSubmit, watch, formState: { errors } } = useForm();
+
+  const passwordField = register("newPassword", {
+    required: "Password is required",
+    pattern: {
+      value: /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=\[\]{}|;:'",.<>\/?]).{8,}$/,
+      message: "Password must be at least 8 characters, include uppercase, lowercase, number, and special character",
+    },
+    validate: (value) =>
+      !/\s/.test(value) || "Password cannot contain whitespaces",
+  });
+
+  const confirmPasswordField = register("confirmPassword", {
+    required: "Please confirm your password",
+    validate: (val) => {
+      if (watch("newPassword") !== val) {
+        return "Your passwords do not match";
+      }
+      return true;
+    },
+  });
 
   useEffect(() => {
     // Parse the hash parameters inserted by Supabase
@@ -33,21 +53,7 @@ export default function ResetPassword() {
     }
   }, []);
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!newPassword || !confirmPassword) {
-      setError("Please fill in all fields.");
-      return;
-    }
-    if (newPassword !== confirmPassword) {
-      setError("Passwords do not match.");
-      return;
-    }
-    if (newPassword.length < 6) {
-      setError("Password must be at least 6 characters.");
-      return;
-    }
-
+  const onSubmit = async ({ newPassword }) => {
     setError(null);
     setLoading(true);
 
@@ -111,17 +117,15 @@ export default function ResetPassword() {
             <p className="text-sm text-[#a1a1aa] mt-2">Enter your new password below.</p>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4" noValidate>
             <div className="space-y-2">
               <label htmlFor="password" className="text-sm font-medium leading-none block">New Password</label>
               <div className="relative">
                 <input
                   id="password"
                   type={showPassword ? "text" : "password"}
-                  value={newPassword}
-                  onChange={(e) => setNewPassword(e.target.value)}
+                  {...passwordField}
                   disabled={loading}
-                  required
                   className="flex h-10 w-full rounded-md border border-[#27272a] bg-white/5 px-3 py-2 pr-10 text-sm placeholder:text-[#a1a1aa] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#fafafa] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 transition-all hover:bg-white/10 ring-offset-[#09090b]"
                 />
                 <button
@@ -132,6 +136,7 @@ export default function ResetPassword() {
                   {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </button>
               </div>
+              {errors.newPassword && <span className="text-xs text-red-500 block">{errors.newPassword.message}</span>}
             </div>
             
             <div className="space-y-2">
@@ -140,10 +145,8 @@ export default function ResetPassword() {
                 <input
                   id="confirmPassword"
                   type={showConfirmPassword ? "text" : "password"}
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  {...confirmPasswordField}
                   disabled={loading}
-                  required
                   className="flex h-10 w-full rounded-md border border-[#27272a] bg-white/5 px-3 py-2 pr-10 text-sm placeholder:text-[#a1a1aa] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#fafafa] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 transition-all hover:bg-white/10 ring-offset-[#09090b]"
                 />
                 <button
@@ -154,6 +157,7 @@ export default function ResetPassword() {
                   {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </button>
               </div>
+              {errors.confirmPassword && <span className="text-xs text-red-500 block">{errors.confirmPassword.message}</span>}
             </div>
 
             {error && (

@@ -23,8 +23,8 @@ function Login() {
 
   const usernameField = register("username", {
     required: "Username or email is required",
+    setValueAs: (value) => value.trim(),
     validate: (value) => {
-      if (!value.trim()) return true;
       const isEmail = value.includes("@");
       if (isEmail) {
         const emailRegex = /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i;
@@ -41,11 +41,9 @@ function Login() {
   const onSubmit = async (data) => {
     setLoading(true);
     setLoginError(null);
-    
-    const cleanData = { ...data, username: data.username.trim() };
 
     try{
-      const result = await loginAction(cleanData);
+      const result = await loginAction(data);
       if(result.error) setLoginError(result.error);
       else{
         setAuth(result);
@@ -158,11 +156,10 @@ function Login() {
                   <Link to="/register" className="font-medium text-[#fafafa] underline-offset-4 hover:underline">Sign up</Link>
               </div>
           </div>
-          
-          <div className="mt-8 text-center text-xs text-[#a1a1aa]">
-              <Link to="/" className="hover:text-[#fafafa] transition-colors flex items-center justify-center gap-1">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6"/></svg>
-                  Back to Home
+
+          <div className="mt-8 text-center text-sm">
+              <Link to="/" className="font-medium text-[#fafafa] underline-offset-4 hover:underline">
+                Back to Home
               </Link>
           </div>
       </div>

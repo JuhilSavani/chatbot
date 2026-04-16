@@ -18,6 +18,7 @@ function Register() {
 
   const usernameField = register("username", {
     required: "Username is required",
+    setValueAs: (value) => value.trim(),
     minLength: {
       value: 3,
       message: "Username must be at least 3 characters long"
@@ -39,6 +40,7 @@ function Register() {
 
   const emailField = register("email", {
     required: "Email is required",
+    setValueAs: (value) => value.trim(),
     pattern: {
       value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
       message: "Invalid email address"
@@ -50,7 +52,9 @@ function Register() {
     pattern: {
       value: /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=\[\]{}|;:'",.<>\/?]).{8,}$/,
       message: "Password must be at least 8 characters, include uppercase, lowercase, number, and special character"
-    }
+    },
+    validate: (value) =>
+      !/\s/.test(value) || "Password cannot contain whitespaces",
   });
 
   const confirmPasswordField = register("confirmPassword", {
@@ -67,14 +71,8 @@ function Register() {
     setRegisterError(null);
     setRegisterMessage(null);
     
-    const cleanData = { 
-      ...data, 
-      username: data.username.trim(),
-      email: data.email.trim()
-    };
-    
     try{
-      const result = await registerAction(cleanData);
+      const result = await registerAction(data);
       if(result.error) setRegisterError(result.error);
       else{
         setRegisterMessage(result.message);
@@ -222,12 +220,11 @@ function Register() {
                   <Link to="/login" className="font-medium text-[#fafafa] underline-offset-4 hover:underline">Sign in</Link>
               </div>
           </div>
-          
-          <div className="mt-8 text-center text-xs text-[#a1a1aa]">
-              <Link to="/" className="hover:text-[#fafafa] transition-colors flex items-center justify-center gap-1">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6"/></svg>
-                  Back to Home
-              </Link>
+
+          <div className="mt-8 text-center text-sm">
+            <Link to="/" className="font-medium text-[#fafafa] underline-offset-4 hover:underline">
+              Back to Home
+            </Link>
           </div>
       </div>
     </div>
