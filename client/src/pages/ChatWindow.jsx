@@ -1,11 +1,17 @@
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import React, {
+  useState,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useCallback,
+} from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import {
   SidebarProvider,
   SidebarInset,
   useSidebar,
 } from "@/components/ui/sidebar";
-import { ArrowRight, StopCircle, Copy, Check } from "lucide-react";
+import { ArrowRight, StopCircle, Copy, Check, ArrowDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import ChatInput from "@/utils/components/ChatInput";
 import ChatSidebar from "@/utils/components/ChatSidebar";
@@ -95,7 +101,7 @@ export default function ChatWindow() {
   );
 }
 
-const ChatMessage = React.memo(({ message }) => {
+const ChatMessage = React.memo(({ message, messageRef }) => {
   const [copied, setCopied] = useState(false);
 
   // 1. Handle "Thinking" State
@@ -148,6 +154,7 @@ const ChatMessage = React.memo(({ message }) => {
 
   return (
     <div
+      ref={messageRef}
       className={`mb-6 flex flex-col relative group ${isUser ? "items-end" : "items-start w-full"}`}
     >
       {/* PDF Attachments */}
@@ -223,8 +230,10 @@ function MainContent({ setThreads }) {
   const [messages, setMessages] = useState([]);
   const [loadingChat, setLoadingChat] = useState(false);
   const [loadingResponse, setLoadingResponse] = useState(false);
+  const [hasStreamStarted, setHasStreamStarted] = useState(false);
   const [error, setError] = useState(null);
   const [usage, setUsage] = useState(null);
+  const [generationScrollRequest, setGenerationScrollRequest] = useState(0);
 
   useEffect(() => {
     if (auth?.user?.id) {
@@ -237,6 +246,63 @@ function MainContent({ setThreads }) {
   const currentChatThreadId = useRef(null);
   const abortRef = useRef(null);
   const messagesEndRef = useRef(null);
+  const scrollContainerRef = useRef(null);
+  const latestAssistantMessageRef = useRef(null);
+  const latestHumanMessageRef = useRef(null);
+  const handledGenerationScrollRequestRef = useRef(0);
+  const stopRequestedRef = useRef(false);
+  const [isAtBottom, setIsAtBottom] = useState(true);
+
+  // Track whether the bottom sentinel is visible within the scroll container.
+  useEffect(() => {
+    const root = scrollContainerRef.current;
+    const sentinel = messagesEndRef.current;
+    if (!root || !sentinel) {
+      return;
+    }
+
+    const observer = new IntersectionObserver(
+      ([entry]) => setIsAtBottom(entry.isIntersecting),
+      { root, threshold: 1 },
+    );
+
+    observer.observe(sentinel);
+    return () => observer.disconnect();
+  }, []);
+
+  const scrollToBottom = useCallback(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, []);
+
+  const scrollToGenerationBoundary = useCallback(() => {
+    const assistantTarget = latestAssistantMessageRef.current;
+    if (assistantTarget) {
+      assistantTarget.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+        inline: "nearest",
+      });
+      return;
+    }
+
+    latestHumanMessageRef.current?.scrollIntoView({
+      behavior: "smooth",
+      block: "end",
+      inline: "nearest",
+    });
+  }, []);
+
+  useLayoutEffect(() => {
+    if (!generationScrollRequest || loadingResponse) return;
+    if (handledGenerationScrollRequestRef.current === generationScrollRequest) {
+      return;
+    }
+
+    handledGenerationScrollRequestRef.current = generationScrollRequest;
+    scrollToGenerationBoundary();
+  }, [generationScrollRequest, loadingResponse, scrollToGenerationBoundary]);
+
+  const showScrollButtonPulse = loadingResponse && hasStreamStarted;
 
   // LOAD HISTORY EFFECT
   useEffect(() => {
@@ -291,6 +357,7 @@ function MainContent({ setThreads }) {
   // SEND MESSAGE HANDLER
   const handleMessageSent = async (messageData) => {
     const { message: newMessage, attachments, selectedModel } = messageData;
+    stopRequestedRef.current = false;
 
     // Optimistic UI Update
     const userMsg = { role: "user", content: newMessage };
@@ -316,6 +383,10 @@ function MainContent({ setThreads }) {
       ]);
     }
 
+    let shouldScrollToGenerationBoundary = false;
+    let encounteredStreamError = false;
+
+    setHasStreamStarted(false);
     setLoadingResponse(true);
 
     try {
@@ -345,6 +416,7 @@ function MainContent({ setThreads }) {
 
       for await (const event of stream) {
         if (event.type === "token") {
+          setHasStreamStarted(true);
           // Update the assistant's placeholder message
           setMessages((prev) => {
             const lastMsg = prev[prev.length - 1];
@@ -357,6 +429,7 @@ function MainContent({ setThreads }) {
             ];
           });
         } else if (event.type === "tool_start") {
+          setHasStreamStarted(true);
           setMessages((prev) => [
             ...prev,
             {
@@ -400,6 +473,7 @@ function MainContent({ setThreads }) {
             return newMsgs;
           });
         } else if (event.type === "error") {
+          encounteredStreamError = true;
           if (event.isLimit) {
             const newUsage = {
               remaining: 0,
@@ -422,26 +496,31 @@ function MainContent({ setThreads }) {
           );
         }
       }
+
+      shouldScrollToGenerationBoundary = !encounteredStreamError;
     } catch (err) {
       console.error("Stream failed", err);
       // Optional: Add visual error state to message
     } finally {
       setLoadingResponse(false);
+      setHasStreamStarted(false);
       abortRef.current = null;
+
+      if (shouldScrollToGenerationBoundary && !stopRequestedRef.current) {
+        setGenerationScrollRequest((prev) => prev + 1);
+      }
     }
   };
 
   const handleStop = useCallback(() => {
+    stopRequestedRef.current = true;
     if (abortRef.current) {
       abortRef.current();
       abortRef.current = null;
       setLoadingResponse(false);
+      setHasStreamStarted(false);
     }
   }, []);
-
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [loadingResponse, loadingChat]);
 
   const contentStateClasses =
     !isMobile && open
@@ -449,6 +528,16 @@ function MainContent({ setThreads }) {
       : "bg-[#09090b] m-0 rounded-none border-transparent";
 
   const isNewChat = messages.length === 0 && !loadingChat;
+  const latestAssistantIndex = messages.reduce(
+    (latestIndex, currentMessage, currentIndex) =>
+      currentMessage.role === "assistant" ? currentIndex : latestIndex,
+    -1,
+  );
+  const latestHumanIndex = messages.reduce(
+    (latestIndex, currentMessage, currentIndex) =>
+      currentMessage.role === "user" ? currentIndex : latestIndex,
+    -1,
+  );
 
   return (
     <SidebarInset
@@ -510,7 +599,10 @@ function MainContent({ setThreads }) {
         </div>
       )}
 
-      <div className="flex-1 overflow-y-auto p-4 md:p-8 w-full scroll-smooth">
+      <div
+        ref={scrollContainerRef}
+        className="relative flex-1 overflow-y-auto p-4 md:p-8 w-full scroll-smooth"
+      >
         {error && (
           <div className="text-red-400 text-center mt-10 p-4 border border-red-500/20 bg-red-500/5 rounded-lg">
             {error}
@@ -534,16 +626,60 @@ function MainContent({ setThreads }) {
 
         {messages.length > 0 && (
           <div className="flex flex-col gap-2 max-w-4xl mx-auto w-full pb-8">
-            {messages.map((message, index) => (
-              <ChatMessage key={index} message={message} />
-            ))}
+            {messages.map((message, index) => {
+              const messageRef =
+                index === latestAssistantIndex
+                  ? latestAssistantMessageRef
+                  : index === latestHumanIndex
+                    ? latestHumanMessageRef
+                    : null;
+
+              return (
+                <ChatMessage
+                  key={index}
+                  message={message}
+                  messageRef={messageRef}
+                />
+              );
+            })}
 
             {loadingResponse &&
               messages[messages.length - 1]?.role !== "assistant" &&
               !messages.some((m) => m.isPdfProcessing) && (
                 <ChatMessage message={{ isThinking: true }} />
               )}
-            <div ref={messagesEndRef} />
+          </div>
+        )}
+        <div ref={messagesEndRef} className="h-px w-full shrink-0" />
+        {/* Scroll-to-bottom floating button */}
+        {!loadingChat && messages.length > 0 && !isAtBottom && (
+          <div className="sticky bottom-4 flex justify-center pointer-events-none">
+            <div className="relative pointer-events-auto isolate">
+              {showScrollButtonPulse && (
+                <>
+                  <span className="beep-sync pointer-events-none absolute -inset-2 rounded-full border border-zinc-400/20 bg-zinc-400/6 shadow-[0_0_0_1px_rgba(161,161,170,0.08),0_0_20px_rgba(161,161,170,0.08)]" />
+                  <span className="beep-sync pointer-events-none absolute -inset-4 rounded-full border border-zinc-400/12 bg-zinc-400/4 opacity-55 blur-[1px]" />
+                </>
+              )}
+              <button
+                id="scroll-to-bottom-btn"
+                onClick={scrollToBottom}
+                className={[
+                  "relative z-10 flex h-10 w-10 items-center justify-center rounded-full border text-[#fafafa] shadow-lg transition-colors duration-200 overflow-hidden",
+                  "bg-[#18181b] hover:bg-[#27272a]",
+                  showScrollButtonPulse
+                    ? "border-white/30 shadow-[0_0_0_1px_rgba(255,255,255,0.18),0_0_32px_rgba(255,255,255,0.22)]"
+                    : "border-white/10 shadow-[0_0_0_1px_rgba(255,255,255,0.03)]",
+                ].join(" ")}
+                title="Jump to latest message"
+                aria-label="Jump to latest message"
+              >
+                {showScrollButtonPulse && (
+                  <span className="beep-sync pointer-events-none absolute inset-0 z-0 rounded-full bg-zinc-300/8" />
+                )}
+                <ArrowDown className="relative z-10 w-3.5 h-3.5" />
+              </button>
+            </div>
           </div>
         )}
       </div>

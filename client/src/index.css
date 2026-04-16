@@ -212,6 +212,24 @@
   100% { transform: translateX(100%); }
 }
 
+@keyframes buttonBeep {
+  0%,
+  100% {
+    transform: scale(0.98);
+    opacity: 0.28;
+  }
+
+  50% {
+    transform: scale(1.08);
+    opacity: 0.95;
+  }
+}
+
+.beep-sync {
+  animation: buttonBeep 1.45s ease-in-out infinite;
+  transform-origin: center;
+}
+
 .meteor-effect {
   position: absolute;
   top: 0;
