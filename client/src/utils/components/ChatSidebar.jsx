@@ -139,21 +139,21 @@ export default function ChatSidebar({ threads = [], isLoading = false, setThread
         <MessageSquare className="h-4 w-4 mt-1 shrink-0" />
         <div className="flex flex-col gap-1 min-w-0 flex-1 relative">
           <div className="flex items-center justify-between">
-            <span className="truncate font-medium text-sm text-zinc-300 group-data-[active=true]/thread:text-white group-hover/thread:text-white group-active/thread:text-white transition-colors pr-6">
+            <span className={`truncate font-medium text-sm text-zinc-300 group-data-[active=true]/thread:text-white group-hover/thread:text-white group-active/thread:text-white transition-colors ${isMobile ? "pr-16" : "pr-6"}`}>
               {thread.threadName || "Untitled Chat"}
             </span>
-            {pinned.has(thread.threadId) && (
+            {pinned.has(thread.threadId) && !isMobile && (
               <Pin className="h-3 w-3 text-zinc-400 rotate-45 shrink-0 block group-hover/thread:hidden" />
             )}
           </div>
-          <span className="text-xs text-zinc-500 truncate group-data-[active=true]/thread:text-zinc-400 group-hover/thread:text-zinc-400 group-active/thread:text-zinc-400 transition-colors">
+          <span className={`text-xs text-zinc-500 truncate group-data-[active=true]/thread:text-zinc-400 group-hover/thread:text-zinc-400 group-active/thread:text-zinc-400 transition-colors ${isMobile ? "pr-16" : ""}`}>
             {(!thread.updatedAt || isNaN(new Date(thread.updatedAt).getTime())) 
               ? "" 
               : new Date(thread.updatedAt).toLocaleDateString()}
           </span>
           
           {/* Hover Actions */}
-          <div className="absolute right-0 top-0 h-full flex items-center gap-1 pl-8 bg-gradient-to-l from-zinc-800 via-zinc-800 to-transparent opacity-0 translate-x-[100px] group-hover/thread:opacity-100 group-hover/thread:translate-x-0 transition-all duration-200 ease-out">
+          <div className={`absolute flex gap-1 transition-all duration-200 ease-out ${isMobile ? "-right-1 top-0 items-start pt-0 opacity-100 translate-x-0 bg-transparent pl-0 pr-0" : "right-0 top-0 h-full items-center pl-8 bg-gradient-to-l from-zinc-800 via-zinc-800 to-transparent opacity-0 translate-x-[100px] group-hover/thread:opacity-100 group-hover/thread:translate-x-0"}`}>
             <div 
               role="button"
               tabIndex={0}
