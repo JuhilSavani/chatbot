@@ -11,12 +11,13 @@ const MODEL_OPTIONS = [
 ];
 const DEFAULT_MODEL_ID = MODEL_OPTIONS[0].id;
 
-const ChatInput = ({ threadId, onMessageSent, loading, onStop }) => {
+const ChatInput = ({ threadId, onMessageSent, loading, onStop, disabled = false }) => {
   const [message, setMessage] = useState('');
   const [selectedModelId, setSelectedModelId] = useState(DEFAULT_MODEL_ID);
   const [isModelMenuOpen, setIsModelMenuOpen] = useState(false);
   const [error, setError] = useState(null);
   const [isSending, setIsSending] = useState(false);
+  const isInputLocked = disabled || isSending;
   
   // Each entry: { id, file, text, status: 'verifying' | 'done' | 'error', tokenCount, error }
   const [attachments, setAttachments] = useState([]);
@@ -25,6 +26,7 @@ const ChatInput = ({ threadId, onMessageSent, loading, onStop }) => {
   const textareaRef = useRef(null);
   const fileInputRef = useRef(null);
   const modelSelectorRef = useRef(null);
+  const inputContainerRef = useRef(null);
 
   useEffect(() => {
     if (textareaRef.current) {
@@ -59,6 +61,22 @@ const ChatInput = ({ threadId, onMessageSent, loading, onStop }) => {
       document.removeEventListener('keydown', handleEscape);
     };
   }, []);
+
+  useEffect(() => {
+    if (!isInputLocked) return;
+
+    setIsModelMenuOpen(false);
+    setIsDragging(false);
+
+    const activeElement = document.activeElement;
+    if (
+      inputContainerRef.current &&
+      activeElement instanceof HTMLElement &&
+      inputContainerRef.current.contains(activeElement)
+    ) {
+      activeElement.blur();
+    }
+  }, [isInputLocked]);
 
   const updateAttachment = (id, updates) => {
     setAttachments(prev => prev.map(a => a.id === id ? { ...a, ...updates } : a));
@@ -126,6 +144,8 @@ const ChatInput = ({ threadId, onMessageSent, loading, onStop }) => {
   };
 
   const processPdfFiles = (files) => {
+    if (isInputLocked) return;
+
     const pdfFiles = Array.from(files).filter(f => f.type === 'application/pdf');
 
     if (pdfFiles.length === 0) {
@@ -166,16 +186,22 @@ const ChatInput = ({ threadId, onMessageSent, loading, onStop }) => {
 
   const handleDragOver = (e) => {
     e.preventDefault();
+    if (isInputLocked) return;
+
     if (!isDragging) setIsDragging(true);
   };
 
   const handleDragLeave = (e) => {
+    if (isInputLocked) return;
+
     e.preventDefault();
     setIsDragging(false);
   };
 
   const handleDrop = (e) => {
     e.preventDefault();
+    if (isInputLocked) return;
+
     setIsDragging(false);
     
     if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
@@ -185,6 +211,8 @@ const ChatInput = ({ threadId, onMessageSent, loading, onStop }) => {
   };
 
   const handleFileSelect = (e) => {
+    if (isInputLocked) return;
+
     if (e.target.files && e.target.files.length > 0) {
       processPdfFiles(e.target.files);
     }
@@ -204,7 +232,7 @@ const ChatInput = ({ threadId, onMessageSent, loading, onStop }) => {
   const selectedModel = MODEL_OPTIONS.find(option => option.id === selectedModelId) || MODEL_OPTIONS[0];
 
   const handleSendMessage = async () => {
-    if (!message.trim() || loading || isSending || !threadId) return;
+    if (!message.trim() || loading || isInputLocked || !threadId) return;
 
     const userMessage = message.trim();
     setError(null);
@@ -256,6 +284,8 @@ const ChatInput = ({ threadId, onMessageSent, loading, onStop }) => {
   };
 
   const handleKeyDown = (e) => {
+    if (isInputLocked) return;
+
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       handleSendMessage();
@@ -272,11 +302,20 @@ const ChatInput = ({ threadId, onMessageSent, loading, onStop }) => {
       
       {/* Main Input Container */}
       <div 
-        className={`w-full max-w-4xl bg-[#18181b]/50 backdrop-blur-xl rounded-2xl p-3 md:p-4 border relative flex flex-col min-h-32 transition-all duration-200 z-10 group focus-within:shadow-[0_0_0_4px_rgba(255,255,255,0.8)] ${isDragging ? 'border-blue-500 bg-blue-500/10' : 'border-white/5'}`}
+        ref={inputContainerRef}
+        className={`w-full max-w-4xl bg-[#18181b]/50 backdrop-blur-xl rounded-2xl p-3 md:p-4 border relative flex flex-col min-h-32 transition-all duration-200 z-10 group focus-within:shadow-[0_0_0_4px_rgba(255,255,255,0.8)] ${isDragging ? 'border-blue-500 bg-blue-500/10' : 'border-white/5'} ${disabled ? 'opacity-60' : ''}`}
+        aria-disabled={disabled}
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
       >
+        {disabled && (
+          <div
+            aria-hidden="true"
+            className="absolute inset-0 z-20 rounded-2xl cursor-not-allowed bg-transparent"
+          />
+        )}
+
         {/* Hidden File Input */}
         <input
           type="file"
@@ -343,7 +382,7 @@ const ChatInput = ({ threadId, onMessageSent, loading, onStop }) => {
             value={message}
             onChange={(e) => setMessage(e.target.value)}
             onKeyDown={handleKeyDown}
-            disabled={isSending}
+            disabled={isInputLocked}
             rows={1}
             style={{ maxHeight: '200px', overflowY: 'auto' }}
           />
@@ -360,7 +399,7 @@ const ChatInput = ({ threadId, onMessageSent, loading, onStop }) => {
               <button
                 type="button"
                 onClick={() => setIsModelMenuOpen(prev => !prev)}
-                disabled={isSending}
+                disabled={isInputLocked}
                 className={`flex items-center rounded-md border border-white/10 bg-white/5 p-1 transition-all duration-200 hover:bg-white/10`}
               >
                 <span className="px-2 text-[10px] font-semibold tracking-[0.18em] text-[#a1a1aa]">MODEL</span>
@@ -402,7 +441,7 @@ const ChatInput = ({ threadId, onMessageSent, loading, onStop }) => {
             {/* Attachment Button */}
             <button 
               onClick={() => fileInputRef.current?.click()}
-              disabled={isSending || isBusy || attachments.length >= MAX_PDFS}
+              disabled={isInputLocked || isBusy || attachments.length >= MAX_PDFS}
               className="border border-white/10 text-[#a1a1aa] hover:text-[#fafafa]  bg-white/5 hover:bg-white/10 p-1.5 transition-colors rounded-md disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <Paperclip className="w-4 h-4" strokeWidth={2} />
@@ -412,9 +451,9 @@ const ChatInput = ({ threadId, onMessageSent, loading, onStop }) => {
           {/* Right Side: Send/Stop Button */}
           <button 
             onClick={loading ? onStop : handleSendMessage}
-            disabled={isSending || (!loading && !message.trim())}
+            disabled={isInputLocked || (!loading && !message.trim())}
             className={`w-8 h-8 rounded-md transition-all duration-200 flex items-center justify-center
-              ${(loading || isSending || message.trim())
+              ${(loading || (!isInputLocked && message.trim()))
                 ? 'bg-[#fafafa] text-[#18181b] hover:bg-white hover:shadow-[0_0_10px_rgba(255,255,255,0.2)]' 
                 : 'border border-white/10 text-[#a1a1aa] bg-white/5 cursor-not-allowed'
               }`}

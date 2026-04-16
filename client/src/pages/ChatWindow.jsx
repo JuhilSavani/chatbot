@@ -235,6 +235,15 @@ function MainContent({ setThreads }) {
   const [usage, setUsage] = useState(null);
   const [generationScrollRequest, setGenerationScrollRequest] = useState(0);
 
+  const isUsageLocked = !!usage && usage.remaining <= 0;
+  const usageResetLabel = usage?.reset
+    ? new Date(usage.reset).toLocaleDateString("en-US", {
+        month: "long",
+        day: "numeric",
+        year: "numeric",
+      })
+    : null;
+
   useEffect(() => {
     if (auth?.user?.id) {
       getUsage(auth.user.id).then((data) => {
@@ -568,7 +577,6 @@ function MainContent({ setThreads }) {
 
           {(() => {
             const remaining = usage ? usage.remaining : 5;
-            const reset = usage?.reset;
             const isLoaded = !!usage;
             return (
               <div className="flex flex-col items-end">
@@ -582,9 +590,9 @@ function MainContent({ setThreads }) {
                     {remaining} / 5 usages left
                   </span>
                 </div>
-                {isLoaded && remaining === 0 && reset && (
+                {isLoaded && remaining === 0 && usageResetLabel && (
                   <div className="text-[10px] text-[#71717a] mt-1 px-2 whitespace-nowrap absolute top-12 right-6">
-                    Resets: {new Date(reset).toLocaleDateString()}
+                    Resets: {usageResetLabel}
                   </div>
                 )}
               </div>
@@ -653,7 +661,7 @@ function MainContent({ setThreads }) {
         <div ref={messagesEndRef} className="h-px w-full shrink-0" />
         {/* Scroll-to-bottom floating button */}
         {!loadingChat && messages.length > 0 && !isAtBottom && (
-          <div className="sticky bottom-4 flex justify-center pointer-events-none">
+          <div className="sticky -bottom-2 flex justify-center pointer-events-none">
             <div className="relative pointer-events-auto isolate">
               {showScrollButtonPulse && (
                 <>
@@ -685,33 +693,29 @@ function MainContent({ setThreads }) {
       </div>
 
       <div className="shrink-0 w-full p-2 md:p-4 bg-[#09090b] border-t border-white/5">
-        <div className="max-w-4xl mx-auto">
-          {usage && usage.remaining <= 0 ? (
-            <div className="flex flex-col items-center justify-center p-6 border border-red-500/20 bg-[#18181b] rounded-xl">
-              <h2 className="text-lg font-medium text-red-400 mb-1">
+        <div className="max-w-4xl mx-auto flex flex-col gap-2">
+          {isUsageLocked && (
+            <div className="p-4 border border-amber-500/20 bg-amber-500/5 rounded-lg">
+              <h2 className="text-md font-medium text-amber-300 mb-1">
                 Monthly Limit Reached
               </h2>
-              <p className="text-[#a1a1aa] text-sm text-center">
+              <p className="text-[#a1a1aa] text-sm text-left">
                 You've used your free queries for this month. Your limit will
                 reset on{" "}
                 <span className="text-[#fafafa] font-medium">
-                  {new Date(usage.reset).toLocaleDateString("en-US", {
-                    month: "long",
-                    day: "numeric",
-                    year: "numeric",
-                  })}
+                  {usageResetLabel}
                 </span>
                 .
               </p>
             </div>
-          ) : (
-            <ChatInput
-              threadId={currentChatThreadId}
-              onMessageSent={handleMessageSent}
-              loading={loadingResponse}
-              onStop={handleStop}
-            />
           )}
+          <ChatInput
+            threadId={currentChatThreadId}
+            onMessageSent={handleMessageSent}
+            loading={loadingResponse}
+            onStop={handleStop}
+            disabled={isUsageLocked}
+          />
         </div>
       </div>
     </SidebarInset>
