@@ -61,19 +61,19 @@ export const register = async (req, res) => {
 };
 
 export const login = async (req, res) => {
-  const { username, password } = req.body;
-  if (!username || !password)
+  const { identifier, password } = req.body;
+  if (!identifier || !password)
     return res.status(400).json({
       message: "Provide complete credentials to login",
     });
   try {
-    const identifier = username.toLowerCase().trim();
-    const isEmail = identifier.includes("@");
+    const normalizedIdentifier = identifier.toLowerCase().trim();
+    const isEmail = normalizedIdentifier.includes("@");
 
     const user = await User.findOne({
       where: isEmail
-        ? where(fn("LOWER", col("email")), "=", identifier)
-        : where(fn("LOWER", col("username")), "=", identifier),
+        ? where(fn("LOWER", col("email")), "=", normalizedIdentifier)
+        : where(fn("LOWER", col("username")), "=", normalizedIdentifier),
     });
 
     if (!user) 
@@ -85,7 +85,7 @@ export const login = async (req, res) => {
       return res.status(401).json({ message: "Verify your email address to login" });
 
     if (error || !data.session) 
-      return res.status(401).json({ message: "Incorrect username or password" });
+      return res.status(401).json({ message: "Invalid credentials" });
   
     res.cookie("authJwt", data.session.access_token, {
       httpOnly: true,
@@ -178,15 +178,27 @@ export const googleCallback = async (req, res) => {
 };
 
 export const forgotPassword = async (req, res) => {
-  const { email } = req.body;
-  if (!email) 
-    return res.status(400).json({ message: "Provide email address to reset password" });
+  const { identifier } = req.body;
+  if (!identifier) 
+    return res.status(400).json({ message: "Provide username or email to reset password" });
 
   try {
-    await supabase.auth.resetPasswordForEmail(email, {
+    const normalizedIdentifier = identifier.toLowerCase().trim();
+    const isEmail = normalizedIdentifier.includes("@");
+
+    const user = await User.findOne({
+      where: isEmail
+        ? where(fn("LOWER", col("email")), "=", normalizedIdentifier)
+        : where(fn("LOWER", col("username")), "=", normalizedIdentifier),
+    });
+
+    if (!user)
+      return res.status(404).json({ message: "No account found with the provided username or email" });
+
+    await supabase.auth.resetPasswordForEmail(user.email, {
       redirectTo: `${process.env.CLIENT_APP_ORIGIN_URL || "http://localhost:3000"}/reset-password`,
     });
-    return res.status(200).json({ message: `We have sent a password reset link at ${email}` });
+    return res.status(200).json({ message: `We have sent a password reset link at ${user.email}` });
   } catch (error) {
     console.error(error.stack);
     return res.status(500).json({ message: "Failed to send password reset link" });

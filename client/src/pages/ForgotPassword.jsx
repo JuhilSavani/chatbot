@@ -1,25 +1,22 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
+import { useForm } from "react-hook-form";
 import { forgotPasswordAction } from "@/utils/actions/authorize.actions";
 
 export default function ForgotPassword() {
-  const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState(null);
   const [error, setError] = useState(null);
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!email) {
-      setError("Email is required");
-      return;
-    }
+  const { register, handleSubmit, formState: { errors } } = useForm();
+
+  const onSubmit = async ({ identifier }) => {
     setError(null);
     setMessage(null);
     setLoading(true);
 
     try {
-      const result = await forgotPasswordAction({ email });
+      const result = await forgotPasswordAction({ identifier });
       if (result.error) {
         setError(result.error);
       } else {
@@ -52,23 +49,33 @@ export default function ForgotPassword() {
           <div className="text-center mb-6">
             <h1 className="text-2xl font-bold tracking-tight">Forgot Password</h1>
             <p className="text-sm text-[#a1a1aa] mt-2">
-              Enter your email address and we'll send you a link to reset your password.
+              Enter your username or email address and we'll send you a link to reset your password.
             </p>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4" noValidate>
             <div className="space-y-2">
-              <label htmlFor="email" className="text-sm font-medium leading-none block">Email</label>
+              <label htmlFor="identifier" className="text-sm font-medium leading-none block">Username or Email</label>
               <input
-                id="email"
-                type="email"
-                placeholder="m@example.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                id="identifier"
+                type="text"
+                placeholder="username or email@example.com"
+                {...register("identifier", {
+                  required: "Username or email is required",
+                  setValueAs: (value) => value.trim(),
+                  validate: (value) => {
+                    const isEmail = value.includes("@");
+                    if (isEmail) {
+                      const emailRegex = /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i;
+                      return emailRegex.test(value) || "Invalid email address";
+                    }
+                    return true;
+                  }
+                })}
                 disabled={loading}
-                required
                 className="flex h-10 w-full rounded-md border border-[#27272a] bg-white/5 px-3 py-2 text-sm placeholder:text-[#a1a1aa] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#fafafa] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 transition-all hover:bg-white/10 ring-offset-[#09090b]"
               />
+              {errors.identifier && <span className="text-xs text-red-500 block">{errors.identifier.message}</span>}
             </div>
 
             {error && (

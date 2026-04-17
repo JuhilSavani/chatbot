@@ -34,9 +34,9 @@ export async function loginAction(data){
   }
 }
 
-export async function forgotPasswordAction(data) {
+export async function forgotPasswordAction({ identifier }) {
   try {
-    const response = await axios.post("/authorize/forgot-password", data);
+    const response = await axios.post("/authorize/forgot-password", { identifier });
     return response.data;
   } catch (error) {
     console.error(error.stack);

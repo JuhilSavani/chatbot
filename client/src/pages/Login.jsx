@@ -21,7 +21,7 @@ function Login() {
  
   const from = location.state?.from?.pathname || "/chat";
 
-  const usernameField = register("username", {
+  const identifierField = register("identifier", {
     required: "Username or email is required",
     setValueAs: (value) => value.trim(),
     validate: (value) => {
@@ -91,15 +91,15 @@ function Login() {
 
               <form className="space-y-4" onSubmit={handleSubmit(onSubmit)} noValidate>
                   <div className="space-y-2">
-                      <label htmlFor="username" className="text-sm font-medium leading-none block">Username or Email</label>
+                      <label htmlFor="identifier" className="text-sm font-medium leading-none block">Username or Email</label>
                       <input 
                         type="text" 
-                        id="username" 
-                        {...usernameField}
+                        id="identifier" 
+                        {...identifierField}
                         className="flex h-10 w-full rounded-md border border-[#27272a] bg-white/5 px-3 py-2 text-sm placeholder:text-[#a1a1aa] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#fafafa] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 transition-all hover:bg-white/10 ring-offset-[#09090b]" 
                         placeholder="username or email@example.com" 
                       />
-                      {errors.username && <span className="text-xs text-red-500 block">{errors.username.message}</span>}
+                      {errors.identifier && <span className="text-xs text-red-500 block">{errors.identifier.message}</span>}
                   </div>
                   
                   <div className="space-y-2">
