@@ -34,41 +34,12 @@ Setting up Sidekick takes just a few minutes:
     ```
 
 3. **Configure your server environment:** <br/>
-    Create a `.env` file in the `server` folder. You can copy the structure from `.env.example`:
-    ```env
-    PORT=4000
-    NODE_ENV=development
-    CLIENT_APP_ORIGIN_URL=http://localhost:3000
-    
-    # Supabase (Database & Auth)
-    SUPABASE_PG_URI=postgresql://postgres:[PASSWORD]@[HOST]:5432/postgres
-    SUPABASE_PROJECT_URL=https://[PROJECT_ID].supabase.co
-    SUPABASE_SERVICE_ROLE_KEY=[YOUR_SERVICE_ROLE_KEY]
-    
-    # Google OAuth
-    GOOGLE_CLIENT_ID=[YOUR_GOOGLE_CLIENT_ID]
-    GOOGLE_CLIENT_SECRET=[YOUR_GOOGLE_CLIENT_SECRET]
-    GOOGLE_REDIRECT_URI=http://localhost:4000/api/authorize/google/callback
-    
-    # Cloudinary
-    CLOUDINARY_CLOUD_NAME=[YOUR_CLOUDINARY_CLOUD_NAME]
-    CLOUDINARY_API_KEY=[YOUR_CLOUDINARY_API_KEY]
-    CLOUDINARY_API_SECRET=[YOUR_CLOUDINARY_API_SECRET]
-
-    # AI Providers
-    TAVILY_API_KEY=[YOUR_TAVILY_KEY]
-    GITHUB_TOKEN=[YOUR_GITHUB_TOKEN]
-    SUPERMEMORY_API_KEY=[YOUR_SUPERMEMORY_API_KEY]
-    
-    # Upstash (Rate Limiting)
-    UPSTASH_REDIS_REST_URL=[YOUR_UPSTASH_REDIS_REST_URL]
-    UPSTASH_REDIS_REST_TOKEN=[YOUR_UPSTASH_REDIS_REST_TOKEN]
-    ```
+    Create a `.env` file in the `server` folder. You can copy the structure from `.env.example`.
 
 4. **Set up the persistence tables (one-time only):** <br/>
     Before starting the server for the first time, run this script to create the LangGraph persistence tables (`checkpoints` and `writes`) in your Supabase database:
     ```bash
-    npm run persistence:init
+    npm run checkpoints:init
     ```
     > You only need to do this once. It's safe to re-run — it uses `CREATE TABLE IF NOT EXISTS`.
 
@@ -85,13 +56,7 @@ Setting up Sidekick takes just a few minutes:
     ```
     
 7. **Configure your client environment:** <br/>
-    Create a `.env` file in the `client` folder. You can copy the structure from `.env.example`:
-    ```env
-    # Google OAuth
-    VITE_BASE_API_ENDPOINT=http://localhost:4000/api
-    VITE_GOOGLE_CLIENT_ID=[YOUR_GOOGLE_CLIENT_ID]
-    VITE_GOOGLE_REDIRECT_URI=http://localhost:4000/api/authorize/google/callback
-    ```
+    Create a `.env` file in the `client` folder. You can copy the structure from `.env.example`.
     
 8. **Start the client application:**
     ```bash
