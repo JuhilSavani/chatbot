@@ -34,8 +34,12 @@ export const connectPostgres = async () => {
     console.log("✅ Postgres connected successfully!");
 
     if (!IS_PROD) {
-      await sequelize.sync({ alter: true });
-      console.log("🛠️ Database synced (dev mode).");
+      try {
+        await sequelize.sync({ alter: true });
+        console.log("🛠️ Database synced (dev mode).");
+      } catch (e) {
+        console.error("❌ Unable to sync database:", e.message);
+      }
     }
   } catch (error) {
     console.error("❌ Unable to connect to Postgres:", error.message);
