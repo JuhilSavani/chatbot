@@ -5,7 +5,6 @@ import { sequelize } from "../config/sequelize.config.js";
 import { QueryTypes } from 'sequelize';
 import { supermemory } from "../config/supermemory.config.js";
 import { extractText, getDocumentProxy } from "unpdf";
-import cloudinary from "../config/cloudinary.config.js";
 import { Attachment } from "../models/attachment.models.js";
 import { generateThreadName } from "../utils/generateThreadName.js";
 import { selectRelevantDocuments } from "../utils/selectRelevantDocuments.js";
@@ -78,16 +77,7 @@ export const ingestDocuments = async (req, res) => {
     const ingestedDocs = [];
     for (const att of attachments) {
       try {
-        const signedUrl = cloudinary.utils.private_download_url(
-          att.public_id, 
-          "",
-          {
-            resource_type: "raw",
-            type: "authenticated",
-            expires_at: Math.floor(Date.now() / 1000) + 300,
-            attachment: false
-          }
-        );
+        const signedUrl = att.secure_url;
 
         console.log(`[PDF Ingest] Fetching "${att.name}"`);
         const pdfResponse = await fetch(signedUrl);
@@ -106,6 +96,8 @@ export const ingestDocuments = async (req, res) => {
         const attachmentRecord = await Attachment.create({
           threadId,
           publicId: att.public_id,
+          secureUrl: att.secure_url,
+          resourceType: att.resource_type,
           name: att.name,
           content: text,
           tokenCount: att.tokenCount || 0,

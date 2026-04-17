@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Paperclip, ArrowUp, Square, X, FileText, Loader2, ChevronDown, Check } from 'lucide-react';
 import pdfjsWorkerUrl from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
-import { uploadPdfToCloudinary } from '../actions/upload.actions';
+import { uploadFileToCloudinary } from '../actions/upload.actions';
 
 const MAX_PDFS = 5;
 const MAX_TOKENS = 32768;
@@ -245,7 +245,7 @@ const ChatInput = ({ threadId, onMessageSent, loading, onStop, disabled = false 
         const uploadResults = await Promise.all(
           doneAttachments.map(async (att) => {
             console.log(`[ChatInput] Uploading "${att.file.name}" to Cloudinary...`);
-            const result = await uploadPdfToCloudinary(att.file);
+            const result = await uploadFileToCloudinary(att.file);
             console.log(`[ChatInput] Upload complete for "${att.file.name}"`);
             return result;
           })
@@ -254,6 +254,8 @@ const ChatInput = ({ threadId, onMessageSent, loading, onStop, disabled = false 
 
         const attachmentUrls = uploadResults.map((r, i) => ({
           public_id: r.public_id,
+          secure_url: r.secure_url,
+          resource_type: r.resource_type,
           name: r.original_filename,
           tokenCount: doneAttachments[i].tokenCount || 0,
         }));

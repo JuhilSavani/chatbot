@@ -1,16 +1,16 @@
 import axios from "../axios";
 
 /**
- * Uploads a PDF file to Cloudinary using signed upload.
- * 
+ * Uploads a file to Cloudinary using a signed public upload.
+ *
  * Flow:
  * 1. Request a signature from our backend
  * 2. Upload directly to Cloudinary using that signature
- * 
- * @param {File} file - The PDF file to upload
- * @returns {Promise<{secure_url, public_id, ...}>} Cloudinary response
+ *
+ * @param {File} file - The file to upload
+ * @returns {Promise<{public_id, secure_url, resource_type, original_filename, ...}>} Full Cloudinary response
  */
-export async function uploadPdfToCloudinary(file) {
+export async function uploadFileToCloudinary(file) {
   let signData;
   try {
     const response = await axios.post("/upload/sign");
@@ -32,11 +32,9 @@ export async function uploadPdfToCloudinary(file) {
   formData.append("folder", folder);
   formData.append("use_filename", "true");
   formData.append("unique_filename", "true");
-  formData.append("type", "authenticated");
-  formData.append("access_mode", "authenticated");
 
-  // 3. Upload directly to Cloudinary (raw = non-image/video files like PDFs)
-  const cloudinaryUrl = `https://api.cloudinary.com/v1_1/${cloudName}/raw/upload`;
+  // 3. Upload directly to Cloudinary (auto = handles all file types)
+  const cloudinaryUrl = `https://api.cloudinary.com/v1_1/${cloudName}/auto/upload`;
 
   const response = await fetch(cloudinaryUrl, {
     method: "POST",

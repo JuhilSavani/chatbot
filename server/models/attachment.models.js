@@ -18,6 +18,16 @@ export const Attachment = sequelize.define(
       type: DataTypes.STRING,
       allowNull: false,
     },
+    secureUrl: {
+      type: DataTypes.TEXT,
+      allowNull: false,
+      defaultValue: '',
+    },
+    resourceType: {
+      type: DataTypes.STRING,
+      allowNull: false,
+      defaultValue: '',
+    },
     name: {
       type: DataTypes.STRING,
       allowNull: false,
