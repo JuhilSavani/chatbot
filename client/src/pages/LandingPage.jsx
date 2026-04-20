@@ -50,9 +50,9 @@ export default function LandingPage() {
             <span className="font-semibold text-2xl tracking-tight">Sidekick</span>
           </div>
           <div className="hidden md:flex items-center gap-8 text-sm font-medium text-[#a1a1aa]">
-            <a href="#stack" className="hover:text-[#fafafa] transition-colors">Tech Stack</a>
-            <a href="#system-design" className="hover:text-[#fafafa] transition-colors">Architecture</a>
-            <a href="#developer-notes" className="hover:text-[#fafafa] transition-colors">Developer Notes</a>
+            <a href="#tech-stack" className="hover:text-[#fafafa] transition-colors">Tech Stack</a>
+            <a href="#features" className="hover:text-[#fafafa] transition-colors">Features</a>
+            <a href="#faqs" className="hover:text-[#fafafa] transition-colors">FAQs</a>
             <a href="https://github.com/JuhilSavani/chatbot" target="_blank" rel="noopener noreferrer" className="hover:text-[#fafafa] transition-colors">GitHub</a>
           </div>
           <div className="flex items-center gap-4">
@@ -68,31 +68,32 @@ export default function LandingPage() {
       <main className="flex-grow pt-32 pb-16 px-6 relative overflow-hidden">
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1000px] h-[600px] hero-glow pointer-events-none -z-10"></div>
 
-        <div className="max-w-4xl mx-auto text-center space-y-8 animate-fade-in-up">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10 text-xs font-medium text-[#a1a1aa] mb-4 hover:border-white/20 transition-colors cursor-default">
+        <div className="max-w-4xl mx-auto text-center space-y-6 animate-fade-in-up">
+          <div className="mb-8 inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/5 border border-white/10 text-xs font-medium text-[#a1a1aa] mb-4 hover:border-white/20 transition-colors cursor-default">
             <span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse"></span>
             <span>Open Source Engineering Project</span>
             <span className="w-px h-3 bg-white/10 mx-1"></span>
             <span className="text-white/60">v1.0.0</span>
           </div>
 
-          <h1 className="text-5xl md:text-7xl font-bold tracking-tight bg-clip-text text-transparent bg-linear-to-b from-white to-white/60 pb-2">
-            Exploring Conversational <br />
-            <span className="text-white">Agentic Workflows</span>
+          <h1 className="text-4xl md:text-6xl font-bold tracking-tight bg-clip-text text-transparent bg-linear-to-b from-white to-white/60 pb-2">
+            Your personal sidekick.<br />
+            <span className="text-white">Beyond the prompt.</span>
           </h1>
 
           <p className="text-lg md:text-xl text-[#a1a1aa] max-w-3xl mx-auto leading-relaxed">
-            An open-source reference architecture featuring cross-session conversational memory, autonomous tool execution, and real-time token streaming.
+            Sidekick is an open source personal AI assistant with long-term memory. It learns your preferences, 
+            masters your documents, and recalls past context across every session. It grows smarter the more you use it.
           </p>
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
             <Link to="/chat" className="w-full sm:w-auto px-8 py-3.5 bg-[#fafafa] border border-transparent text-[#18181b] font-medium rounded-lg hover:bg-[#fafafa]/90 transition-all shadow-lg hover:shadow-white/20 flex items-center justify-center gap-2 group">
-              Start Chatting
+              Start Chatting for Free
               <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="group-hover:translate-x-0.5 transition-transform"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
             </Link>
             <a href="https://github.com/JuhilSavani/chatbot" target="_blank" rel="noopener noreferrer" className="w-full sm:w-auto px-8 py-3.5 bg-white/5 border border-white/10 text-[#fafafa] font-medium rounded-lg hover:bg-white/10 transition-all flex items-center justify-center gap-2">
               <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.403 5.403 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4"/><path d="M9 18c-4.51 2-5-2-7-2"/></svg>
-              View Source
+              Explore the Open Project
             </a>
           </div>
         </div>
@@ -146,7 +147,7 @@ export default function LandingPage() {
                      </div>
                 </div>
                 {/* Sidebar Footer */}
-                <div className="p-2 border-t border-white/5 mt-auto">
+                <div className="p-2 border-t border-white/5 mt-auto pointer-events-none select-none">
                      <div className="flex items-center justify-between mx-2 mb-2 pt-2 px-2">
                         <div className="flex items-center gap-3 overflow-hidden">
                             <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center shrink-0 border border-white/5 text-[#fafafa] font-medium text-sm">JS</div>
@@ -159,7 +160,7 @@ export default function LandingPage() {
              {/* Chat Area Mock */}
              <div className="flex-1 flex flex-col bg-[#09090b] min-w-0 relative">
                  {/* Chat Header */}
-                 <div className="flex h-16 shrink-0 items-center gap-2 border-b border-white/5 px-6 bg-[#09090b]/80 backdrop-blur-md sticky top-0 z-10 w-full">
+                 <div className="flex h-16 shrink-0 items-center gap-2 border-b border-white/5 px-6 bg-[#09090b]/80 backdrop-blur-md sticky top-0 z-10 w-full pointer-events-none select-none">
                      <div className="flex items-center gap-4">
                          <span className="h-4 w-px bg-white/10 mr-2 hidden md:block"></span>
                          <span className="text-sm font-medium text-[#fafafa]">Transformer Architecture</span>
@@ -242,7 +243,7 @@ export default function LandingPage() {
       </main>
 
       {/* Tech Strip */}
-      <section id="stack" className="py-12 border-y border-white/5 bg-transparent overflow-hidden">
+      <section id="tech-stack" className="py-12 border-y border-white/5 bg-transparent overflow-hidden">
         <div className="max-w-7xl mx-auto px-6">
           <p className="text-center text-xs font-medium text-[#52525b] uppercase tracking-widest mb-8">Powering the Architecture</p>
           <div className="flex flex-wrap justify-center items-center gap-8 md:gap-16 opacity-70 grayscale hover:grayscale-0 transition-all duration-500">
@@ -255,89 +256,72 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Project Status API-style block */}
-      <section id="status" className="py-24 px-6 bg-[#09090b] relative overflow-hidden">
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-white/5 rounded-full blur-3xl pointer-events-none -z-10"></div>
-        <div className="max-w-6xl mx-auto flex justify-center">
-          <div className="relative w-full md:w-1/2">
-            <div className="rounded-xl border border-white/10 bg-black/50 backdrop-blur-sm p-2 shadow-2xl relative">
-              <div className="absolute inset-0 bg-linear-to-t from-[#09090b] via-transparent to-transparent z-10 pointer-events-none"></div>
+      {/* Features */}
+      <section id="features" class="pt-24 pb-24 px-6 bg-[#09090b] relative overflow-hidden">
+        <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-blue-500/5 rounded-full blur-3xl pointer-events-none -z-10"></div>
+        <div class="max-w-7xl mx-auto">
+            <div class="text-center mb-16">
+                <h2 class="text-3xl md:text-4xl font-bold mb-4">Features that drive results</h2>
+                <p class="text-[#a1a1aa] max-w-2xl mx-auto">
+                    Built for professionals who need an intelligent conversational workspace.
+                </p>
+            </div>
 
-              {/* Terminal Header */}
-              <div className="bg-[#18181b] rounded-t-lg border-b border-white/5 px-4 py-3 flex items-center gap-2">
-                <div className="flex gap-2">
-                  <div className="w-3 h-3 rounded-full bg-[#ff5f56]"></div>
-                  <div className="w-3 h-3 rounded-full bg-[#ffbd2e]"></div>
-                  <div className="w-3 h-3 rounded-full bg-[#27c93f]"></div>
+            <div class="grid md:grid-cols-3 gap-8 relative">
+              <div class="text-center space-y-4 p-8 border border-white/5 rounded-lg bg-white/[0.02]">
+                <div class="w-16 h-16 mx-auto bg-[#18181b] rounded-lg flex items-center justify-center shadow-xl">
+                  <svg class="w-8 h-8 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                  </svg>
                 </div>
-                <div className="ml-4 text-xs font-mono text-[#a1a1aa]">status.json</div>
+                <h3 class="text-xl font-semibold">Document Intelligence</h3>
+                <p class="text-[#a1a1aa] text-sm leading-relaxed">Upload and analyze documents with ease. Sidekick extracts key information, summarizes content, and answers questions about your files.</p>
               </div>
 
-              {/* Terminal Body */}
-              <div className="bg-[#09090b] rounded-b-lg p-6 font-mono text-sm text-[#d4d4d4] overflow-hidden">
-                {'{'}<br/>
-                {'\u00A0\u00A0'}<span className="text-[#9cdcfe]">"phase"</span>: <span className="text-[#ce9178]">"active_development"</span>,<br/>
-                {'\u00A0\u00A0'}<span className="text-[#9cdcfe]">"current_version"</span>: <span className="text-[#b5cea8]">1.0.0</span>,<br/>
-                {'\u00A0\u00A0'}<span className="text-[#9cdcfe]">"open_source"</span>: <span className="text-[#569cd6]">true</span>,<br/>
-                {'\u00A0\u00A0'}<span className="text-[#9cdcfe]">"maintained_by"</span>: <span className="text-[#ce9178]">"Juhil Savani"</span>,<br/>
-                {'\u00A0\u00A0'}<span className="text-[#9cdcfe]">"next_steps"</span>: [<br/>
-                {'\u00A0\u00A0\u00A0\u00A0'}<span className="text-[#ce9178]">"Rate-limit free-tier users"</span>,<br/>
-                {'\u00A0\u00A0\u00A0\u00A0'}<span className="text-[#ce9178]">"Integrate MCP servers"</span>,<br/>
-                {'\u00A0\u00A0\u00A0\u00A0'}<span className="text-[#ce9178]">"Add multi-modal support"</span><br/>
-                {'\u00A0\u00A0'}]<br/>
-                {'}'}
+              <div class="text-center space-y-4 p-8 border border-white/5 rounded-lg bg-white/[0.02]">
+                <div class="w-16 h-16 mx-auto bg-[#18181b] rounded-lg flex items-center justify-center shadow-xl">
+                  <svg className="w-8 h-8 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"></path>
+                  </svg>
+                </div>
+                <h3 class="text-xl font-semibold">Persistent Memory</h3>
+                <p class="text-[#a1a1aa] text-sm leading-relaxed">Sidekick learns your preferences, project details and recalls conversations across sessions for a truly personalized workflow.</p>
+              </div>
+
+              {/* Real-time Grounding */}
+              <div className="text-center space-y-4 p-8 border border-white/5 rounded-xl bg-white/[0.02]">
+                <div className="w-16 h-16 mx-auto bg-[#18181b] rounded-lg flex items-center justify-center shadow-xl">
+                  <svg className="w-8 h-8 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"></path>
+                  </svg>
+                </div>
+                <h3 className="text-xl font-semibold text-white">Real-time Grounding</h3>
+                <p className="text-[#a1a1aa] text-sm leading-relaxed">
+                  Equipped with autonomous search tools, Sidekick browses the live web to verify facts and provide up-to-the-minute information for critical tasks.
+                </p>
               </div>
             </div>
-          </div>
         </div>
-      </section>
+    </section>
 
-      {/* Architecture Section */}
-      <section id="system-design" className="pt-6 pb-24 px-6 bg-[#09090b] relative overflow-hidden">
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-blue-500/5 rounded-full blur-3xl pointer-events-none -z-10"></div>
-        <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold mb-4">System Architecture</h2>
-            <p className="text-[#a1a1aa] max-w-2xl mx-auto">
-              The data flow from user interaction to AI response.
-            </p>
-          </div>
-
-          <div className="grid md:grid-cols-4 gap-8 relative">
-            <div className="hidden md:block absolute top-12 left-[10%] right-[10%] h-0.5 bg-linear-to-r from-transparent via-white/20 to-transparent -z-10"></div>
-
-            {[
-              { step: '1', title: 'Client (React)', desc: 'Sends prompt via protected API route using Axios.' },
-              { step: '2', title: 'Server (Express)', desc: 'Validates JWT auth and routes request to LangGraph workflow.' },
-              { step: '3', title: 'AI Agent', desc: 'Processes intent, calls tools if needed, and streams response.' },
-              { step: '4', title: 'Database (PG)', desc: 'Persists conversation history and thread metadata.' },
-            ].map(({ step, title, desc }) => (
-              <div key={step} className="text-center space-y-4 relative">
-                <div className="w-20 h-20 mx-auto bg-[#18181b] border border-white/10 rounded-2xl flex items-center justify-center relative z-10 shadow-xl">
-                  <span className="text-2xl font-bold text-white">{step}</span>
-                </div>
-                <h3 className="text-lg font-semibold">{title}</h3>
-                <p className="text-[#a1a1aa] text-xs leading-relaxed max-w-xs mx-auto">{desc}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Developer Notes (FAQ) */}
-      <section id="developer-notes" className="py-24 px-6 border-t border-white/5 bg-[#09090b]">
+      {/* Frequently Asked Questions (FAQ) */}
+      <section id="faqs" className="py-24 px-6 border-t border-white/5 bg-[#09090b]">
         <div className="max-w-3xl mx-auto">
-          <h2 className="text-3xl font-bold mb-12 text-center">Developer Notes</h2>
+          <h2 className="text-3xl font-bold mb-12 text-center">Frequently Asked Questions</h2>
 
           <div className="space-y-4">
             {[
               {
-                question: 'Why did I build this?',
-                answer: 'I wanted to move beyond simple "wrapper" applications and understand what happens after that. How do you persist context? How do you handle efficient streaming updates on the frontend? Effectively, Sidekick is my playground for answering those questions. It\'s a documentation of my learning curve in building complex, stateful applications.',
+                question: 'What makes Sidekick different from other AI chatbots?',
+                answer: 'Most AI chatbots are "wrappers" that simply relay your input to a large language model. Sidekick goes beyond that by integrating autonomous tools, persistent memory, and real-time web grounding. It doesn\'t just answer questions; it takes action, remembers context, and verifies information, making it a true conversational workspace.'
               },
               {
-                question: 'Is this targeted as a commercial SaaS?',
-                answer: 'No. This is primarily a learning project and portfolio piece. It is open-sourced to help other developers learn how to integrate these specific technologies.',
+                question: 'Does Sidekick have free usage?',
+                answer: 'Yes. Sidekick is fundamentally an open-source project. You can use our hosted demo to experience the capabilities immediately, or clone the repository to self-host your own instance with no subscription fees.',
+              },
+              {
+                question: 'How is my data handled?',
+                answer: 'If you use the hosted demo, your chat history and files are temporarily stored in Supabase and Cloudinary. For strict data privacy, we highly recommend cloning the repository. By self-hosting Sidekick, you control the database and API keys, ensuring complete data ownership.'
               },
             ].map((item, index) => (
               <div
@@ -378,22 +362,22 @@ export default function LandingPage() {
       </section>
 
       {/* Final CTA Section */}
-      <section className="py-32 px-6 relative overflow-hidden bg-[#09090b] border-t border-white/5">
+      <section className="py-24 px-6 relative overflow-hidden bg-[#09090b] border-t border-white/5">
         <div className="absolute inset-0 pointer-events-none">
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-white/5 via-[#09090b] to-[#09090b] opacity-50"></div>
         </div>
         <div className="max-w-4xl mx-auto text-center relative z-10">
-          <h2 className="text-4xl md:text-5xl font-bold mb-6 tracking-tight">Want to explore the code?</h2>
+          <h2 className="text-4xl md:text-5xl font-bold mb-6 tracking-tight">Ready to boost your productivity?</h2>
           <p className="text-xl text-[#a1a1aa] mb-10 max-w-2xl mx-auto">
-            Dive into the open-source repository to see how conversational memory, tool execution, and token streaming are built.
+            Join thousands of professionals who are already using Sidekick as their go-to chatting partner
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-            <a href="https://github.com/JuhilSavani/chatbot" target="_blank" rel="noopener noreferrer" className="w-full sm:w-auto px-8 py-3.5 bg-[#fafafa] border border-transparent text-[#18181b] font-medium rounded-lg hover:bg-[#fafafa]/90 transition-all shadow-lg hover:shadow-white/20 flex items-center justify-center gap-2 group">
-              View Source Code
-            </a>
-            <Link to="/chat" className="w-full sm:w-auto px-8 py-3.5 bg-white/5 border border-white/10 text-[#fafafa] font-medium rounded-lg hover:bg-white/10 transition-all flex items-center justify-center gap-2">
+            <Link to="/chat" className="w-full sm:w-auto px-8 py-3.5 bg-[#fafafa] border border-transparent text-[#18181b] font-medium rounded-lg hover:bg-[#fafafa]/90 transition-all shadow-lg hover:shadow-white/20 flex items-center justify-center gap-2 group">
               Try the Demo
             </Link>
+            <a href="https://github.com/JuhilSavani/chatbot" target="_blank" rel="noopener noreferrer" className="w-full sm:w-auto px-8 py-3.5 bg-white/5 border border-white/10 text-[#fafafa] font-medium rounded-lg hover:bg-white/10 transition-all flex items-center justify-center gap-2">
+              View Source Code
+            </a>
           </div>
         </div>
       </section>
