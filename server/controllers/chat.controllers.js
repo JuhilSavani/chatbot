@@ -9,8 +9,8 @@ import { Attachment } from "../models/attachment.models.js";
 import { generateThreadName } from "../utils/generateThreadName.js";
 import { selectRelevantDocuments } from "../utils/selectRelevantDocuments.js";
 
-const ALLOWED_MODELS = ["openai/gpt-4o-mini", "openai/gpt-4o"];
-const DEFAULT_MODEL = "openai/gpt-4o-mini";
+const ALLOWED_MODELS = ["openai/gpt-oss-20b", "openai/gpt-oss-120b"];
+const DEFAULT_MODEL = "openai/gpt-oss-20b";
 
 function validateModel(model) {
   if (!model) return DEFAULT_MODEL;

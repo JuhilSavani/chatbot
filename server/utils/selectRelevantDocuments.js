@@ -22,7 +22,7 @@ export async function selectRelevantDocuments(query, recentHistory, attachments)
   }
 
   // Use default mini model for document selection
-  const chatModel = getChatModel("openai/gpt-4o-mini");
+  const chatModel = getChatModel("openai/gpt-oss-20b");
   const structuredModel = chatModel.withStructuredOutput(DocumentSelectionSchema);
 
   const historyText = recentHistory

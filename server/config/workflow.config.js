@@ -17,8 +17,8 @@ const modelCache = new Map();
 export function getChatModel(modelName) {
   if (!modelCache.has(modelName)) {
     const model = new ChatOpenAI({
-      configuration: { baseURL: "https://models.github.ai/inference" },
-      apiKey: process.env.GITHUB_TOKEN,
+      configuration: { baseURL: "https://openrouter.ai/api/v1" },
+      apiKey: process.env.OPENROUTER_API_KEY,
       model: modelName,
       streaming: true,
     });
@@ -31,7 +31,7 @@ async function callAgent(state, config) {
   const signal = config.configurable.signal || config.signal;
 
   // Resolve the model using factory
-  const modelName = config.configurable?.selectedModel || "openai/gpt-4o-mini";
+  const modelName = config.configurable?.selectedModel || "openai/gpt-oss-20b";
   const chatModel = getChatModel(modelName).bindTools(tools);
 
   console.log(`[Agent] Using model: ${modelName}`);
