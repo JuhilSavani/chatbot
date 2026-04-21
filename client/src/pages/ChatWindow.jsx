@@ -11,7 +11,7 @@ import {
   SidebarInset,
   useSidebar,
 } from "@/components/ui/sidebar";
-import { ArrowRight, StopCircle, Copy, Check, ArrowDown } from "lucide-react";
+import { ArrowRight, StopCircle, Copy, Check, ArrowDown, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import ChatInput from "@/utils/components/ChatInput";
 import ChatSidebar from "@/utils/components/ChatSidebar";
@@ -234,6 +234,7 @@ function MainContent({ setThreads }) {
   const [error, setError] = useState(null);
   const [usage, setUsage] = useState(null);
   const [generationScrollRequest, setGenerationScrollRequest] = useState(0);
+  const [isUsageNoteDismissed, setIsUsageNoteDismissed] = useState(false);
 
   const isUsageLocked = !!usage && usage.remaining <= 0;
   const usageResetLabel = usage?.reset
@@ -591,7 +592,7 @@ function MainContent({ setThreads }) {
                   </span>
                 </div>
                 {isLoaded && remaining === 0 && usageResetLabel && (
-                  <div className="text-[10px] text-[#71717a] mt-1 px-2 whitespace-nowrap absolute top-12 right-6">
+                  <div className="text-[10px] text-[#71717a] mt-1 px-2 whitespace-nowrap">
                     Resets: {usageResetLabel}
                   </div>
                 )}
@@ -612,7 +613,13 @@ function MainContent({ setThreads }) {
         className="relative flex-1 overflow-y-auto p-4 md:p-8 w-full scroll-smooth"
       >
         {error && (
-          <div className="text-red-400 text-center mt-10 p-4 border border-red-500/20 bg-red-500/5 rounded-lg">
+          <div className="text-red-400 text-center mt-10 p-4 border border-red-500/20 bg-red-500/5 rounded-lg relative">
+            <button 
+              onClick={() => setError(null)} 
+              className="absolute top-2 right-2 p-1 text-red-400/50 hover:text-red-400 transition-colors rounded-md hover:bg-red-500/10"
+            >
+              <X className="w-4 h-4" />
+            </button>
             {error}
           </div>
         )}
@@ -694,8 +701,14 @@ function MainContent({ setThreads }) {
 
       <div className="shrink-0 w-full p-2 md:p-4 bg-[#09090b] border-t border-white/5">
         <div className="max-w-4xl mx-auto flex flex-col gap-2">
-          {isUsageLocked && (
-            <div className="p-4 border border-amber-500/20 bg-amber-500/5 rounded-lg">
+          {isUsageLocked && !isUsageNoteDismissed && (
+            <div className="p-4 border border-amber-500/20 bg-amber-500/5 rounded-lg relative">
+              <button 
+                onClick={() => setIsUsageNoteDismissed(true)} 
+                className="absolute top-2 right-2 p-1 text-amber-500/50 hover:text-amber-400 transition-colors rounded-md hover:bg-amber-500/10"
+              >
+                <X className="w-4 h-4" />
+              </button>
               <h2 className="text-md font-medium text-amber-300 mb-1">
                 Monthly Limit Reached
               </h2>

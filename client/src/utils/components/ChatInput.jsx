@@ -6,8 +6,8 @@ import { uploadFileToCloudinary } from '../actions/upload.actions';
 const MAX_PDFS = 5;
 const MAX_TOKENS = 32768;
 const MODEL_OPTIONS = [
-  { id: 'openai/gpt-4o-mini', label: 'GPT-4o-mini' },
-  { id: 'openai/gpt-4o', label: 'GPT-4o' },
+  { id: 'openai/gpt-oss-20b', label: 'GPT-OSS-20B' },
+  { id: 'openai/gpt-oss-120b', label: 'GPT-OSS-120B' },
 ];
 const DEFAULT_MODEL_ID = MODEL_OPTIONS[0].id;
 
@@ -297,8 +297,14 @@ const ChatInput = ({ threadId, onMessageSent, loading, onStop, disabled = false 
   return (
     <>
       {error && (
-        <div className="mb-2 p-3 bg-red-500/10 border border-red-500/20 rounded-lg text-red-400 text-sm">
-          {error}
+        <div className="mb-2 p-3 bg-red-500/10 border border-red-500/20 rounded-lg text-red-400 text-sm flex justify-between items-start gap-2">
+          <span className="flex-1">{error}</span>
+          <button 
+            onClick={() => setError(null)} 
+            className="p-0.5 text-red-400/50 hover:text-red-400 transition-colors rounded-md hover:bg-red-500/10 shrink-0 mt-0.5"
+          >
+            <X className="w-4 h-4" />
+          </button>
         </div>
       )}
       

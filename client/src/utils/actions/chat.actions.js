@@ -1,4 +1,5 @@
 import axios, { BASE_API_ENDPOINT } from "../axios";
+import { handleAxiosError } from "../handleAxiosError";
 
 /**
  * Loads all existing threads.
@@ -8,12 +9,11 @@ export async function loadChatThreadsAction() {
   try {
     const response = await axios.get("/chat/threads");
     return response.data; 
-  } catch (error) {
-    console.error("Load Threads Error:", error);
-    return handleAxiosError(error, "Failed to load chat threads!");
+  } catch (e) {
+    console.error("Load Threads Error:", e);
+    return handleAxiosError(e, "Failed to load chat threads!");
   }
 }
-
 
 
 /**
@@ -27,20 +27,20 @@ export async function loadChatHistoryAction(threadId, signal) {
     }
     const response = await axios.get(`/chat/${threadId}`, { signal });
     return response.data;
-  } catch (error) {
+  } catch (e) {
     // Check if this was a user cancellation,
     // We must RE-THROW this so the useEffect knows to ignore it.
-    if (axios.isCancel(error)) throw error; 
+    if (axios.isCancel(e)) throw e; 
 
-    if (error.response) {
-      if (error.response.status === 403) 
+    if (e.response) {
+      if (e.response.status === 403) 
         return { error: "This conversation is private and belongs to another account. You don't have access to view it." };
-      if (error.response.status === 404) 
+      if (e.response.status === 404) 
         return { error: "This conversation does not exist. It may have been deleted or the URL is incorrect." };
     }
     
-    console.error("Load History Error:", error);
-    return handleAxiosError(error, "Failed to load chat history!");
+    console.error("Load History Error:", e);
+    return handleAxiosError(e, "Failed to load chat history!");
   }
 }
 
@@ -57,9 +57,9 @@ export async function syncPinStatusAction(threadId, isPinned) {
     const action = isPinned ? "pin" : "unpin";
     const response = await axios.put(`/chat/pin/${threadId}/${action}`);
     return response.data;
-  } catch (error) {
-    console.error("Sync Pin Status Error:", error);
-    return handleAxiosError(error, "Failed to update pin status.");
+  } catch (e) {
+    console.error("Sync Pin Status Error:", e);
+    return handleAxiosError(e, "Failed to update pin status.");
   }
 }
 
@@ -75,9 +75,9 @@ export async function deleteThreadAction(threadId) {
 
     const response = await axios.delete(`/chat/${threadId}`);
     return response.data;
-  } catch (error) {
-    console.error("Delete Thread Error:", error);
-    return handleAxiosError(error, "Failed to delete thread.");
+  } catch (e) {
+    console.error("Delete Thread Error:", e);
+    return handleAxiosError(e, "Failed to delete thread.");
   }
 }
 
@@ -93,9 +93,9 @@ export async function ingestDocumentsAction(threadId, attachments) {
 
     const response = await axios.post(`/chat/ingest`, { threadId, attachments });
     return response.data;
-  } catch (error) {
-    console.error("Ingest Documents Error:", error);
-    return handleAxiosError(error, "Failed to ingest documents.");
+  } catch (e) {
+    console.error("Ingest Documents Error:", e);
+    return handleAxiosError(e, "Failed to ingest documents.");
   }
 }
 
@@ -176,14 +176,14 @@ export function streamChatAction({ threadId, message, selectedModel }) {
         yield chunk;
       }
 
-    } catch (error) {
-      if (error.name !== 'AbortError') {
+    } catch (e) {
+      if (e.name !== 'AbortError') {
         // Yield error so the UI can display it
         yield { 
           type: 'error', 
-          val: error.message || "Network error",
-          isLimit: error.isLimit,
-          reset: error.reset 
+          val: e.message || "Network error",
+          isLimit: e.isLimit,
+          reset: e.reset 
         };
       }
     }
@@ -194,23 +194,4 @@ export function streamChatAction({ threadId, message, selectedModel }) {
     stream: generateStream(), // The UI can just "for await" this
     abort: () => controller.abort()
   };
-}
-
-
-// --- Helper for cleaner error handling ---
-function handleAxiosError(error, defaultMessage) {
-  if (error.response) {
-    // Server responded with a status code that falls out of the range of 2xx
-    // We prioritize the server's specific error message if it exists
-    const serverMessage = error.response.data?.message || error.response.data?.error;
-    return { error: serverMessage || defaultMessage };
-  } 
-  
-  if (error.request) {
-    // The request was made but no response was received
-    return { error: "No response from server. Please check your connection." };
-  } 
-  
-  // Something happened in setting up the request
-  return { error: defaultMessage };
 }

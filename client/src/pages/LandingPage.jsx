@@ -243,7 +243,7 @@ export default function LandingPage() {
       </main>
 
       {/* Tech Strip */}
-      <section id="tech-stack" className="py-12 border-y border-white/5 bg-transparent overflow-hidden">
+      <section id="tech-stack" className="py-24 border-y border-white/5 bg-transparent overflow-hidden">
         <div className="max-w-7xl mx-auto px-6">
           <p className="text-center text-xs font-medium text-[#52525b] uppercase tracking-widest mb-8">Powering the Architecture</p>
           <div className="flex flex-wrap justify-center items-center gap-8 md:gap-16 opacity-70 grayscale hover:grayscale-0 transition-all duration-500">
@@ -330,11 +330,11 @@ export default function LandingPage() {
               >
                 <button
                   onClick={() => toggleNote(index)}
-                  className="w-full flex items-center justify-between p-6 text-left focus:outline-none cursor-pointer"
+                  className="w-full flex items-start justify-between p-6 text-left focus:outline-none cursor-pointer"
                 >
                   <span className="font-medium text-lg">{item.question}</span>
                   <svg
-                    className={`w-5 h-5 transition-transform duration-300 text-[#a1a1aa] ${activeNote === index ? 'rotate-180' : ''}`}
+                    className={`w-5 h-5 shrink-0 mt-1 transition-transform duration-300 text-[#a1a1aa] ${activeNote === index ? 'rotate-180' : ''}`}
                     viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
                   >
                     <path d="M19 9l-7 7-7-7"/>

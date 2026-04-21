@@ -15,11 +15,11 @@ export async function uploadFileToCloudinary(file) {
   try {
     const response = await axios.post("/upload/sign");
     signData = response.data;
-  } catch (error) {
-    if (error.response && error.response.status === 429) {
-      throw new Error(error.response.data?.message || "Monthly free limit reached.");
+  } catch (e) {
+    if (e.response && e.response.status === 429) {
+      throw new Error(e.response.data?.message || "Monthly free limit reached.");
     }
-    throw error;
+    throw e;
   }
   const { signature, timestamp, folder, apiKey, cloudName } = signData;
 
