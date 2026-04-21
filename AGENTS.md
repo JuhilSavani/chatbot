@@ -10,7 +10,7 @@ This is a **full-stack AI chatbot application** built as a monorepo with:
 
 - **Frontend**: React 19 + Vite 7 + TailwindCSS v4 + shadcn/ui
 - **Backend**: Express 5 + PostgreSQL (Supabase) + Sequelize ORM
-- **Orchestration**: LangGraph with OpenAI GPT-4o-mini (via GitHub Models API)
+- **Orchestration**: LangGraph with OpenRouter (defaulting to GPT-OSS-20B)
 - **Authentication**: Supabase Auth + Passport.js JWT + HTTP-only cookies
 - **File Storage**: Cloudinary (signed uploads)
 - **Usage Limits**: Upstash Redis (monthly query & upload quotas)
@@ -147,7 +147,7 @@ GOOGLE_REDIRECT_URI=http://localhost:4000/api/authorize/google/callback
 CLOUDINARY_CLOUD_NAME=
 CLOUDINARY_API_KEY= 
 CLOUDINARY_API_SECRET= 
-GITHUB_TOKEN=
+OPENROUTER_API_KEY=
 TAVILY_API_KEY=
 SUPERMEMORY_API_KEY=
 FIRECRAWL_API_KEY=
