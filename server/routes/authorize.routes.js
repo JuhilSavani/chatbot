@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { login, register, logout, googleCallback, forgotPassword, resetPassword } from "../controllers/authorize.controllers.js";
+import { login, register, logout, googleCallback, forgotPassword, resetPassword, resendVerificationEmail } from "../controllers/authorize.controllers.js";
 
 import { authenticateJWT } from "../config/passport.config.js";
 
@@ -25,6 +25,7 @@ router.get("/google/callback", googleCallback);
 
 router.post("/forgot-password", forgotPassword);
 router.post("/reset-password", resetPassword);
+router.post("/resend-verification", resendVerificationEmail);
 
 
 export default router;

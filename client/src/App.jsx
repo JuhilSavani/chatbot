@@ -6,6 +6,7 @@ import NotFound from "./pages/NotFound";
 import ChatWindow from "./pages/ChatWindow";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
+import ResendVerification from "./pages/ResendVerification";
 import AuthProvider from "./utils/contexts/AuthProvider";
 import LandingPage from "./pages/LandingPage";
 import Loading from "./pages/Loading";
@@ -37,6 +38,7 @@ const router = createBrowserRouter(
         <Route path="register" element={<Register />} />
         <Route path="forgot-password" element={<ForgotPassword />} />
         <Route path="reset-password" element={<ResetPassword />} />
+        <Route path="resend-verification" element={<ResendVerification />} />
         
         {/* Protected Routes */}
         <Route 

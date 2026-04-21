@@ -240,3 +240,43 @@ export const resetPassword = async (req, res) => {
     return res.status(401).json({ message: "Invalid or expired token" });
   }
 };
+
+export const resendVerificationEmail = async (req, res) => {
+  const { identifier } = req.body;
+  if (!identifier) 
+    return res.status(400).json({ message: "Provide username or email to resend verification link" });
+
+  try {
+    const normalizedIdentifier = identifier.toLowerCase().trim();
+    const isEmail = normalizedIdentifier.includes("@");
+
+    const user = await User.findOne({
+      where: isEmail
+        ? where(fn("LOWER", col("email")), "=", normalizedIdentifier)
+        : where(fn("LOWER", col("username")), "=", normalizedIdentifier),
+    });
+
+    if (!user)
+      return res.status(404).json({ message: "No account found with the provided username or email" });
+
+    const { error } = await supabase.auth.resend({
+      type: "signup",
+      email: user.email,
+      options: {
+        emailRedirectTo: `${process.env.CLIENT_APP_ORIGIN_URL || "http://localhost:3000"}/login`
+      }
+    });
+
+    if (error) {
+      if (error.message.includes("already verified") || error.message.includes("already confirmed")) {
+         return res.status(400).json({ message: "Email is already verified. You can log in directly." });
+      }
+      return res.status(400).json({ message: error.message || "Failed to resend verification email" });
+    }
+
+    return res.status(200).json({ message: `We have resent the verification link to ${user.email}` });
+  } catch (error) {
+    console.error(error.stack);
+    return res.status(500).json({ message: "Failed to resend verification link" });
+  }
+};
