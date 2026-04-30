@@ -311,7 +311,7 @@ const ChatInput = ({ threadId, onMessageSent, loading, onStop, disabled = false 
       {/* Main Input Container */}
       <div 
         ref={inputContainerRef}
-        className={`w-full max-w-4xl bg-[#18181b]/50 backdrop-blur-xl rounded-2xl p-3 md:p-4 border relative flex flex-col min-h-32 transition-all duration-200 z-10 group focus-within:shadow-[0_0_0_4px_rgba(255,255,255,0.8)] ${isDragging ? 'border-blue-500 bg-blue-500/10' : 'border-white/5'} ${disabled ? 'opacity-60' : ''}`}
+        className={`w-full max-w-4xl bg-[#18181b]/50 backdrop-blur-xl rounded-2xl p-3 md:p-4 border relative flex flex-col min-h-32 transition-all duration-200 z-10 group focus-within:shadow-[0_0_0_4px_rgba(255,255,255,0.8)] ${isDragging ? 'border-blue-500 bg-blue-500/10' : 'border-white/10'} ${disabled ? 'opacity-60' : ''}`}
         aria-disabled={disabled}
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
@@ -397,7 +397,7 @@ const ChatInput = ({ threadId, onMessageSent, loading, onStop, disabled = false 
         </div>
 
         {/* Bottom Controls Row */}
-        <div className="flex items-end justify-between pt-2 px-1 border-t border-white/5 mt-2">
+        <div className="flex items-end justify-between pt-2 px-1 border-t border-white/10 mt-2">
           
           {/* Left Side: Model Selector, Search, Attachment */}
           <div className="flex items-center gap-2">

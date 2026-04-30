@@ -188,7 +188,7 @@ const ChatMessage = React.memo(({ message, messageRef }) => {
 
       {/* Message Bubble */}
       <div
-        className={`p-4 rounded-2xl ${isUser ? "bg-white/10 max-w-[95%] md:max-w-[80%] w-fit border border-white/5 text-[#fafafa]" : "bg-transparent w-full px-2"}`}
+        className={`p-4 rounded-2xl ${isUser ? "bg-white/10 max-w-[95%] md:max-w-[80%] w-fit border border-white/10 text-[#fafafa]" : "bg-transparent w-full px-2"}`}
       >
         <div className={isUser ? "text-[#fafafa]" : "text-[#fafafa] w-full"}>
           {isUser ? (
@@ -534,7 +534,7 @@ function MainContent({ setThreads }) {
 
   const contentStateClasses =
     !isMobile && open
-      ? "bg-[#09090b] my-2 mr-2 rounded-2xl border-white/5 shadow-2xl"
+      ? "bg-[#09090b] my-2 mr-2 rounded-2xl border-white/10 shadow-2xl"
       : "bg-[#09090b] m-0 rounded-none border-transparent";
 
   const isNewChat = messages.length === 0 && !loadingChat;
@@ -553,7 +553,7 @@ function MainContent({ setThreads }) {
     <SidebarInset
       className={`transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] flex flex-col overflow-hidden border ${contentStateClasses} ${!isMobile && open ? "h-[calc(100dvh-1rem)]" : "h-[100dvh]"}`}
     >
-      <header className="flex h-16 shrink-0 items-center gap-2 border-b border-white/5 px-4 md:px-6 bg-[#09090b]/80 backdrop-blur-md sticky top-0 z-10 w-full">
+      <header className="flex h-16 shrink-0 items-center gap-2 border-b border-white/10 px-4 md:px-6 bg-[#09090b]/80 backdrop-blur-md sticky top-0 z-10 w-full">
         <div
           className={`transition-all duration-300 ${!isMobile && open ? "w-0 overflow-hidden opacity-0" : "w-auto opacity-100"}`}
         >
@@ -670,12 +670,12 @@ function MainContent({ setThreads }) {
         {!loadingChat && messages.length > 0 && !isAtBottom && (
           <div className="sticky -bottom-2 flex justify-center pointer-events-none">
             <div className="relative pointer-events-auto isolate">
-              {showScrollButtonPulse && (
+              {/* {showScrollButtonPulse && (
                 <>
                   <span className="beep-sync pointer-events-none absolute -inset-2 rounded-full border border-zinc-400/20 bg-zinc-400/6 shadow-[0_0_0_1px_rgba(161,161,170,0.08),0_0_20px_rgba(161,161,170,0.08)]" />
                   <span className="beep-sync pointer-events-none absolute -inset-4 rounded-full border border-zinc-400/12 bg-zinc-400/4 opacity-55 blur-[1px]" />
                 </>
-              )}
+              )} */}
               <button
                 id="scroll-to-bottom-btn"
                 onClick={scrollToBottom}
@@ -699,7 +699,7 @@ function MainContent({ setThreads }) {
         )}
       </div>
 
-      <div className="shrink-0 w-full p-2 md:p-4 bg-[#09090b] border-t border-white/5">
+      <div className="shrink-0 w-full p-2 md:p-4 bg-[#09090b] border-t border-white/10">
         <div className="max-w-4xl mx-auto flex flex-col gap-2">
           {isUsageLocked && !isUsageNoteDismissed && (
             <div className="p-4 border border-amber-500/20 bg-amber-500/5 rounded-lg relative">

@@ -103,7 +103,7 @@ export default function LandingPage() {
           {/* Bottom fade-blur overlay */}
           <div className="absolute bottom-0 left-0 right-0 h-[65%] bg-linear-to-t from-[#09090b] via-[#09090b]/10 to-transparent z-30 pointer-events-none rounded-b-xl"></div>
           
-          <div className="bg-[#09090b] rounded-lg h-[620px] md:h-[650px] w-full flex overflow-hidden border border-white/5 relative z-20 shadow-[0_0_50px_rgba(0,0,0,0.5)]">
+          <div className="bg-[#09090b] rounded-lg h-[620px] md:h-[650px] w-full flex overflow-hidden border border-white/10 relative z-20 shadow-[0_0_50px_rgba(0,0,0,0.5)]">
              {/* Sidebar Mock */}
              <div className="w-64 border-r border-[#27272a]/20 bg-[#09090b] hidden md:flex flex-col flex-shrink-0 text-[#fafafa]">
                  {/* Sidebar Header */}
@@ -112,12 +112,12 @@ export default function LandingPage() {
                         <div className="w-8 h-8 rounded-lg bg-linear-to-br from-white to-zinc-400 shadow-[0_0_15px_rgba(255,255,255,0.6)]"></div>
                         <span className="font-semibold text-2xl tracking-tight">Sidekick</span>
                     </div>
-                    <div className="w-full flex items-center justify-center gap-2 bg-[#18181b]/50 text-[#fafafa] border border-white/5 h-10 px-4 rounded-md transition-all text-sm font-medium mb-4">
+                    <div className="w-full flex items-center justify-center gap-2 bg-[#18181b]/50 text-[#fafafa] border border-white/10 h-10 px-4 rounded-md transition-all text-sm font-medium mb-4">
                          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-[#a1a1aa]"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
                          <span className="opacity-80">New Chat</span>
                     </div>
                     <div className="relative group px-1 mb-2 text-left">
-                        <div className="w-full bg-transparent pl-8 py-2 text-sm border-b border-white/5 transition-all outline-none text-[#52525b] opacity-80">Search chats...</div>
+                        <div className="w-full bg-transparent pl-8 py-2 text-sm border-b border-white/10 transition-all outline-none text-[#52525b] opacity-80">Search chats...</div>
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="absolute left-3 top-1/2 -translate-y-1/2 text-[#52525b] opacity-80"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
                     </div>
                 </div>
@@ -147,10 +147,10 @@ export default function LandingPage() {
                      </div>
                 </div>
                 {/* Sidebar Footer */}
-                <div className="p-2 border-t border-white/5 mt-auto pointer-events-none select-none">
+                <div className="p-2 border-t border-white/10 mt-auto pointer-events-none select-none">
                      <div className="flex items-center justify-between mx-2 mb-2 pt-2 px-2">
                         <div className="flex items-center gap-3 overflow-hidden">
-                            <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center shrink-0 border border-white/5 text-[#fafafa] font-medium text-sm">JS</div>
+                            <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center shrink-0 border border-white/10 text-[#fafafa] font-medium text-sm">JS</div>
                             <span className="truncate text-sm font-medium text-[#fafafa]">juhilsavani</span>
                         </div>
                      </div>
@@ -160,7 +160,7 @@ export default function LandingPage() {
              {/* Chat Area Mock */}
              <div className="flex-1 flex flex-col bg-[#09090b] min-w-0 relative">
                  {/* Chat Header */}
-                 <div className="flex h-16 shrink-0 items-center gap-2 border-b border-white/5 px-6 bg-[#09090b]/80 backdrop-blur-md sticky top-0 z-10 w-full pointer-events-none select-none">
+                 <div className="flex h-16 shrink-0 items-center gap-2 border-b border-white/10 px-6 bg-[#09090b]/80 backdrop-blur-md sticky top-0 z-10 w-full pointer-events-none select-none">
                      <div className="flex items-center gap-4">
                          <span className="h-4 w-px bg-white/10 mr-2 hidden md:block"></span>
                          <span className="text-sm font-medium text-[#fafafa]">Transformer Architecture</span>
@@ -171,7 +171,7 @@ export default function LandingPage() {
                  <div className="flex-1 overflow-hidden p-4 md:p-8 w-full flex flex-col pointer-events-none select-none">
                      <div className="flex flex-col gap-2 max-w-4xl mx-auto w-full pb-8">
                          {/* User Message */}
-                         <div className="mb-6 p-4 rounded-2xl relative bg-white/10 ml-auto max-w-[85%] md:max-w-[80%] w-fit border border-white/5 text-[#fafafa]">
+                         <div className="mb-6 p-4 rounded-2xl relative bg-white/10 ml-auto max-w-[85%] md:max-w-[80%] w-fit border border-white/10 text-[#fafafa]">
                              <div className="text-[#fafafa] text-sm md:text-base">
                                 Can you show me a simplified implementation of a Transformer model in TensorFlow?
                              </div>
@@ -183,8 +183,8 @@ export default function LandingPage() {
                                  <p className="mb-4">Here is a simplified implementation of a Multi-Head Attention layer, which is a core component of the Transformer model.</p>
                                  
                                  {/* Code Block Mock */}
-                                 <div className="relative rounded-lg overflow-hidden border border-white/5 bg-[#09090b] mb-4 font-mono text-sm max-w-[100%]">
-                                     <div className="flex items-center justify-between px-4 py-2 bg-[#18181b]/50 border-b border-white/5">
+                                 <div className="relative rounded-lg overflow-hidden border border-white/10 bg-[#09090b] mb-4 font-mono text-sm max-w-[100%]">
+                                     <div className="flex items-center justify-between px-4 py-2 bg-[#18181b]/50 border-b border-white/10">
                                          <span className="text-xs text-gray-400">python</span>
                                          <div className="flex items-center gap-1.5 px-2 py-1 rounded text-gray-400 text-xs">
                                              <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
@@ -213,13 +213,13 @@ export default function LandingPage() {
                  </div>
 
                  {/* Input Area Mock */}
-                 <div className="shrink-0 w-full p-4 bg-[#09090b] border-t border-white/5 absolute bottom-0 left-0 right-0 pointer-events-none select-none">
+                 <div className="shrink-0 w-full p-4 bg-[#09090b] border-t border-white/10 absolute bottom-0 left-0 right-0 pointer-events-none select-none">
                      <div className="max-w-4xl mx-auto">
-                          <div className="w-full bg-[#18181b]/50 backdrop-blur-xl rounded-2xl p-4 border border-white/5 relative flex flex-col shadow-[0_0_0_1px_rgba(255,255,255,0.05)]">
+                          <div className="w-full bg-[#18181b]/50 backdrop-blur-xl rounded-2xl p-4 border border-white/10 relative flex flex-col shadow-[0_0_0_1px_rgba(255,255,255,0.05)]">
                              <div className="grow mb-2">
                                  <div className="w-full bg-transparent text-[#52525b] text-[16px] leading-relaxed select-none">Send a message to Sidekick...</div>
                              </div>
-                             <div className="flex items-end justify-between pt-2 px-1 border-t border-white/5 mt-2">
+                             <div className="flex items-end justify-between pt-2 px-1 border-t border-white/10 mt-2">
                                  <div className="flex items-center gap-2">
                                       <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border border-transparent bg-white/5 text-[#a1a1aa]">
                                          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/></svg>
@@ -243,7 +243,7 @@ export default function LandingPage() {
       </main>
 
       {/* Tech Strip */}
-      <section id="tech-stack" className="py-24 border-y border-white/5 bg-transparent overflow-hidden">
+      <section id="tech-stack" className="py-24 border-y border-white/10 bg-transparent overflow-hidden">
         <div className="max-w-7xl mx-auto px-6">
           <p className="text-center text-xs font-medium text-[#52525b] uppercase tracking-widest mb-8">Powering the Architecture</p>
           <div className="flex flex-wrap justify-center items-center gap-8 md:gap-16 opacity-70 grayscale hover:grayscale-0 transition-all duration-500">
@@ -268,7 +268,7 @@ export default function LandingPage() {
             </div>
 
             <div class="grid md:grid-cols-3 gap-8 relative">
-              <div class="text-center space-y-4 p-8 border border-white/5 rounded-lg bg-white/[0.02]">
+              <div class="text-center space-y-4 p-8 border border-white/10 rounded-lg bg-white/[0.02]">
                 <div class="w-16 h-16 mx-auto bg-[#18181b] rounded-lg flex items-center justify-center shadow-xl">
                   <svg class="w-8 h-8 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
@@ -278,7 +278,7 @@ export default function LandingPage() {
                 <p class="text-[#a1a1aa] text-sm leading-relaxed">Upload and analyze documents with ease. Sidekick extracts key information, summarizes content, and answers questions about your files.</p>
               </div>
 
-              <div class="text-center space-y-4 p-8 border border-white/5 rounded-lg bg-white/[0.02]">
+              <div class="text-center space-y-4 p-8 border border-white/10 rounded-lg bg-white/[0.02]">
                 <div class="w-16 h-16 mx-auto bg-[#18181b] rounded-lg flex items-center justify-center shadow-xl">
                   <svg className="w-8 h-8 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"></path>
@@ -289,7 +289,7 @@ export default function LandingPage() {
               </div>
 
               {/* Real-time Grounding */}
-              <div className="text-center space-y-4 p-8 border border-white/5 rounded-xl bg-white/[0.02]">
+              <div className="text-center space-y-4 p-8 border border-white/10 rounded-xl bg-white/[0.02]">
                 <div className="w-16 h-16 mx-auto bg-[#18181b] rounded-lg flex items-center justify-center shadow-xl">
                   <svg className="w-8 h-8 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"></path>
@@ -305,7 +305,7 @@ export default function LandingPage() {
     </section>
 
       {/* Frequently Asked Questions (FAQ) */}
-      <section id="faqs" className="py-24 px-6 border-t border-white/5 bg-[#09090b]">
+      <section id="faqs" className="py-24 px-6 border-t border-white/10 bg-[#09090b]">
         <div className="max-w-3xl mx-auto">
           <h2 className="text-3xl font-bold mb-12 text-center">Frequently Asked Questions</h2>
 
@@ -362,12 +362,12 @@ export default function LandingPage() {
       </section>
 
       {/* Final CTA Section */}
-      <section className="py-24 px-6 relative overflow-hidden bg-[#09090b] border-t border-white/5">
+      <section className="py-24 px-6 relative overflow-hidden bg-[#09090b] border-t border-white/10">
         <div className="absolute inset-0 pointer-events-none">
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-white/5 via-[#09090b] to-[#09090b] opacity-50"></div>
         </div>
         <div className="max-w-4xl mx-auto text-center relative z-10">
-          <h2 className="text-4xl md:text-5xl font-bold mb-6 tracking-tight">Ready to boost your productivity?</h2>
+          <h2 className="text-4xl md:text-5xl font-bold mb-6 tracking-tight">Ready to move beyond the prompt?</h2>
           <p className="text-xl text-[#a1a1aa] mb-10 max-w-2xl mx-auto">
             Join thousands of professionals who are already using Sidekick as their go-to chatting partner
           </p>
@@ -383,7 +383,7 @@ export default function LandingPage() {
       </section>
 
       {/* Footer */}
-      <footer className="py-12 px-6 border-t border-white/5 bg-[#09090b] text-sm text-[#a1a1aa]">
+      <footer className="py-12 px-6 border-t border-white/10 bg-[#09090b] text-sm text-[#a1a1aa]">
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-start md:items-center gap-10 md:gap-8">
           <div className="space-y-4">
             <div className="flex items-center gap-2.75">

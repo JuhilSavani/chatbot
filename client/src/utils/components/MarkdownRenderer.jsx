@@ -101,7 +101,7 @@ export default function MarkdownRenderer({ content }) {
               );
             }
             return (
-              <code className={`${className} bg-white/10 text-[#fafafa] px-1.5 py-0.5 rounded text-sm font-mono border border-white/5`} {...props}>
+              <code className={`${className} bg-white/10 text-[#fafafa] px-1.5 py-0.5 rounded text-sm font-mono border border-white/10`} {...props}>
                 {children}
               </code>
             );
@@ -129,7 +129,7 @@ export default function MarkdownRenderer({ content }) {
             return <th className="px-4 py-3 font-semibold text-[#fafafa]">{children}</th>;
           },
           td({ children }) {
-            return <td className="px-4 py-3 border-t border-white/5 text-[#d4d4d8]">{children}</td>;
+            return <td className="px-4 py-3 border-t border-white/10 text-[#d4d4d8]">{children}</td>;
           }
         }}
       >
@@ -150,7 +150,7 @@ function CodeBlock({ language, value }) {
 
   return (
     <div className="relative group my-6 rounded-xl overflow-hidden border border-white/10 bg-[#09090b] shadow-lg">
-      <div className="flex items-center justify-between px-4 py-2.5 bg-white/5 border-b border-white/5 text-xs text-[#a1a1aa]">
+      <div className="flex items-center justify-between px-4 py-2.5 bg-white/5 border-b border-white/10 text-xs text-[#a1a1aa]">
         <span className="font-mono font-medium text-[#fafafa]">{language}</span>
         <button
           onClick={handleCopy}

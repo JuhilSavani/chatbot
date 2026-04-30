@@ -216,7 +216,7 @@ export default function ChatSidebar({ threads = [], isLoading = false, setThread
           <Button 
             onClick={handleNewChat}
             disabled={!auth.isAuthenticated}
-            className="w-full justify-start gap-3 bg-[#18181b]/50 text-[#fafafa] hover:bg-white/5 border border-white/5 shadow-none h-10 px-4 transition-all hover:border-white/10" 
+            className="w-full justify-start gap-3 bg-[#18181b]/50 text-[#fafafa] hover:bg-white/5 border border-white/10 shadow-none h-10 px-4 transition-all hover:border-white/20" 
             size="sm"
           >
             <Plus className="h-4 w-4 text-[#a1a1aa]" />
@@ -231,7 +231,7 @@ export default function ChatSidebar({ threads = [], isLoading = false, setThread
               placeholder="Search chats..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full bg-transparent text-[#fafafa] pl-8 py-2 text-sm border-b border-white/5 focus:border-white/40 focus:outline-none transition-all placeholder-[#52525b] peer"
+              className="w-full bg-transparent text-[#fafafa] pl-8 py-2 text-sm border-b border-white/10 focus:border-white/40 focus:outline-none transition-all placeholder-[#52525b] peer"
             />
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-[#52525b] peer-focus:text-[#cacaca] transition-colors pointer-events-none" />
           </div>
@@ -281,9 +281,9 @@ export default function ChatSidebar({ threads = [], isLoading = false, setThread
       </SidebarContent>
 
       <SidebarFooter className="p-2 bg-[#09090b]">
-          <div className="flex items-center justify-between mx-2 mb-2 border-t border-white/5 pt-4 px-2">
+          <div className="flex items-center justify-between mx-2 mb-2 border-t border-white/10 pt-4 px-2">
             <div className="flex items-center gap-3 overflow-hidden">
-              <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center shrink-0 border border-white/5 text-[#fafafa] font-medium text-sm">
+              <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center shrink-0 border border-white/10 text-[#fafafa] font-medium text-sm">
                 {auth.user.username?.[0]?.toUpperCase()}
               </div>
               <span className="truncate text-sm font-medium text-[#fafafa]">{auth.user.username}</span>
