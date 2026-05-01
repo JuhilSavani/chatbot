@@ -15,6 +15,7 @@ const ChatInput = ({ threadId, onMessageSent, loading, onStop, disabled = false 
   const [message, setMessage] = useState('');
   const [selectedModelId, setSelectedModelId] = useState(DEFAULT_MODEL_ID);
   const [isModelMenuOpen, setIsModelMenuOpen] = useState(false);
+  const [isPersonalizationEnabled, setIsPersonalizationEnabled] = useState(true);
   const [error, setError] = useState(null);
   const [isSending, setIsSending] = useState(false);
   const isInputLocked = disabled || isSending;
@@ -265,6 +266,7 @@ const ChatInput = ({ threadId, onMessageSent, loading, onStop, disabled = false 
           message: userMessage,
           selectedModel: selectedModelId,
           attachments: attachmentUrls,
+          personalizationEnabled: isPersonalizationEnabled,
         });
         clearAllAttachments();
         return;
@@ -277,9 +279,10 @@ const ChatInput = ({ threadId, onMessageSent, loading, onStop, disabled = false 
     }
 
     setMessage('');
-    onMessageSent({ 
-      message: userMessage, 
+    onMessageSent({
+      message: userMessage,
       selectedModel: selectedModelId,
+      personalizationEnabled: isPersonalizationEnabled,
     });
     
     clearAllAttachments();
@@ -410,7 +413,7 @@ const ChatInput = ({ threadId, onMessageSent, loading, onStop, disabled = false 
                 disabled={isInputLocked}
                 className={`flex items-center rounded-md border border-white/10 bg-white/5 p-1 transition-all duration-200 hover:bg-white/10`}
               >
-                <span className="px-2 text-[10px] font-semibold tracking-[0.18em] text-[#a1a1aa]">MODEL</span>
+                <span className="hidden sm:inline-block px-2 text-[10px] font-semibold tracking-[0.18em] text-[#a1a1aa]">MODEL</span>
                 <span className="flex items-center gap-1.5 rounded-md bg-[#09090b] px-2.5 py-1 text-xs text-[#fafafa] min-w-[120px] justify-between">
                   <span>{selectedModel.label}</span>
                   <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${isModelMenuOpen ? 'rotate-180' : ''}`} />
@@ -442,6 +445,21 @@ const ChatInput = ({ threadId, onMessageSent, loading, onStop, disabled = false 
                 </div>
               )}
             </div>
+
+            {/* Personalization Toggle Pill */}
+            <button
+              type="button"
+              onClick={() => setIsPersonalizationEnabled(prev => !prev)}
+              disabled={isInputLocked}
+              title={isPersonalizationEnabled ? 'Personalization on' : 'Personalization off'}
+              className={`rounded-md border px-2.5 py-1.75 text-[11px] font-medium tracking-wide transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed ${
+                isPersonalizationEnabled
+                  ? 'border-blue-500/30 bg-blue-500/15 text-blue-400'
+                  : 'border-white/10 bg-white/5 text-[#71717a] hover:text-[#a1a1aa] hover:bg-white/10'
+              }`}
+            >
+              Personalize
+            </button>
 
             {/* Divider */}
             <div className="h-6 w-0.25 bg-white/40 mx-1"></div>

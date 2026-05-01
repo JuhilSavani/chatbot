@@ -129,7 +129,7 @@ export const ingestDocuments = async (req, res) => {
  * Sends token-by-token updates to the client in real-time
  */
 export const chatWithModelStream = async (req, res) => {
-  const { message, threadId, selectedModel: requestedModel } = req.body;
+  const { message, threadId, selectedModel: requestedModel, personalizationEnabled } = req.body;
   const userId = req.user.id;
 
   // Resolve the model (validate against allowlist)
@@ -226,16 +226,18 @@ export const chatWithModelStream = async (req, res) => {
 
     // 5. Fetch User Profile
     let profile = { static: [], dynamic: [] };
-    try {
-      const profileData = await supermemory.profile({ containerTag: userId });
-      if (profileData && profileData.profile) {
-        profile = {
-          static: profileData.profile.static || [],
-          dynamic: profileData.profile.dynamic || []
-        };
+    if (personalizationEnabled !== false) {
+      try {
+        const profileData = await supermemory.profile({ containerTag: userId });
+        if (profileData && profileData.profile) {
+          profile = {
+            static: profileData.profile.static || [],
+            dynamic: profileData.profile.dynamic || []
+          };
+        }
+      } catch (err) {
+        console.error("Failed to fetch user profile:", err.message);
       }
-    } catch (err) {
-      console.error("Failed to fetch user profile:", err.message);
     }
 
     // 6. Start the stream with streamEvents v2
@@ -245,6 +247,7 @@ export const chatWithModelStream = async (req, res) => {
         thread_id: threadId, 
         signal: controller.signal,
         selectedModel,      // Selected model from client (validated)
+        personalizationEnabled, // Flag to toggle Supermemory tool usage
         profile,            // Pass profile here
         relevantDocuments,  // Pass relevant documents here
         hasDocuments: attachmentRecord.length > 0, // Flag: does this thread have any uploads?

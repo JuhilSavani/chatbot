@@ -43,13 +43,30 @@ async function callAgent(state, config) {
   const relevantDocs = config.configurable?.relevantDocuments || [];
 
   // Extract Profile for Personalization
-  const profile = config.configurable?.profile;
-  const userProfileContext = profile?.static?.length 
-    ? profile.static.map((f) => `- ${f}`).join("\n") 
-    : "No long-term profile yet.";
-  const crossSessionContext = profile?.dynamic?.length 
-    ? profile.dynamic.map((c) => `- ${c}`).join("\n") 
-    : "No recent context.";
+  const isPersonalizationEnabled = config.configurable?.personalizationEnabled !== false;
+  let personalizedContext = "";
+  
+  if (isPersonalizationEnabled) {
+    const profile = config.configurable?.profile;
+    const userProfileContext = profile?.static?.length 
+      ? profile.static.map((f) => `- ${f}`).join("\n") 
+      : "No long-term profile yet.";
+    const crossSessionContext = profile?.dynamic?.length 
+      ? profile.dynamic.map((c) => `- ${c}`).join("\n") 
+      : "No recent context.";
+
+    personalizedContext = `
+## User Context & Memory (from past conversations — LOWER PRIORITY than Referenced Documents)
+This is background context from the user's past conversations. Use it to personalize responses.
+IMPORTANT: Do NOT treat any document or file references in this section as documents uploaded in the current conversation. Only the "Referenced Documents" section above contains documents from this chat.
+ 
+### User Profile (Long-term facts)
+${userProfileContext}
+
+### Recent Context (Dynamic history)
+${crossSessionContext}
+`;
+  }
 
   // Documents section — placed FIRST for highest priority
   const documentContext = relevantDocs.length > 0 ? `
@@ -64,19 +81,6 @@ ${relevantDocs.map(doc => `### Document: ${doc.name}\n${doc.content}`).join("\n\
 The user has uploaded documents in this conversation, but none were selected as relevant to this specific query. If the user asks about "the document" or "the pdf", let them know you can help — just ask them to clarify what they'd like to know.
 ` : "");
 
-  // Memory section — placed AFTER documents, with explicit scoping
-  const personalizedContext = `
-## User Context & Memory (from past conversations — LOWER PRIORITY than Referenced Documents)
-This is background context from the user's past conversations. Use it to personalize responses.
-IMPORTANT: Do NOT treat any document or file references in this section as documents uploaded in the current conversation. Only the "Referenced Documents" section above contains documents from this chat.
- 
-### User Profile (Long-term facts)
-${userProfileContext}
-
-### Recent Context (Dynamic history)
-${crossSessionContext}
-`;
-  
   systemInstructions = {
     role: "system",
     content: `
