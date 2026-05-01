@@ -33,7 +33,8 @@ export async function selectRelevantDocuments(query, recentHistory, attachments)
     .map((att) => `- ID: "${att.publicId}" | Name: "${att.name}" \n ${att.content}`)
     .join("\n====\n");
 
-  const prompt = `You are a document relevance classifier. Given the user's query and recent conversation history, determine which of the available documents are likely relevant to answering the query.
+  const prompt = `
+You are a document relevance classifier. Given the user's query and recent conversation history, determine which of the available documents are likely relevant to answering the query.
 
 ## Recent Conversation History
 ${historyText || "No prior messages."}

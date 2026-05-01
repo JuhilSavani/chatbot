@@ -7,7 +7,6 @@ import { supermemory } from "../config/supermemory.config.js";
 import { extractText, getDocumentProxy } from "unpdf";
 import { Attachment } from "../models/attachment.models.js";
 import { generateThreadName } from "../utils/generateThreadName.js";
-import { selectRelevantDocuments } from "../utils/selectRelevantDocuments.js";
 
 const ALLOWED_MODELS = ["openai/gpt-oss-20b", "openai/gpt-oss-120b"];
 const DEFAULT_MODEL = "openai/gpt-oss-20b";
@@ -57,12 +56,10 @@ export const ingestDocuments = async (req, res) => {
 
   try {
     // 1. Thread setup/verification
-    let thread = await Thread.findOne({ where: { threadId } });
-    
-    const isNewThread = !thread;
-    if (isNewThread) {
-      thread = await Thread.create({ threadId, userId });
-    }
+    const [thread, _] = await Thread.findOrCreate({
+      where: { threadId },
+      defaults: { userId }, // This gets set only on creation
+    });
 
     if (thread.userId !== userId) {
       return res.status(403).json({ message: "You don't have access to this conversation" });
@@ -174,56 +171,21 @@ export const chatWithModelStream = async (req, res) => {
 
   try {
     // 2. Thread setup (same as non-streaming)
-    let thread = await Thread.findOne({ where: { threadId } });
-    
-    const isNewThreadRecord = !thread;
-    if (isNewThreadRecord) {
-      thread = await Thread.create({ threadId, userId });
-    }
+    const [thread, isNewThreadRecord] = await Thread.findOrCreate({
+      where: { threadId },
+      defaults: { userId }, // This gets set only on creation
+    });
 
     if (!isNewThreadRecord && thread.userId !== userId) {
       res.write(`data: ${JSON.stringify({ type: "error", val: "You don't have access to this conversation" })}\n\n`);
       return; // Stop here! The 'finally' block below will take care of [DONE] and res.end()
     }
 
-    const state = await workflow.getState({ configurable: { thread_id: threadId } });
-    const chatMessages = state.values?.messages || [];
-
-    // Understand if it's the very first message
-    const isFirstMessage = chatMessages.length === 0;
-
-    // 4. Load all attachments for this thread & select relevant ones
+    // 4. Load all attachments for this thread
     const attachmentRecord = await Attachment.findAll({
       where: { threadId },
       attributes: ["publicId", "name", "content"],
     });
-
-    let relevantDocuments = [];
-    if (attachmentRecord.length > 0) {
-      // Get last 6 turns (12 messages) from LangGraph state for context
-      let recentHistory = [];
-      try {
-        // Filter to only human and AI text messages (skip tool calls and tool results)
-        const conversationalMsgs = chatMessages.filter(m => {
-          const type = m._getType();
-          if (type === 'human') return true;
-          if (type === 'ai' && m.content && !m.tool_calls?.length) return true;
-          return false;
-        });
-        recentHistory = conversationalMsgs.slice(-12).map(m => ({
-          role: m._getType(),
-          content: m.content,
-        }));
-      } catch (err) {
-        console.error("Failed to load history for doc selection:", err.message);
-      }
-
-      const selectedIds = await selectRelevantDocuments(message, recentHistory, attachmentRecord);
-
-      // Filter to selected docs and build context string
-      relevantDocuments = attachmentRecord.filter(a => selectedIds.includes(a.publicId));
-      console.log(`[DocContext] Injecting ${relevantDocuments.length} doc(s) into context`);
-    }
 
     // 5. Fetch User Profile
     let profile = { static: [], dynamic: [] };
@@ -250,8 +212,7 @@ export const chatWithModelStream = async (req, res) => {
         selectedModel,      // Selected model from client (validated)
         personalizationEnabled, // Flag to toggle Supermemory tool usage
         profile,            // Pass profile here
-        relevantDocuments,  // Pass relevant documents here
-        hasDocuments: attachmentRecord.length > 0, // Flag: does this thread have any uploads?
+        attachments: attachmentRecord,  // Pass all attachments here for the router node
       },
       version: "v2",
     });
@@ -299,7 +260,7 @@ export const chatWithModelStream = async (req, res) => {
 
     // 9. Extra Background Work (Before res.end())
     try {
-      if (isFirstMessage && fullResponse) {
+      if (thread.title === "Untitled Chat" && fullResponse) {
         thread.title = await generateThreadName(message, fullResponse);
         await thread.save();
         // Send thread name to client

@@ -1,9 +1,18 @@
 import { checkpointer } from "./sequelize.config.js";
 import { ChatOpenAI } from "@langchain/openai";
-import { StateGraph, MessagesAnnotation } from "@langchain/langgraph";
+import { StateGraph, MessagesAnnotation, Annotation } from "@langchain/langgraph";
 import { ToolNode, toolsCondition } from "@langchain/langgraph/prebuilt";
 import { searchTool } from "../tools/search.tools.js";
 import { scrapeTool } from "../tools/scrape.tools.js";
+import { selectRelevantDocuments } from "../utils/selectRelevantDocuments.js";
+
+export const AgentState = Annotation.Root({
+  ...MessagesAnnotation.spec,
+  relevantDocuments: Annotation({
+    reducer: (state, update) => update !== undefined ? update : state,
+    default: () => [],
+  }),
+});
 
 // 1. Define your tools
 const tools = [searchTool, scrapeTool];
@@ -27,8 +36,39 @@ export function getChatModel(modelName) {
   return modelCache.get(modelName);
 }
 
+function routeAttachments(state, config) {
+  const attachments = config.configurable?.attachments || [];
+  return attachments.length > 0 ? "selectDocuments" : "chatAgent";
+}
+
+async function selectDocumentsNode(state, config) {
+  const attachments = config.configurable?.attachments || [];
+  if (attachments.length === 0) return { relevantDocuments: [] };
+  
+  // Filter to only human and AI text messages (skip tool calls and tool results)
+  const messages = state.messages.filter(m => {
+    const type = m._getType();
+    if (type === 'human') return true;
+    if (type === 'ai' && m.content && !m.tool_calls?.length) return true;
+    return false;
+  });
+  
+  // Get last 6 conversational turns (12 messages) from LangGraph state for context
+  const recentHistory = messages.slice(-13, -1).map(m => ({ 
+    role: m._getType(), 
+    content: m.content 
+  }));
+
+  const query = messages[messages.length - 1]?.content || "";
+  
+  const selectedIds = await selectRelevantDocuments(query, recentHistory, attachments);
+  const relevantDocuments = attachments.filter(a => selectedIds.includes(a.publicId));
+  
+  return { relevantDocuments };
+}
+
 async function callAgent(state, config) {
-  const signal = config.configurable.signal || config.signal;
+  const signal = config.configurable.signal || config.signal; // Abort signal
 
   // Resolve the model using factory
   const modelName = config.configurable?.selectedModel || "openai/gpt-oss-20b";
@@ -39,8 +79,9 @@ async function callAgent(state, config) {
   let systemInstructions;
 
   // Get Relavant Documents
-  const hasDocuments = config.configurable?.hasDocuments === true;
-  const relevantDocs = config.configurable?.relevantDocuments || [];
+  const attachments = config.configurable?.attachments || [];
+  const hasDocuments = attachments.length > 0;
+  const relevantDocs = state.relevantDocuments || [];
 
   // Extract Profile for Personalization
   const isPersonalizationEnabled = config.configurable?.personalizationEnabled !== false;
@@ -119,12 +160,14 @@ ${personalizedContext}
 }
 
 // 4. Build the Graph
-const graph = new StateGraph(MessagesAnnotation);
+const graph = new StateGraph(AgentState);
 
+graph.addNode("selectDocuments", selectDocumentsNode);
 graph.addNode("chatAgent", callAgent);
 graph.addNode("tools", toolNode);
 
-graph.addEdge("__start__", "chatAgent");
+graph.addConditionalEdges("__start__", routeAttachments);
+graph.addEdge("selectDocuments", "chatAgent");
 graph.addConditionalEdges("chatAgent", toolsCondition);
 graph.addEdge("tools", "chatAgent");
 
