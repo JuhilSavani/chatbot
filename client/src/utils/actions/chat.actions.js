@@ -145,12 +145,16 @@ export function streamChatAction({ threadId, message, selectedModel, personaliza
           const lines = chunk.split("\n");
           for (const line of lines) {
             // Handle standard SSE "data: " prefix
-            if (line.startsWith("data: ") && !line.includes("[DONE]")) {
-              try {
-                const json = JSON.parse(line.slice(6)); // Remove "data: "
-                controller.enqueue(json);
-              } catch (e) {
-                // Ignore partial/malformed chunks
+            if (line.startsWith("data: ")) {
+              if (line.includes("[DONE]")) {
+                controller.enqueue({ type: "done" });
+              } else {
+                try {
+                  const json = JSON.parse(line.slice(6)); // Remove "data: "
+                  controller.enqueue(json);
+                } catch (e) {
+                  // Ignore partial/malformed chunks
+                }
               }
             }
           }

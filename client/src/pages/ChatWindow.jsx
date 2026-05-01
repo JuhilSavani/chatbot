@@ -505,6 +505,13 @@ function MainContent({ setThreads }) {
                 : t,
             ),
           );
+        } else if (event.type === "done") {
+          setLoadingResponse(false);
+          setHasStreamStarted(false);
+          if (shouldScrollToGenerationBoundary && !stopRequestedRef.current) {
+            setGenerationScrollRequest((prev) => prev + 1);
+            shouldScrollToGenerationBoundary = false;
+          }
         }
       }
 

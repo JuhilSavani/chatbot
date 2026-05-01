@@ -170,6 +170,7 @@ export const chatWithModelStream = async (req, res) => {
   res.write(`data: ${JSON.stringify(initResponse)}\n\n`);
 
   let fullResponse = "";
+  let streamEndedNormally = false;
 
   try {
     // 2. Thread setup (same as non-streaming)
@@ -292,7 +293,11 @@ export const chatWithModelStream = async (req, res) => {
       }
     }
 
-    // 8. Update thread name for new threads
+    // 8. Signal LLM stream is done so the UI can unlock immediately
+    res.write("data: [DONE]\n\n");
+    streamEndedNormally = true;
+
+    // 9. Extra Background Work (Before res.end())
     try {
       if (isFirstMessage && fullResponse) {
         thread.title = await generateThreadName(message, fullResponse);
@@ -328,8 +333,10 @@ export const chatWithModelStream = async (req, res) => {
       val: userFriendlyError 
     })}\n\n`);
   } finally {
-    // 9. Signal end of stream
-    res.write("data: [DONE]\n\n");
+    if (!streamEndedNormally) {
+      // 10. Signal end of stream in case of error
+      res.write("data: [DONE]\n\n");
+    }
     res.end();
 
     // 10. Store interaction in Supermemory (after stream ends)
