@@ -1,6 +1,7 @@
 import { Pool } from "pg";
 import { Sequelize } from "sequelize";
 import { PostgresSaver } from "@langchain/langgraph-checkpoint-postgres";
+import { PostgresStore } from "@langchain/langgraph-checkpoint-postgres/store";
 
 const IS_PROD = process.env.NODE_ENV !== "development";
 const SUPABASE_PG_URI = process.env.SUPABASE_PG_URI;
@@ -63,3 +64,10 @@ pgPool.on("error", (error) => {
 });
 
 export const checkpointer = new PostgresSaver(pgPool);
+export const memoryStore = new PostgresStore({
+  connectionOptions: {
+    connectionString: SUPABASE_PG_URI,
+    max: 1,
+    ssl: { rejectUnauthorized: false }
+  }
+});
