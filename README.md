@@ -37,12 +37,13 @@ Setting up Sidekick takes just a few minutes:
 3. **Configure your server environment:** <br/>
     Create a `.env` file in the `server` folder. You can copy the structure from `.env.example`.
 
-4. **Set up the persistence tables (one-time only):** <br/>
-    Before starting the server for the first time, run this script to create the LangGraph persistence tables (`checkpoints` and `writes`) in your Supabase database:
+4. **Set up the persistence and memory tables (one-time only):** <br/>
+    Before starting the server for the first time, run these scripts to create the LangGraph persistence tables (`checkpoints`, `writes`) and memory store tables in your Supabase database:
     ```bash
     npm run checkpoints:init
+    npm run memory:init
     ```
-    > You only need to do this once. It's safe to re-run — it uses `CREATE TABLE IF NOT EXISTS`.
+    > You only need to do this once. It's safe to re-run — uses `CREATE TABLE IF NOT EXISTS`.
 
 5. **Start the server application:**
     ```bash

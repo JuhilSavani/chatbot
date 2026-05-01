@@ -196,7 +196,7 @@ export const chatWithModelStream = async (req, res) => {
         thread_id: threadId, 
         signal: controller.signal,
         selectedModel,                      // Selected model from client (validated)
-        personalizationEnabled,             // Flag to toggle Supermemory tool usage
+        personalizationEnabled,             // Flag to toggle personalization
         userId,                             // Pass userId so graph nodes can access PostgresStore
         attachments: attachmentRecord,      // Pass all attachments here for the router node
       },
@@ -299,7 +299,6 @@ export const chatWithModelStream = async (req, res) => {
       res.write("data: [DONE]\n\n");
     }
     res.end();
-    // Supermemory interaction store removed, now handled by updateMemory node
   }
 }
 

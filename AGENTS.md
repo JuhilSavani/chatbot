@@ -50,8 +50,7 @@ chatbot/
 │   ├── config/
 │   │   ├── sequelize.config.js      # PostgreSQL + LangGraph checkpointer
 │   │   ├── passport.config.js       # JWT strategy with Supabase JWKS
-│   │   ├── workflow.config.js       # LangGraph StateGraph configuration
-│   │   └── supermemory.config.js    # Supermemory client configuration
+│   │       ├── workflow.config.js       # LangGraph StateGraph configuration
 │   ├── routes/
 │   │   ├── authorize.routes.js      # Public auth routes
 │   │   ├── chat.routes.js           # Authenticated chat routes
@@ -111,6 +110,7 @@ npm run start            # Start production server
 
 # Utilities
 npm run persistence:init # Setup LangGraph persistence tables (checkpoints, writes)
+npm run memory:init      # Setup LangGraph memory store tables
 npm run rateLimits:reset # Reset Upstash Redis rate limit cache
 ```
 
@@ -149,7 +149,6 @@ CLOUDINARY_API_KEY=
 CLOUDINARY_API_SECRET= 
 OPENROUTER_API_KEY=
 TAVILY_API_KEY=
-SUPERMEMORY_API_KEY=
 FIRECRAWL_API_KEY=
 UPSTASH_REDIS_REST_URL=
 UPSTASH_REDIS_REST_TOKEN=
