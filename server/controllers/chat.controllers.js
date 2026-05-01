@@ -3,7 +3,7 @@ import { HumanMessage } from "@langchain/core/messages";
 import { Thread } from "../models/thread.models.js";
 import { sequelize } from "../config/sequelize.config.js";
 import { QueryTypes } from 'sequelize';
-import { supermemory } from "../config/supermemory.config.js";
+
 import { extractText, getDocumentProxy } from "unpdf";
 import { Attachment } from "../models/attachment.models.js";
 import { generateThreadName } from "../utils/generateThreadName.js";
@@ -187,21 +187,7 @@ export const chatWithModelStream = async (req, res) => {
       attributes: ["publicId", "name", "content"],
     });
 
-    // 5. Fetch User Profile
-    let profile = { static: [], dynamic: [] };
-    if (personalizationEnabled !== false) {
-      try {
-        const profileData = await supermemory.profile({ containerTag: userId });
-        if (profileData && profileData.profile) {
-          profile = {
-            static: profileData.profile.static || [],
-            dynamic: profileData.profile.dynamic || []
-          };
-        }
-      } catch (err) {
-        console.error("Failed to fetch user profile:", err.message);
-      }
-    }
+    // 5. Removed Supermemory fetching, workflow now handles it via PostgresStore
 
     // 6. Start the stream with streamEvents v2
     const inputs = { messages: [new HumanMessage(message)] };
@@ -209,18 +195,33 @@ export const chatWithModelStream = async (req, res) => {
       configurable: { 
         thread_id: threadId, 
         signal: controller.signal,
-        selectedModel,      // Selected model from client (validated)
-        personalizationEnabled, // Flag to toggle Supermemory tool usage
-        profile,            // Pass profile here
-        attachments: attachmentRecord,  // Pass all attachments here for the router node
+        selectedModel,                      // Selected model from client (validated)
+        personalizationEnabled,             // Flag to toggle Supermemory tool usage
+        userId,                             // Pass userId so graph nodes can access PostgresStore
+        attachments: attachmentRecord,      // Pass all attachments here for the router node
       },
       version: "v2",
     });
 
     // 7. Iterate and filter events
     for await (const event of stream) {
+      // Ignore background LLM/tool events (like from updateMemoryNode) after the main chat is done
+      // if (streamEndedNormally) continue; 
+      
+      // Listen for custom events dispatched from nodes
+      if (event.event === "on_custom_event") {
+        if (event.name === "recalling_memory") {
+          res.write(`data: ${JSON.stringify({ 
+            type: "recalling_memory", 
+            val: event.data.message 
+          })}\n\n`);
+        } else if (event.name === "llm_done") {
+          res.write("data: [DONE]\n\n");
+          streamEndedNormally = true; 
+        }
+      }
       // Token from the LLM
-      if (event.event === "on_chat_model_stream") {
+      else if (event.event === "on_chat_model_stream") {
         const content = event.data.chunk?.content;
         if (content) {
           fullResponse += content;
@@ -254,9 +255,8 @@ export const chatWithModelStream = async (req, res) => {
       }
     }
 
-    // 8. Signal LLM stream is done so the UI can unlock immediately
-    res.write("data: [DONE]\n\n");
-    streamEndedNormally = true;
+    // 8. Wait for the loop to naturally end (after background tasks complete)
+    // The [DONE] signal was sent by the llm_done custom event to unlock UI earlier
 
     // 9. Extra Background Work (Before res.end())
     try {
@@ -299,15 +299,7 @@ export const chatWithModelStream = async (req, res) => {
       res.write("data: [DONE]\n\n");
     }
     res.end();
-
-    // 10. Store interaction in Supermemory (after stream ends)
-    if (fullResponse) {
-      const memoryContent = `User: ${message}\nAssistant: ${fullResponse}`;
-      await supermemory.add({
-        content: memoryContent,
-        containerTag: userId
-      }).catch(err => console.error("Failed to save memory:", err.message));
-    }
+    // Supermemory interaction store removed, now handled by updateMemory node
   }
 }
 
