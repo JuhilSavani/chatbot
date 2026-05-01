@@ -5,6 +5,7 @@ import {
   CheckCircle2,
   Loader2,
   XCircle,
+  Link as LinkIcon,
 } from "lucide-react";
 
 // --- HELPER: Tool Renderers ---
@@ -79,7 +80,7 @@ const WebSearchOutput = ({ output }) => {
             </div>
 
             {/* Index badge */}
-            <span className="flex-shrink-0 text-[9px] font-bold text-[#3f3f46] group-hover:text-[#52525b] tabular-nums transition-colors">
+            <span className="flex-shrink-0 text-[9px] font-bold text-[#d4d4d8] tabular-nums transition-colors">
               {String(idx + 1).padStart(2, "0")}
             </span>
           </a>
@@ -125,7 +126,7 @@ export default function ToolCall({ tool, input, output, status = "loading" }) {
         `}
         onClick={hasOutput ? () => setIsOpen(!isOpen) : undefined}
       >
-        <div className="flex items-center gap-2.5 min-w-0">
+        <div className="flex items-center gap-2.5 min-w-0 flex-1">
           {/* Icon */}
           <div
             className={`flex-shrink-0 p-1.5 rounded-md border border-white/5 ${status === "error" ? "bg-red-500/10 text-red-400" : "bg-blue-500/10 text-blue-400"}`}
@@ -137,15 +138,15 @@ export default function ToolCall({ tool, input, output, status = "loading" }) {
           </div>
 
           {/* Label + query */}
-          <div className="flex items-center gap-2 min-w-0">
-            <span className="text-[#71717a] text-xs whitespace-nowrap">
+          <div className="flex items-center gap-2 min-w-0 flex-1">
+            <span className="text-[#71717a] text-xs whitespace-nowrap flex-shrink-0">
               Using tool:{" "}
               <span className="font-mono text-[#d4d4d8] bg-white/5 px-1.5 py-0.5 rounded border border-white/5 text-[11px]">
                 {tool}
               </span>
             </span>
             {input && (
-              <span className="hidden sm:block text-[11px] text-[#52525b] truncate max-w-[620px] border-l border-white/8 pl-2 leading-tight">
+              <span className="text-[11px] text-[#52525b] truncate border-l border-white/8 pl-2 leading-tight">
                 {input}
               </span>
             )}
@@ -166,8 +167,21 @@ export default function ToolCall({ tool, input, output, status = "loading" }) {
             <div
               className={`p-1 rounded-md hover:bg-white/5 transition-all duration-200 ${isOpen ? "rotate-180" : ""}`}
             >
-              <ChevronDown size={13} className="text-[#52525b]" />
+              <ChevronDown size={13} className="text-[#d4d4d8]" />
             </div>
+          )}
+
+          {tool === "scrape_url" && input && status === "success" && (
+            <a
+              href={input}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={(e) => e.stopPropagation()}
+              className="p-1 rounded-md hover:bg-white/5 transition-all duration-200"
+              title="Open link in new tab"
+            >
+              <LinkIcon size={13} className="text-[#d4d4d8] hover:text-white" />
+            </a>
           )}
         </div>
       </div>

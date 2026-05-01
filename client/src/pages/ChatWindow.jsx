@@ -188,9 +188,9 @@ const ChatMessage = React.memo(({ message, messageRef }) => {
 
       {/* Message Bubble */}
       <div
-        className={`p-4 rounded-2xl ${isUser ? "bg-white/10 max-w-[95%] md:max-w-[80%] w-fit border border-white/10 text-[#fafafa]" : "bg-transparent w-full px-2"}`}
+        className={`p-4 rounded-2xl ${isUser ? "bg-white/10 max-w-[95%] md:max-w-[80%] w-fit border border-white/10 text-[#fafafa] break-words whitespace-pre-wrap" : "bg-transparent w-full px-2"}`}
       >
-        <div className={isUser ? "text-[#fafafa]" : "text-[#fafafa] w-full"}>
+        <div className={isUser ? "text-[#fafafa] break-words whitespace-pre-wrap" : "text-[#fafafa] w-full"}>
           {isUser ? (
             message.content
           ) : isError ? (
@@ -366,7 +366,7 @@ function MainContent({ setThreads }) {
 
   // SEND MESSAGE HANDLER
   const handleMessageSent = async (messageData) => {
-    const { message: newMessage, attachments, selectedModel } = messageData;
+    const { message: newMessage, attachments, selectedModel, personalizationEnabled } = messageData;
     stopRequestedRef.current = false;
 
     // Optimistic UI Update
@@ -419,6 +419,7 @@ function MainContent({ setThreads }) {
         threadId: activeThreadId,
         message: newMessage,
         selectedModel,
+        personalizationEnabled,
       });
 
       // Store abort function for stop button
