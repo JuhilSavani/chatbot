@@ -1,6 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Paperclip, ArrowUp, Square, X, FileText, Loader2, ChevronDown, Check } from 'lucide-react';
-import pdfjsWorkerUrl from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
 import { uploadFileToCloudinary } from '../actions/upload.actions';
 
 const MAX_PDFS = 5;
@@ -85,58 +84,40 @@ const ChatInput = ({ threadId, onMessageSent, loading, onStop, disabled = false 
 
   const processSinglePdf = async (file, id) => {
     try {
-      // 1. Extract text
       const fileBuffer = await file.arrayBuffer();
-      console.log(`[ChatInput] Processing "${file.name}" (${fileBuffer.byteLength} bytes)`);
+      console.log(`[ChatInput] Sending "${file.name}" to worker...`);
 
-      const pdfjsLib = await import('pdfjs-dist');
-      pdfjsLib.GlobalWorkerOptions.workerSrc = pdfjsWorkerUrl;
-
-      const loadingTask = pdfjsLib.getDocument({ data: new Uint8Array(fileBuffer) });
-      const pdfDocument = await loadingTask.promise;
-      console.log(`[ChatInput] "${file.name}" loaded. Pages: ${pdfDocument.numPages}`);
-
-      let fullText = '';
-      for (let i = 1; i <= pdfDocument.numPages; i++) {
-        const page = await pdfDocument.getPage(i);
-        const textContent = await page.getTextContent();
-        const pageText = textContent.items.map((item) => item.str).join(' ');
-        fullText += pageText + '\n';
-      }
-      console.log(`[ChatInput] "${file.name}" text extracted. Length: ${fullText.length}`);
-
-      // 2. Count tokens in web worker
-
-      const tokenCount = await new Promise((resolve, reject) => {
+      const result = await new Promise((resolve, reject) => {
         const worker = new Worker(
-          new URL('../workers/countTokensWorker.js', import.meta.url),
+          new URL('../workers/pdfWorker.js', import.meta.url),
           { type: 'module' }
         );
         worker.onerror = (err) => {
           worker.terminate();
-          reject(new Error('Token counting worker failed.'));
+          reject(new Error('PDF processing worker failed.'));
         };
         worker.onmessage = (e) => {
+          if (e.data.type !== 'PdfWorker') return;
           worker.terminate();
           if (e.data.success) {
-            resolve(e.data.tokenCount);
+            resolve({ fullText: e.data.fullText, tokenCount: e.data.tokenCount });
           } else {
-            reject(new Error(e.data.error || 'Token counting failed'));
+            reject(new Error(e.data.error || 'PDF processing failed'));
           }
         };
-        worker.postMessage({ text: fullText });
+        worker.postMessage({ fileBuffer, fileName: file.name }, [fileBuffer]);
       });
 
-      console.log(`[ChatInput] "${file.name}" token count: ${tokenCount}`);
+      console.log(`[ChatInput] "${file.name}" token count: ${result.tokenCount}`);
 
-      // 3. Check token limit
-      if (tokenCount > MAX_TOKENS) {
+      // Check token limit
+      if (result.tokenCount > MAX_TOKENS) {
         console.error(`Rejected "${file.name}" due to token limit`);
         setAttachments(prev => prev.filter(a => a.id !== id));
-        setError(`"${file.name}" exceeds the token limit (${tokenCount.toLocaleString()} / ${MAX_TOKENS.toLocaleString()} tokens).`);
+        setError(`"${file.name}" exceeds the token limit (${result.tokenCount.toLocaleString()} / ${MAX_TOKENS.toLocaleString()} tokens).`);
       } else {
         console.log(`"${file.name}" done`);
-        updateAttachment(id, { status: 'done', text: fullText, tokenCount });
+        updateAttachment(id, { status: 'done', text: result.fullText, tokenCount: result.tokenCount });
       }
     } catch (err) {
       console.error(`[ChatInput] Error processing "${file.name}":`, err);
