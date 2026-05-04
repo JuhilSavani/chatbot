@@ -8,7 +8,7 @@
     "build": "vite build && rm -f dist/reset-rate-limit-storage.html",
     "lint": "eslint .",
     "preview": "vite preview",
-    "postinstall": "patch-package"
+    "postinstall": "for f in patches/scripts/*.js; do node $f; done"
   },
   "dependencies": {
     "@radix-ui/react-alert-dialog": "^1.1.15",
