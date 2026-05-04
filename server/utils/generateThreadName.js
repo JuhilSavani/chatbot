@@ -5,7 +5,7 @@ import { HumanMessage } from "@langchain/core/messages";
 export async function generateThreadName(userMessage, aiResponse) {
   try {
     // Use default mini model for title generation
-    const titleModel = getChatModel("openai/gpt-oss-20b");
+    const titleModel = getChatModel("nvidia/nemotron-3-nano-30b-a3b");
 
     // Option 1: Use a simple LLM call to generate a concise title
     const titlePrompt = `
