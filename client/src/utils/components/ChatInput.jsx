@@ -2,7 +2,8 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Paperclip, ArrowUp, Square, X, FileText, Loader2, ChevronDown, Check } from 'lucide-react';
 import { uploadFileToCloudinary } from '../actions/upload.actions';
 
-const MAX_PDFS = 5;
+const MAX_FILES = 5;
+const ALLOWED_TYPES = ['application/pdf', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
 const MAX_TOKENS = 32768;
 const MODEL_OPTIONS = [
   { id: 'openai/gpt-oss-20b', label: 'GPT-OSS-20B' },
@@ -19,7 +20,7 @@ const ChatInput = ({ threadId, onMessageSent, loading, onStop, disabled = false 
   const [isSending, setIsSending] = useState(false);
   const isInputLocked = disabled || isSending;
   
-  // Each entry: { id, file, text, status: 'verifying' | 'done' | 'error', tokenCount, error }
+  // Each entry: { id, file, text, status: 'processing' | 'done' | 'error', tokenCount, error }
   const [attachments, setAttachments] = useState([]);
   const [isDragging, setIsDragging] = useState(false);
 
@@ -82,42 +83,71 @@ const ChatInput = ({ threadId, onMessageSent, loading, onStop, disabled = false 
     setAttachments(prev => prev.map(a => a.id === id ? { ...a, ...updates } : a));
   };
 
-  const processSinglePdf = async (file, id) => {
+  const processSingleFile = async (file, id, worker, workerName) => {
     try {
       const fileBuffer = await file.arrayBuffer();
-      console.log(`[ChatInput] Sending "${file.name}" to worker...`);
+      console.log(`[ChatInput] Phase 1 — extracting "${file.name}"...`);
 
-      const result = await new Promise((resolve, reject) => {
-        const worker = new Worker(
-          new URL('../workers/pdfWorker.js', import.meta.url),
-          { type: 'module' }
-        );
-        worker.onerror = (err) => {
+      // ── Phase 1: Extraction ──────────────────────────────────────────────────
+      const markdown = await new Promise((resolve, reject) => {
+        worker.onerror = (e) => {
           worker.terminate();
-          reject(new Error('PDF processing worker failed.'));
+          console.error('[ChatInput] Worker instantiation error:', e.message, e.filename, e.lineno);
+          reject(new Error(`Extraction worker failed to load: ${e.message || 'Unknown network/bundling error'}`));
         };
-        worker.onmessage = (e) => {
-          if (e.data.type !== 'PdfWorker') return;
+        worker.onmessage = ({ data }) => {
+          if (data?.workerName !== workerName) return;
+
+          if (data.status === 'PROGRESS') {
+            console.log(`[ChatInput] "${file.name}" — page ${data.page}/${data.total}`);
+            return;
+          }
+
           worker.terminate();
-          if (e.data.success) {
-            resolve({ fullText: e.data.fullText, tokenCount: e.data.tokenCount });
+          if (data.status === 'SUCCESS') {
+            resolve(data.markdown);
           } else {
-            reject(new Error(e.data.error || 'PDF processing failed'));
+            reject(new Error(data.message || 'Extraction failed'));
           }
         };
-        worker.postMessage({ fileBuffer, fileName: file.name }, [fileBuffer]);
+        worker.postMessage({ status: 'PROCESS', buffer: fileBuffer, filename: file.name }, [fileBuffer]);
       });
 
-      console.log(`[ChatInput] "${file.name}" token count: ${result.tokenCount}`);
+      console.log(`[ChatInput] Phase 2 — counting tokens for "${file.name}"...`);
 
-      // Check token limit
-      if (result.tokenCount > MAX_TOKENS) {
+      // ── Phase 2: Token counting ──────────────────────────────────────────────
+      const tokenCount = await new Promise((resolve, reject) => {
+        const worker = new Worker(
+          new URL('../workers/tokenWorker.js', import.meta.url),
+          { type: 'module' }
+        );
+        worker.onerror = () => {
+          worker.terminate();
+          reject(new Error('Token counting worker failed.'));
+        };
+        worker.onmessage = ({ data }) => {
+          if (data?.workerName !== 'TokenWorker') return;
+
+          worker.terminate();
+          if (data.status === 'DONE') {
+            resolve(data.tokenCount);
+          } else {
+            reject(new Error(data.message || 'Token counting failed'));
+          }
+        };
+        worker.postMessage({ status: 'COUNT', text: markdown });
+      });
+
+      console.log(`[ChatInput] "${file.name}" token count: ${tokenCount}`);
+
+      // ── Token limit check ────────────────────────────────────────────────────
+      if (tokenCount > MAX_TOKENS) {
         console.error(`Rejected "${file.name}" due to token limit`);
         setAttachments(prev => prev.filter(a => a.id !== id));
-        setError(`"${file.name}" exceeds the token limit (${result.tokenCount.toLocaleString()} / ${MAX_TOKENS.toLocaleString()} tokens).`);
+        setError(`"${file.name}" exceeds the token limit (${tokenCount.toLocaleString()} / ${MAX_TOKENS.toLocaleString()} tokens).`);
       } else {
         console.log(`"${file.name}" done`);
-        updateAttachment(id, { status: 'done', text: result.fullText, tokenCount: result.tokenCount });
+        updateAttachment(id, { status: 'done', text: markdown, tokenCount });
       }
     } catch (err) {
       console.error(`[ChatInput] Error processing "${file.name}":`, err);
@@ -125,25 +155,25 @@ const ChatInput = ({ threadId, onMessageSent, loading, onStop, disabled = false 
     }
   };
 
-  const processPdfFiles = (files) => {
+  const processFiles = (files) => {
     if (isInputLocked) return;
 
-    const pdfFiles = Array.from(files).filter(f => f.type === 'application/pdf');
+    const validFiles = Array.from(files).filter(f => ALLOWED_TYPES.includes(f.type));
 
-    if (pdfFiles.length === 0) {
-      setError('Only PDF files are supported.');
+    if (validFiles.length === 0) {
+      setError('Only PDF and DOCX files are supported.');
       return;
     }
 
-    const remainingSlots = MAX_PDFS - attachments.length;
+    const remainingSlots = MAX_FILES - attachments.length;
     if (remainingSlots <= 0) {
-      setError(`Maximum of ${MAX_PDFS} PDFs allowed per message.`);
+      setError(`Maximum of ${MAX_FILES} files allowed per message.`);
       return;
     }
 
-    const filesToProcess = pdfFiles.slice(0, remainingSlots);
-    if (pdfFiles.length > remainingSlots) {
-      setError(`Only ${remainingSlots} more PDF(s) can be added. ${pdfFiles.length - remainingSlots} file(s) were skipped.`);
+    const filesToProcess = validFiles.slice(0, remainingSlots);
+    if (validFiles.length > remainingSlots) {
+      setError(`Only ${remainingSlots} more file(s) can be added. ${validFiles.length - remainingSlots} file(s) were skipped.`);
     } else {
       setError(null);
     }
@@ -153,16 +183,38 @@ const ChatInput = ({ threadId, onMessageSent, loading, onStop, disabled = false 
       id: crypto.randomUUID(),
       file,
       text: '',
-      status: 'verifying',
+      status: 'processing',
       tokenCount: 0,
       error: null,
     }));
 
     setAttachments(prev => [...prev, ...newEntries]);
 
-    // Process all concurrently
+    // Process all concurrently, routing by MIME type
     newEntries.forEach(entry => {
-      processSinglePdf(entry.file, entry.id);
+      if (entry.file.type === 'application/pdf') {
+        const pdfWorker = new Worker(
+          new URL('../workers/pdfWorker.js', import.meta.url),
+          { type: 'module' }
+        );
+        processSingleFile(
+          entry.file,
+          entry.id,
+          pdfWorker,
+          'PdfWorker'
+        );
+      } else {
+        const docxWorker = new Worker(
+          new URL('../workers/docxWorker.js', import.meta.url),
+          { type: 'module' }
+        );
+        processSingleFile(
+          entry.file,
+          entry.id,
+          docxWorker,
+          'DocxWorker'
+        );
+      }
     });
   };
 
@@ -187,7 +239,7 @@ const ChatInput = ({ threadId, onMessageSent, loading, onStop, disabled = false 
     setIsDragging(false);
     
     if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
-      processPdfFiles(e.dataTransfer.files);
+      processFiles(e.dataTransfer.files);
       e.dataTransfer.clearData();
     }
   };
@@ -196,7 +248,7 @@ const ChatInput = ({ threadId, onMessageSent, loading, onStop, disabled = false 
     if (isInputLocked) return;
 
     if (e.target.files && e.target.files.length > 0) {
-      processPdfFiles(e.target.files);
+      processFiles(e.target.files);
     }
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
@@ -210,7 +262,7 @@ const ChatInput = ({ threadId, onMessageSent, loading, onStop, disabled = false 
   };
 
   const doneAttachments = attachments.filter(a => a.status === 'done');
-  const isBusy = attachments.some(a => a.status === 'verifying');
+  const isBusy = attachments.some(a => a.status === 'processing');
   const selectedModel = MODEL_OPTIONS.find(option => option.id === selectedModelId) || MODEL_OPTIONS[0];
 
   const handleSendMessage = async () => {
@@ -240,6 +292,7 @@ const ChatInput = ({ threadId, onMessageSent, loading, onStop, disabled = false 
           resource_type: r.resource_type,
           name: r.original_filename,
           tokenCount: doneAttachments[i].tokenCount || 0,
+          text: doneAttachments[i].text || '',
         }));
 
         setMessage('');
@@ -252,8 +305,8 @@ const ChatInput = ({ threadId, onMessageSent, loading, onStop, disabled = false 
         clearAllAttachments();
         return;
       } catch (err) {
-        console.error('[ChatInput] Failed to process PDFs:', err);
-        setError('Failed to process PDF: ' + err.message);
+        console.error('[ChatInput] Failed to process file:', err);
+        setError('Failed to process file: ' + err.message);
         setIsSending(false);
         return;
       }
@@ -311,7 +364,7 @@ const ChatInput = ({ threadId, onMessageSent, loading, onStop, disabled = false 
         {/* Hidden File Input */}
         <input
           type="file"
-          accept="application/pdf"
+          accept="application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
           multiple
           ref={fileInputRef}
           onChange={handleFileSelect}
@@ -330,11 +383,11 @@ const ChatInput = ({ threadId, onMessageSent, loading, onStop, disabled = false 
                     : 'bg-white/10 border-white/10 text-white'
                 }`}
               >
-                {att.status === 'verifying' ? (
+                {att.status === 'processing' ? (
                   <>
                     <Loader2 className="w-4 h-4 animate-spin text-blue-400" />
-                    <span className="text-[#a1a1aa] truncate max-w-[80px]">
-                      Verifying... {att.file.name}
+                    <span className="text-[#a1a1aa] truncate max-w-[100px]">
+                      Processing... {att.file.name}
                     </span>
                   </>
                 ) : att.status === 'error' ? (
@@ -448,7 +501,7 @@ const ChatInput = ({ threadId, onMessageSent, loading, onStop, disabled = false 
             {/* Attachment Button */}
             <button 
               onClick={() => fileInputRef.current?.click()}
-              disabled={isInputLocked || isBusy || attachments.length >= MAX_PDFS}
+              disabled={isInputLocked || isBusy || attachments.length >= MAX_FILES}
               className="border border-white/10 text-[#a1a1aa] hover:text-[#fafafa]  bg-white/5 hover:bg-white/10 p-1.5 transition-colors rounded-md disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <Paperclip className="w-4 h-4" strokeWidth={2} />

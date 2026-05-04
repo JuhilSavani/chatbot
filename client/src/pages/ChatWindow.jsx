@@ -114,15 +114,7 @@ const ChatMessage = React.memo(({ message, messageRef }) => {
     );
   }
 
-  // 2. Handle "PDF Processing" State
-  if (message.isPdfProcessing) {
-    return (
-      <div className="flex items-center gap-3 text-[#d4d4d8] text-sm">
-        <div className="w-4 h-4 border-2 border-[#d4d4d8] border-t-transparent rounded-full animate-spin" />
-        <span>Processing PDFs...</span>
-      </div>
-    );
-  }
+
 
   // 3. Handle Tool Calls
   if (message.role === "tool_call") {
@@ -157,7 +149,7 @@ const ChatMessage = React.memo(({ message, messageRef }) => {
       ref={messageRef}
       className={`mb-6 flex flex-col relative group ${isUser ? "items-end" : "items-start w-full"}`}
     >
-      {/* PDF Attachments */}
+      {/* File Attachments */}
       {isUser && message.attachments?.length > 0 && (
         <div className="flex flex-wrap gap-2 mb-2 justify-end max-w-[95%] md:max-w-[80%]">
           {message.attachments.map((name, i) => (
@@ -401,12 +393,10 @@ function MainContent({ setThreads }) {
 
     try {
       if (attachments?.length > 0) {
-        setMessages((prev) => [...prev, { isPdfProcessing: true }]);
         const ingestResult = await ingestDocumentsAction(
           activeThreadId,
           attachments,
         );
-        setMessages((prev) => prev.filter((m) => !m.isPdfProcessing));
 
         if (ingestResult.error) {
           setError(ingestResult.error);
@@ -667,8 +657,7 @@ function MainContent({ setThreads }) {
             })}
 
             {loadingResponse &&
-              messages[messages.length - 1]?.role !== "assistant" &&
-              !messages.some((m) => m.isPdfProcessing) && (
+              messages[messages.length - 1]?.role !== "assistant" && (
                 <ChatMessage message={{ isThinking: true }} />
               )}
           </div>

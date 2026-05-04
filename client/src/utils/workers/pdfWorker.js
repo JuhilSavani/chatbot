@@ -1,47 +1,74 @@
-// Web Worker for PDF text extraction and token counting.
-// Offloads heavy pdf.js parsing and tiktoken counting from the main thread.
+/**
+ * pdfWorker.js
+ *
+ * Web Worker that extracts text from a PDF using unpdf.
+ * Token counting is handled by a separate tokenWorker.js.
+ *
+ * Incoming messages from main thread:
+ *   { status: 'PROCESS', buffer: ArrayBuffer, filename: string }
+ *
+ * Outgoing messages to main thread:
+ *   { workerName: 'PdfWorker', status: 'PROGRESS', page: number, total: number }
+ *   { workerName: 'PdfWorker', status: 'SUCCESS',  markdown: string, filename: string }
+ *   { workerName: 'PdfWorker', status: 'ERROR',    reason: 'EMPTY_PDF' | 'EXTRACTION_FAILED', message: string }
+ */
 
-import * as pdfjsLib from 'pdfjs-dist';
-import 'pdfjs-dist/build/pdf.worker.mjs';
+import { getDocumentProxy } from 'unpdf';
 
-self.addEventListener('message', async (e) => {
-  console.log('[PdfWorker] Received message from main thread');
+self.onmessage = async ({ data }) => {
+  if (data.status !== 'PROCESS') return;
+
+  const { buffer, filename } = data;
+
   try {
-    const { fileBuffer, fileName } = e.data;
-    if (!fileBuffer) {
-      throw new Error('No file buffer provided.');
+    const pdf = await getDocumentProxy(new Uint8Array(buffer));
+    const totalPages = pdf.numPages;
+    let parsedPages = 0;
+    const texts = [];
+
+    for (let i = 1; i <= totalPages; i++) {
+      const page = await pdf.getPage(i);
+      const content = await page.getTextContent();
+      const pageText = content.items
+        .filter((item) => item.str != null)
+        .map((item) => item.str + (item.hasEOL ? '\n' : ''))
+        .join('');
+
+      texts.push(pageText);
+      parsedPages++;
+
+      self.postMessage({
+        workerName: 'PdfWorker',
+        status: 'PROGRESS',
+        page: parsedPages,
+        total: totalPages,
+      });
     }
 
-    console.log(`[PdfWorker] Processing "${fileName}" (${fileBuffer.byteLength} bytes)`);
+    const markdown = texts.join('\n\n');
 
-    const loadingTask = pdfjsLib.getDocument({ data: new Uint8Array(fileBuffer) });
-    const pdfDocument = await loadingTask.promise;
-    console.log(`[PdfWorker] "${fileName}" loaded. Pages: ${pdfDocument.numPages}`);
-
-    let fullText = '';
-    for (let i = 1; i <= pdfDocument.numPages; i++) {
-      const page = await pdfDocument.getPage(i);
-      const textContent = await page.getTextContent();
-      const pageText = textContent.items.map((item) => item.str).join(' ');
-      fullText += pageText + '\n';
+    // Guard: empty extraction (likely a scanned / image-only PDF).
+    const stripped = markdown.replace(/<!--\s*PAGE_BREAK\s*-->/g, '').trim();
+    if (!stripped) {
+      self.postMessage({
+        workerName: 'PdfWorker',
+        status: 'ERROR',
+        reason: 'EMPTY_PDF',
+        message:
+          'No extractable text found. This PDF may be scanned or image-only. ' +
+          'Try uploading a text-based PDF.',
+      });
+      return;
     }
-    console.log(`[PdfWorker] "${fileName}" text extracted. Length: ${fullText.length}. Importing js-tiktoken...`);
 
-    const { getEncoding } = await import('js-tiktoken');
-    console.log('[PdfWorker] js-tiktoken imported, encoding text...');
-
-    const enc = getEncoding('o200k_base');
-    const tokens = enc.encode(fullText);
-    const tokenCount = tokens.length;
-    console.log(`[PdfWorker] Token count for "${fileName}": ${tokenCount}`);
-
-    self.postMessage({ type: 'PdfWorker', success: true, fullText, tokenCount });
-  } catch (error) {
-    console.error('[PdfWorker] Error:', error);
+    self.postMessage({ workerName: 'PdfWorker', status: 'SUCCESS', markdown, filename });
+  } catch (err) {
+    console.error('[pdfWorker] Extraction error:', err);
     self.postMessage({
-      type: 'PdfWorker',
-      success: false,
-      error: error.message || 'Unknown error during PDF processing',
+      workerName: 'PdfWorker',
+      status: 'ERROR',
+      reason: 'EXTRACTION_FAILED',
+      message: err?.message || String(err) || 'Unknown extraction error',
     });
   }
-});
+};
