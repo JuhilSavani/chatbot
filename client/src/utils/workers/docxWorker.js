@@ -32,7 +32,7 @@ self.onmessage = async ({ data }) => {
 
   try {
     const ast = await OfficeParser.parseOffice(buffer, {
-      extractAttachments: true,
+      extractAttachments: false,
       ocr: false,
       includeRawContent: false,
     });
