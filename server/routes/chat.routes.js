@@ -34,7 +34,7 @@ router.post("/stream", chatQueryRateLimiter, chatWithModelStream);
 
 /**
  * @route   POST /api/chat/ingest
- * @desc    Ingest PDF documents and extract text before chatting
+ * @desc    Ingest documents and extract text before chatting
  */
 router.post("/ingest", ingestDocuments);
 

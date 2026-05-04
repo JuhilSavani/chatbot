@@ -3,8 +3,6 @@ import { HumanMessage } from "@langchain/core/messages";
 import { Thread } from "../models/thread.models.js";
 import { sequelize } from "../config/sequelize.config.js";
 import { QueryTypes } from 'sequelize';
-
-import { extractText, getDocumentProxy } from "unpdf";
 import { Attachment } from "../models/attachment.models.js";
 import { generateThreadName } from "../utils/generateThreadName.js";
 
@@ -70,24 +68,14 @@ export const ingestDocuments = async (req, res) => {
     const chatMessages = state.values?.messages || [];
     let messageIndex = chatMessages.filter(m => m._getType() === 'human').length;
 
-    // 3. Process each PDF
+    // 3. Process each file
     const ingestedDocs = [];
     for (const att of attachments) {
       try {
-        const signedUrl = att.secure_url;
+        const text = att.text;
+        if (!text) throw new Error('No extracted text provided by client');
 
-        console.log(`[PDF Ingest] Fetching "${att.name}"`);
-        const pdfResponse = await fetch(signedUrl);
-
-        if (!pdfResponse.ok) {
-          throw new Error(`Failed to fetch PDF: ${pdfResponse.status} ${pdfResponse.statusText}`);
-        }
-
-        const buffer = await pdfResponse.arrayBuffer();
-        console.log(`[PDF Ingest] Buffer size: ${buffer.byteLength} bytes`);
-        
-        const pdf = await getDocumentProxy(new Uint8Array(buffer));
-        const { text } = await extractText(pdf, { mergePages: true });
+        console.log(`[File Ingest] Storing "${att.name}" (${text.length} chars)`);
 
         // Save to DB
         const attachmentRecord = await Attachment.create({
@@ -101,12 +89,10 @@ export const ingestDocuments = async (req, res) => {
           messageIndex,
         });
 
-        console.log(`[PDF Ingest] Stored attachment "${att.name}" for thread ${threadId}`);
+        console.log(`[File Ingest] Stored attachment "${att.name}" for thread ${threadId}`);
         ingestedDocs.push(attachmentRecord);
       } catch (err) {
-        console.error(`Failed to ingest PDF "${att.name}":`, err.message);
-        // We could fail the whole request or just this file. Let's return a partial error if needed, 
-        // but for now, we'll continue and let the client know what succeeded.
+        console.error(`Failed to ingest "${att.name}":`, err.message);
       }
     }
 
@@ -357,7 +343,7 @@ export const loadChatHistory = async (req, res) => {
       if (type === 'human') {
         const historyItem = { role: 'user', content: msg.content };
         
-        // Attach PDF names if this message had any (O(1) lookup)
+        // Attach file names if this message had any (O(1) lookup)
         const matchingAtts = attachmentsByIndex.get(userMsgIndex);
         if (matchingAtts?.length > 0) {
           historyItem.attachments = matchingAtts;
