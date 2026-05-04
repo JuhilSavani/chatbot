@@ -57,7 +57,6 @@ self.onmessage = async ({ data }) => {
       status: 'SUCCESS',
       markdown,
       filename,
-      nodes,
       meta: { author, title, created, modified, customProperties },
     });
   } catch (err) {
