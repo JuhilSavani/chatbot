@@ -7,6 +7,7 @@ import { scrapeTool } from "../tools/scrape.tools.js";
 import { selectRelevantDocuments } from "../utils/selectRelevantDocuments.js";
 import { filterRelevantMemories, extractNewMemories } from "../utils/memoryUtils.js";
 import { dispatchCustomEvent } from "@langchain/core/callbacks/dispatch";
+import { devLog } from "../utils/devLogger.js";
 
 export const AgentState = Annotation.Root({
   ...MessagesAnnotation.spec,
@@ -167,7 +168,7 @@ async function callAgent(state, config) {
   const modelName = config.configurable?.selectedModel || "openai/gpt-oss-20b";
   const chatModel = getChatModel(modelName).bindTools(tools);
 
-  console.log(`[Agent] Using model: ${modelName}`);
+  devLog(`[Agent] Using model: ${modelName}`);
   
   let systemInstructions;
 
@@ -177,7 +178,7 @@ async function callAgent(state, config) {
   const relevantDocs = attachments.filter(a => selectedDocumentIds.includes(a.publicId));
   const contextFromDocuments = relevantDocs.length > 0 ? `
 ## Referenced documents in THIS conversation
-The user has uploaded the following documents in THIS conversation. When the user refers to "the document", "the pdf", "the file", "this paper", or "attached", they ALWAYS mean the documents listed here.
+The user has uploaded the following documents in THIS conversation. When the user refers to "the document", "the file", "the attachment", or "attached", they ALWAYS mean the documents listed here.
 Use the content below to answer their questions accurately. NEVER confuse these with documents mentioned in User Context & Memory.
 
 ${relevantDocs.map(doc => `### Document: ${doc.name}\n${doc.content}`).join("\n\n")}` 

@@ -36,11 +36,6 @@ export const Attachment = sequelize.define(
       type: DataTypes.TEXT,
       allowNull: false,
     },
-    tokenCount: {
-      type: DataTypes.INTEGER,
-      allowNull: true,
-      defaultValue: 0,
-    },
     messageIndex: {
       type: DataTypes.INTEGER,
       allowNull: false,

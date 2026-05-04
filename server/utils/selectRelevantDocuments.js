@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { getChatModel } from "../config/workflow.config.js";
+import { devLog } from "./devLogger.js";
 
 // Schema for structured output
 const DocumentSelectionSchema = z.object({
@@ -47,14 +48,14 @@ ${query}
 
 ## Rules
 - You MUST select at least one document. Only omit a document if you are absolutely certain it is completely unrelated to the query.
-- If the user refers to "the document", "the pdf", "the file", "this paper", "attached", or any similar phrasing, select ALL documents.
+- If the user refers to "the document", "the file", "the attachment", "attached", or any similar phrasing, select ALL documents.
 - Never return an empty array. The user uploaded these documents for a reason — when in doubt, include everything.
 
 Return the public_ids of the selected documents.`;
 
   try {
     const result = await structuredModel.invoke(prompt);
-    console.log(`[DocSelector] Query: "${query}" → Selected: ${result.selectedIds.length}/${attachments.length} docs`);
+    devLog(`[DocSelector] Query: "${query}" → Selected: ${result.selectedIds.length}/${attachments.length} docs`);
     return result.selectedIds;
   } catch (err) {
     console.error("[DocSelector] Structured call failed, falling back to all docs:", err.message);

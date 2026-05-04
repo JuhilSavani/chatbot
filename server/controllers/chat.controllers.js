@@ -5,6 +5,7 @@ import { sequelize } from "../config/sequelize.config.js";
 import { QueryTypes } from 'sequelize';
 import { Attachment } from "../models/attachment.models.js";
 import { generateThreadName } from "../utils/generateThreadName.js";
+import { devLog } from "../utils/devLogger.js";
 
 const ALLOWED_MODELS = ["openai/gpt-oss-20b", "openai/gpt-oss-120b"];
 const DEFAULT_MODEL = "openai/gpt-oss-20b";
@@ -75,7 +76,7 @@ export const ingestDocuments = async (req, res) => {
         const text = att.text;
         if (!text) throw new Error('No extracted text provided by client');
 
-        console.log(`[File Ingest] Storing "${att.name}" (${text.length} chars)`);
+        devLog(`[File Ingest] Storing "${att.name}" (${text.length} chars)`);
 
         // Save to DB
         const attachmentRecord = await Attachment.create({
@@ -85,11 +86,10 @@ export const ingestDocuments = async (req, res) => {
           resourceType: att.resource_type,
           name: att.name,
           content: text,
-          tokenCount: att.tokenCount || 0,
           messageIndex,
         });
 
-        console.log(`[File Ingest] Stored attachment "${att.name}" for thread ${threadId}`);
+        devLog(`[File Ingest] Stored attachment "${att.name}" for thread ${threadId}`);
         ingestedDocs.push(attachmentRecord);
       } catch (err) {
         console.error(`Failed to ingest "${att.name}":`, err.message);

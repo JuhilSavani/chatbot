@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Paperclip, ArrowUp, Square, X, FileText, Loader2, ChevronDown, Check } from 'lucide-react';
 import { uploadFileToCloudinary } from '../actions/upload.actions';
+import { devLog } from '@/lib/utils';
 
 const MAX_FILES = 5;
 const ALLOWED_TYPES = ['application/pdf', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
@@ -86,7 +87,7 @@ const ChatInput = ({ threadId, onMessageSent, loading, onStop, disabled = false 
   const processSingleFile = async (file, id, worker, workerName) => {
     try {
       const fileBuffer = await file.arrayBuffer();
-      console.log(`[ChatInput] Phase 1 — extracting "${file.name}"...`);
+      devLog(`[ChatInput] Phase 1 — extracting "${file.name}"...`);
 
       // ── Phase 1: Extraction ──────────────────────────────────────────────────
       const markdown = await new Promise((resolve, reject) => {
@@ -99,7 +100,7 @@ const ChatInput = ({ threadId, onMessageSent, loading, onStop, disabled = false 
           if (data?.workerName !== workerName) return;
 
           if (data.status === 'PROGRESS') {
-            console.log(`[ChatInput] "${file.name}" — page ${data.page}/${data.total}`);
+            devLog(`[ChatInput] "${file.name}" — page ${data.page}/${data.total}`);
             return;
           }
 
@@ -113,7 +114,7 @@ const ChatInput = ({ threadId, onMessageSent, loading, onStop, disabled = false 
         worker.postMessage({ status: 'PROCESS', buffer: fileBuffer, filename: file.name }, [fileBuffer]);
       });
 
-      console.log(`[ChatInput] Phase 2 — counting tokens for "${file.name}"...`);
+      devLog(`[ChatInput] Phase 2 — counting tokens for "${file.name}"...`);
 
       // ── Phase 2: Token counting ──────────────────────────────────────────────
       const tokenCount = await new Promise((resolve, reject) => {
@@ -138,7 +139,7 @@ const ChatInput = ({ threadId, onMessageSent, loading, onStop, disabled = false 
         worker.postMessage({ status: 'COUNT', text: markdown });
       });
 
-      console.log(`[ChatInput] "${file.name}" token count: ${tokenCount}`);
+      devLog(`[ChatInput] "${file.name}" token count: ${tokenCount}`);
 
       // ── Token limit check ────────────────────────────────────────────────────
       if (tokenCount > MAX_TOKENS) {
@@ -146,7 +147,7 @@ const ChatInput = ({ threadId, onMessageSent, loading, onStop, disabled = false 
         setAttachments(prev => prev.filter(a => a.id !== id));
         setError(`"${file.name}" exceeds the token limit (${tokenCount.toLocaleString()} / ${MAX_TOKENS.toLocaleString()} tokens).`);
       } else {
-        console.log(`"${file.name}" done`);
+        devLog(`"${file.name}" done`);
         updateAttachment(id, { status: 'done', text: markdown, tokenCount });
       }
     } catch (err) {
@@ -278,20 +279,19 @@ const ChatInput = ({ threadId, onMessageSent, loading, onStop, disabled = false 
 
         const uploadResults = await Promise.all(
           doneAttachments.map(async (att) => {
-            console.log(`[ChatInput] Uploading "${att.file.name}" to Cloudinary...`);
+            devLog(`[ChatInput] Uploading "${att.file.name}" to Cloudinary...`);
             const result = await uploadFileToCloudinary(att.file);
-            console.log(`[ChatInput] Upload complete for "${att.file.name}"`);
+            devLog(`[ChatInput] Upload complete for "${att.file.name}"`);
             return result;
           })
         );
-        console.log('[ChatInput] All uploads complete');
+        devLog('[ChatInput] All uploads complete');
 
         const attachmentUrls = uploadResults.map((r, i) => ({
           public_id: r.public_id,
           secure_url: r.secure_url,
           resource_type: r.resource_type,
-          name: r.original_filename,
-          tokenCount: doneAttachments[i].tokenCount || 0,
+          name: doneAttachments[i].file.name,
           text: doneAttachments[i].text || '',
         }));
 
