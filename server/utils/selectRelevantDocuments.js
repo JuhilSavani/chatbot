@@ -35,7 +35,10 @@ export async function selectRelevantDocuments(query, recentHistory, attachments)
     .join("\n====\n");
 
   const prompt = `
-You are a document relevance classifier. Given the user's query and recent conversation history, determine which of the available documents are likely relevant to answering the query.
+> **You are a document relevance classifier.**
+> **Given the user's query and recent conversation history, determine which of the available documents are likely relevant to answering the query.**
+
+---
 
 ## Recent Conversation History
 ${historyText || "No prior messages."}
@@ -47,11 +50,9 @@ ${docList}
 ${query}
 
 ## Rules
-- You MUST select at least one document. Only omit a document if you are absolutely certain it is completely unrelated to the query.
-- If the user refers to "the document", "the file", "the attachment", "attached", or any similar phrasing, select ALL documents.
-- Never return an empty array. The user uploaded these documents for a reason — when in doubt, include everything.
-
-Return the public_ids of the selected documents.`;
+- Only omit a document if you are absolutely certain it is completely unrelated to the query.
+- You MUST select at least one document. Never return an empty array. The user uploaded these documents for a reason — when in doubt, include everything.
+- Return the \`public_ids\` of the selected documents.`;
 
   try {
     const result = await structuredModel.invoke(prompt);

@@ -17,20 +17,24 @@ export async function filterRelevantMemories(preferences, recentActivities, rece
   const historyText = recentHistory.map((m) => `${m.role}: ${m.content}`).join("\n");
 
   const prompt = `
-You are a memory relevance assistant.
-Determine which of the user's past preferences and recent activities are relevant to the current conversation.
+> **You are a memory relevance assistant.**
+> **Determine which of the user's past preferences and recent activities are relevant to the current conversation.**
 
-Current Conversation History:
+---
+
+## Current Conversation History:
 ${historyText}
 Current Query: ${query}
 
-User Preferences (with index):
+## User Preferences (with index):
 ${preferences.map((p, i) => `[${i}] ${p}`).join("\n")}
 
-User Recent Activities (with index):
+## User Recent Activities (with index):
 ${recentActivities.map((a, i) => `[${i}] ${a}`).join("\n")}
 
-Return ONLY the indices of items directly relevant to answering the current query or continuing the current conversation. If none are relevant, return empty arrays.`;
+## Rules
+- Return ONLY the indices of items directly relevant to answering the current query or continuing the current conversation. 
+- If none are relevant, return empty arrays.`;
 
   try {
     const result = await model.invoke(prompt);
@@ -67,30 +71,35 @@ export async function extractNewMemories(existingProfile, existingPreferences, e
 
   const lastTurnText = lastTurn.map((m) => `${m.role}: ${m.content}`).join("\n");
 
-  const prompt = `You are a memory extraction assistant.
-Extract important user details from the following conversation turn.
-Only extract:
+  const prompt = `
+> **You are a memory extraction assistant.**
+> **Extract important user details from the following conversation turn.**
+
+---
+
+## Only extract:
 1. Profile facts (name, age, location, profession, core static facts).
 2. Preferences (likes, dislikes, specific instructions on how they want to be treated).
 3. Recent activities (things they are working on, projects, recent events).
+> **You are provided with the user's EXISTING memories above.**
 
-DEDUPLICATION:
-You are provided with the user's EXISTING memories below.
-For EVERY item you extract, you MUST compare it to the existing lists. 
-If the information is already captured (even if worded slightly differently), set is_new to FALSE. 
-Only set is_new to TRUE if it is a genuinely new piece of information not currently known.
-
-Existing Profile:
+## Existing Profile:
 ${existingProfile.length > 0 ? existingProfile.map(p => `- ${p}`).join("\n") : "None"}
 
-Existing Preferences:
+## Existing Preferences:
 ${existingPreferences.length > 0 ? existingPreferences.map(p => `- ${p}`).join("\n") : "None"}
 
-Existing Activities:
+## Existing Activities:
 ${existingActivities.length > 0 ? existingActivities.map(p => `- ${p}`).join("\n") : "None"}
 
-Last Turn:
-${lastTurnText}`;
+## Last Turn:
+${lastTurnText}
+
+## Deduplication Rule:
+- For EVERY item you extract, you MUST compare it to the existing lists. 
+- If the information is already captured (even if worded slightly differently), set is_new to FALSE. 
+- Only set is_new to TRUE if it is a genuinely new piece of information not currently known.
+`;
 
   try {
     return await model.invoke(prompt);
