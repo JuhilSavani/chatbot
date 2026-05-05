@@ -4,7 +4,11 @@ import { uploadFileToCloudinary } from '../actions/upload.actions';
 import { devLog } from '@/lib/utils';
 
 const MAX_FILES = 5;
-const ALLOWED_TYPES = ['application/pdf', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
+const ALLOWED_TYPES = [
+  'application/pdf',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+];
 const MAX_TOKENS = 32768;
 const MODEL_OPTIONS = [
   { id: 'openai/gpt-oss-20b', label: 'GPT-OSS-20B' },
@@ -203,6 +207,17 @@ const ChatInput = ({ threadId, onMessageSent, loading, onStop, disabled = false 
           entry.id,
           pdfWorker,
           'PdfWorker'
+        );
+      } else if (entry.file.type === 'application/vnd.openxmlformats-officedocument.presentationml.presentation') {
+        const pptxWorker = new Worker(
+          new URL('../workers/pptxWorker.js', import.meta.url),
+          { type: 'module' }
+        );
+        processSingleFile(
+          entry.file,
+          entry.id,
+          pptxWorker,
+          'PptxWorker'
         );
       } else {
         const docxWorker = new Worker(
