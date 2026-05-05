@@ -28,11 +28,15 @@ app.use(cors({
 app.use(express.json());
 app.use(cookieParser());
 app.use(passport.initialize());
-app.use((req, res, next) => {
-  console.log(`📍 ${req.method} ${req.url}`);
-  console.log(`Cookies present:`, req.cookies ? Object.keys(req.cookies) : "None");
-  next();
-});
+
+if (NODE_ENV === "development") {
+  app.use((req, res, next) => {
+    console.log(`📍 ${req.method} ${req.url}`);
+    console.log(`Cookies present:`, req.cookies ? Object.keys(req.cookies) : "None");
+    next();
+  });
+}
+
 
 
 // Root Route
