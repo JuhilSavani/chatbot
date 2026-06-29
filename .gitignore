@@ -10,6 +10,8 @@ lerna-debug.log*
 .env
 .vercel
 node_modules
+build
+.react-router/
 dist
 dist-ssr
 *.local
