@@ -121,7 +121,7 @@ export const chatWithModelStream = async (req, res) => {
     // Invalid model provided - stop early
     return res.status(400).json({ message: "Invalid model. Allowed models: " + ALLOWED_MODELS.join(", ") });
   }
-  console.log(`Using model: ${selectedModel} (requested: ${requestedModel})`);
+  devLog(`Using model: ${selectedModel} (requested: ${requestedModel})`);
 
   // Validation
   if (!message || !threadId) {
@@ -235,7 +235,10 @@ export const chatWithModelStream = async (req, res) => {
           
           // If shouldGenerateTitle is false (meaning it's 2nd Message or later), we immediately 
           // call safeEnd() to close the HTTP response!
-          if (!shouldGenerateTitle) safeEnd();
+          if (!shouldGenerateTitle) {
+            devLog("🔵 [EARLY CLOSURE] Closing HTTP connection early to free up browser slot...");
+            safeEnd();
+          }
         }
       }
       // Token from the LLM
@@ -272,6 +275,8 @@ export const chatWithModelStream = async (req, res) => {
         })}\n\n`);
       }
     }
+    
+    devLog("🔵 [LANGGRAPH DONE] The for-await loop naturally finished all background tasks.");
 
     // 8. Wait for the loop to naturally end (after background tasks complete)
     // The [DONE] signal was sent by the llm_done custom event to unlock UI earlier
@@ -302,7 +307,7 @@ export const chatWithModelStream = async (req, res) => {
 
   } catch (error) {
     if (error.message === 'Abort') {
-      console.log('🚫 Stream aborted by client');
+      devLog('🚫 Stream aborted by client');
       return; // Exit cleanly
     }
     console.error("Stream Error:", error.stack);

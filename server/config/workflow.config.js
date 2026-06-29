@@ -118,6 +118,11 @@ ${relevantPrefs.join("\n")}
 ${relevantActivities.join("\n")}
 `;
 
+  devLog("🔵 [MEMORY] Injecting the following memory into the prompt:");
+  devLog("   - Profile Facts:", profileFacts.length ? profileFacts : "None");
+  devLog("   - Relevant Preferences:", relevantPrefs.length ? relevantPrefs : "None");
+  devLog("   - Relevant Activities:", relevantActivities.length ? relevantActivities : "None");
+
   return { contextFromMemories };
 }
 
@@ -144,18 +149,27 @@ async function updateMemoryNode(state, config) {
 
   if (extraction.profileFacts?.some(f => f.is_new)) {
     const newFacts = extraction.profileFacts.filter(f => f.is_new).map(f => f.fact);
+    devLog("🟠 [MEMORY] Injected new Profile Facts:", newFacts);
     await memoryStore.put([userId], "profile", { content: [...profileFacts, ...newFacts] });
     updated = true;
   }
   if (extraction.preferences?.some(p => p.is_new)) {
     const newPrefs = extraction.preferences.filter(p => p.is_new).map(p => p.pref);
+    devLog("🟠 [MEMORY] Injected new Preferences:", newPrefs);
     await memoryStore.put([userId], "preferences", { content: [...prefs, ...newPrefs] });
     updated = true;
   }
   if (extraction.recentActivities?.some(a => a.is_new)) {
     const newActivities = extraction.recentActivities.filter(a => a.is_new).map(a => a.activity);
+    devLog("🟠 [MEMORY] Injected new Activities:", newActivities);
     await memoryStore.put([userId], "recent_activities", { content: [...activities, ...newActivities] });
     updated = true;
+  }
+  
+  if (updated) {
+    devLog("🟠 [MEMORY] Successfully saved new memories to PostgresStore.");
+  } else {
+    devLog("🟠 [MEMORY] No new memories detected in this turn.");
   }
 
   return {};
@@ -258,7 +272,7 @@ ${state.contextFromMemories}
   } catch (e) {
     // If we have generated ANY content, return it as a valid state update.
     if (fullMessage) {
-      console.log(
+      devLog(
         "Stream aborted, saving partial message:",
         fullMessage.content,
       );

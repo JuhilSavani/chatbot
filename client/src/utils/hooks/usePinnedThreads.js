@@ -1,5 +1,6 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { syncPinStatusAction } from '../actions/chat.actions';
+import { devLog } from '@/lib/utils';
 
 export function usePinnedThreads(initialPinned = []) {
   // Initialize state with a Set of pinned thread IDs
@@ -40,7 +41,8 @@ export function usePinnedThreads(initialPinned = []) {
       const finalIntent = lastState.current[threadId];
       
       try {
-        console.log(`Sending ONE request for ${threadId}: Pinned = ${finalIntent}`);
+        // Now send exactly ONE network request for the FINAL intent.
+        devLog(`Sending ONE request for ${threadId}: Pinned = ${finalIntent}`);
         const result = await syncPinStatusAction(threadId, finalIntent);
         
         if (result.error) {
