@@ -1,22 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { useAuth } from "@/utils/hooks/useAuth";
-import Loading from "./Loading";
+import { Link } from 'react-router-dom';
 
 export default function LandingPage() {
-  const { auth, loading } = useAuth();
-  const navigate = useNavigate();
   const [activeNote, setActiveNote] = useState(null);
-
-  useEffect(() => {
-    if (!loading && auth?.isAuthenticated) {
-      navigate('/chat');
-    }
-  }, [auth, loading, navigate]);
-
-  if (loading || auth?.isAuthenticated) {
-    return <Loading />
-  }
 
   const toggleNote = (index) => {
     setActiveNote(prev => prev === index ? null : index);
@@ -257,35 +243,35 @@ export default function LandingPage() {
       </section>
 
       {/* Features */}
-      <section id="features" class="pt-24 pb-24 px-6 bg-[#09090b] relative overflow-hidden">
-        <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-blue-500/5 rounded-full blur-3xl pointer-events-none -z-10"></div>
-        <div class="max-w-7xl mx-auto">
-            <div class="text-center mb-16">
-                <h2 class="text-3xl md:text-4xl font-bold mb-4">Features that drive results</h2>
-                <p class="text-[#a1a1aa] max-w-2xl mx-auto">
+      <section id="features" className="pt-24 pb-24 px-6 bg-[#09090b] relative overflow-hidden">
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-blue-500/5 rounded-full blur-3xl pointer-events-none -z-10"></div>
+        <div className="max-w-7xl mx-auto">
+            <div className="text-center mb-16">
+                <h2 className="text-3xl md:text-4xl font-bold mb-4">Features that drive results</h2>
+                <p className="text-[#a1a1aa] max-w-2xl mx-auto">
                     Built for professionals who need an intelligent conversational workspace.
                 </p>
             </div>
 
-            <div class="grid md:grid-cols-3 gap-8 relative">
-              <div class="text-center space-y-4 p-8 border border-white/10 rounded-lg bg-white/[0.02]">
-                <div class="w-16 h-16 mx-auto bg-[#18181b] rounded-lg flex items-center justify-center shadow-xl">
-                  <svg class="w-8 h-8 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+            <div className="grid md:grid-cols-3 gap-8 relative">
+              <div className="text-center space-y-4 p-8 border border-white/10 rounded-lg bg-white/[0.02]">
+                <div className="w-16 h-16 mx-auto bg-[#18181b] rounded-lg flex items-center justify-center shadow-xl">
+                  <svg className="w-8 h-8 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
                   </svg>
                 </div>
-                <h3 class="text-xl font-semibold">Document Intelligence</h3>
-                <p class="text-[#a1a1aa] text-sm leading-relaxed">Upload and analyze documents with ease. Sidekick extracts key information, summarizes content, and answers questions about your files.</p>
+                <h3 className="text-xl font-semibold">Document Intelligence</h3>
+                <p className="text-[#a1a1aa] text-sm leading-relaxed">Upload and analyze documents with ease. Sidekick extracts key information, summarizes content, and answers questions about your files.</p>
               </div>
 
-              <div class="text-center space-y-4 p-8 border border-white/10 rounded-lg bg-white/[0.02]">
-                <div class="w-16 h-16 mx-auto bg-[#18181b] rounded-lg flex items-center justify-center shadow-xl">
+              <div className="text-center space-y-4 p-8 border border-white/10 rounded-lg bg-white/[0.02]">
+                <div className="w-16 h-16 mx-auto bg-[#18181b] rounded-lg flex items-center justify-center shadow-xl">
                   <svg className="w-8 h-8 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"></path>
                   </svg>
                 </div>
-                <h3 class="text-xl font-semibold">Persistent Memory</h3>
-                <p class="text-[#a1a1aa] text-sm leading-relaxed">Sidekick learns your preferences, project details and recalls conversations across sessions for a truly personalized workflow.</p>
+                <h3 className="text-xl font-semibold">Persistent Memory</h3>
+                <p className="text-[#a1a1aa] text-sm leading-relaxed">Sidekick learns your preferences, project details and recalls conversations across sessions for a truly personalized workflow.</p>
               </div>
 
               {/* Real-time Grounding */}
