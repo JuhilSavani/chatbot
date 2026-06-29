@@ -253,6 +253,7 @@ function MainContent({ setThreads }) {
   const latestHumanMessageRef = useRef(null);
   const handledGenerationScrollRequestRef = useRef(0);
   const stopRequestedRef = useRef(false);
+  const streamGenRef = useRef(0);
   const [isAtBottom, setIsAtBottom] = useState(true);
 
   // Track whether the bottom sentinel is visible within the scroll container.
@@ -385,6 +386,9 @@ function MainContent({ setThreads }) {
       ]);
     }
 
+    // Increment generation so stale finally blocks don't clobber our state
+    const thisGen = ++streamGenRef.current;
+
     let shouldScrollToGenerationBoundary = false;
     let encounteredStreamError = false;
 
@@ -496,8 +500,10 @@ function MainContent({ setThreads }) {
             ),
           );
         } else if (event.type === "done") {
-          setLoadingResponse(false);
-          setHasStreamStarted(false);
+          if (thisGen === streamGenRef.current) {
+            setLoadingResponse(false);
+            setHasStreamStarted(false);
+          }
           if (shouldScrollToGenerationBoundary && !stopRequestedRef.current) {
             setGenerationScrollRequest((prev) => prev + 1);
             shouldScrollToGenerationBoundary = false;
@@ -510,8 +516,11 @@ function MainContent({ setThreads }) {
       console.error("Stream failed", err);
       // Optional: Add visual error state to message
     } finally {
-      setLoadingResponse(false);
-      setHasStreamStarted(false);
+      // Only reset state if this is still the active stream
+      if (thisGen === streamGenRef.current) {
+        setLoadingResponse(false);
+        setHasStreamStarted(false);
+      }
       abortRef.current = null;
 
       if (shouldScrollToGenerationBoundary && !stopRequestedRef.current) {
