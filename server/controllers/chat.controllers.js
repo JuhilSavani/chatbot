@@ -167,6 +167,14 @@ export const chatWithModelStream = async (req, res) => {
       return; // Stop here! The 'finally' block below will take care of [DONE] and res.end()
     }
 
+    // 3. Mark title as pending to avoid race conditions with rapid follow-up messages
+    let shouldGenerateTitle = false;
+    if (thread.title === "Untitled Chat") {
+      shouldGenerateTitle = true;
+      thread.title = "Generating...";
+      await thread.save();
+    }
+
     // 4. Load all attachments for this thread
     const attachmentRecord = await Attachment.findAll({
       where: { threadId },
@@ -246,7 +254,7 @@ export const chatWithModelStream = async (req, res) => {
 
     // 9. Extra Background Work (Before res.end())
     try {
-      if (thread.title === "Untitled Chat" && fullResponse) {
+      if (shouldGenerateTitle && fullResponse) {
         thread.title = await generateThreadName(message, fullResponse);
         await thread.save();
         // Send thread name to client
@@ -261,6 +269,11 @@ export const chatWithModelStream = async (req, res) => {
     } catch (error) {
       console.error("Failed to update thread title: ", error.stack);
       // Optional: send error event to client
+      // Reset title if generation failed so a future message can retry it
+      if (shouldGenerateTitle) {
+        thread.title = "Untitled Chat";
+        await thread.save();
+      }
     }
 
   } catch (error) {
