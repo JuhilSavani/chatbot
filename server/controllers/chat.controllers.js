@@ -137,9 +137,22 @@ export const chatWithModelStream = async (req, res) => {
   // Create controller and listen for client disconnect
   const controller = new AbortController();
   
+  let isConnectionClosedEarly = false;
+  const safeWrite = (data) => {
+    if (!isConnectionClosedEarly) res.write(data);
+  };
+  const safeEnd = () => {
+    if (!isConnectionClosedEarly) {
+      isConnectionClosedEarly = true;
+      res.end();
+    }
+  };
+  
   // If the user closes the tab or cancels the request, abort the graph
   res.on('close', () => {
-    controller.abort();
+    if (!isConnectionClosedEarly) {
+      controller.abort();
+    }
   });
 
   // Immediately stream an event payload with initialized status and usage remaining
@@ -150,7 +163,7 @@ export const chatWithModelStream = async (req, res) => {
       selectedModel: selectedModel,
     }
   };
-  res.write(`data: ${JSON.stringify(initResponse)}\n\n`);
+  safeWrite(`data: ${JSON.stringify(initResponse)}\n\n`);
 
   let fullResponse = "";
   let streamEndedNormally = false;
@@ -163,7 +176,7 @@ export const chatWithModelStream = async (req, res) => {
     });
 
     if (!isNewThreadRecord && thread.userId !== userId) {
-      res.write(`data: ${JSON.stringify({ type: "error", val: "You don't have access to this conversation" })}\n\n`);
+      safeWrite(`data: ${JSON.stringify({ type: "error", val: "You don't have access to this conversation" })}\n\n`);
       return; // Stop here! The 'finally' block below will take care of [DONE] and res.end()
     }
 
@@ -205,13 +218,24 @@ export const chatWithModelStream = async (req, res) => {
       // Listen for custom events dispatched from nodes
       if (event.event === "on_custom_event") {
         if (event.name === "recalling_memory") {
-          res.write(`data: ${JSON.stringify({ 
+          // Note: This event is currently emitted by the backend but completely ignored
+          // on the frontend (no UI listens for "recalling_memory" yet).
+          safeWrite(`data: ${JSON.stringify({ 
             type: "recalling_memory", 
             val: event.data.message 
           })}\n\n`);
         } else if (event.name === "llm_done") {
-          res.write("data: [DONE]\n\n");
+          // Who: The callAgent node fires it.
+          // When: It fires the exact millisecond the AI finishes typing its text response.
+          // Why: When the backend fired this, the frontend unlocks the chat input instantly 
+          // for the user. But on the backend, LangGraph moves on to the next node in the graph 
+          // (like updateMemoryNode) and continues running silently in the background!
+          safeWrite("data: [DONE]\n\n");
           streamEndedNormally = true; 
+          
+          // If shouldGenerateTitle is false (meaning it's 2nd Message or later), we immediately 
+          // call safeEnd() to close the HTTP response!
+          if (!shouldGenerateTitle) safeEnd();
         }
       }
       // Token from the LLM
@@ -219,7 +243,7 @@ export const chatWithModelStream = async (req, res) => {
         const content = event.data.chunk?.content;
         if (content) {
           fullResponse += content;
-          res.write(`data: ${JSON.stringify({ 
+          safeWrite(`data: ${JSON.stringify({ 
             type: "token", 
             val: content 
           })}\n\n`);
@@ -228,7 +252,7 @@ export const chatWithModelStream = async (req, res) => {
       // Tool start
       else if (event.event === "on_tool_start") {
         // event.data.input is the raw input object
-        res.write(`data: ${JSON.stringify({ 
+        safeWrite(`data: ${JSON.stringify({ 
           type: "tool_start", 
           runId: event.run_id,
           tool: event.name,
@@ -239,7 +263,7 @@ export const chatWithModelStream = async (req, res) => {
       else if (event.event === "on_tool_end") {
         // event.data.output is the raw tool message
         // Take a look at "LANGCHAIN TOOL MESSAGE OUTPUT SCHEMA" at the end of this file
-        res.write(`data: ${JSON.stringify({ 
+        safeWrite(`data: ${JSON.stringify({ 
           type: "tool_end", 
           runId: event.run_id,
           tool: event.name,
@@ -258,7 +282,7 @@ export const chatWithModelStream = async (req, res) => {
         thread.title = await generateThreadName(message, fullResponse);
         await thread.save();
         // Send thread name to client
-        res.write(`data: ${JSON.stringify({ 
+        safeWrite(`data: ${JSON.stringify({ 
           type: "threadName", 
           val: thread.title 
         })}\n\n`);
@@ -288,16 +312,16 @@ export const chatWithModelStream = async (req, res) => {
       userFriendlyError = "Our AI systems are currently under high load. Please try again in a few moments.";
     }
 
-    res.write(`data: ${JSON.stringify({ 
+    safeWrite(`data: ${JSON.stringify({ 
       type: "error", 
       val: userFriendlyError 
     })}\n\n`);
   } finally {
     if (!streamEndedNormally) {
       // 10. Signal end of stream in case of error
-      res.write("data: [DONE]\n\n");
+      safeWrite("data: [DONE]\n\n");
     }
-    res.end();
+    safeEnd();
   }
 }
 
