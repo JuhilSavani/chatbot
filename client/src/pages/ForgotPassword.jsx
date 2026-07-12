@@ -53,6 +53,20 @@ export default function ForgotPassword() {
             </p>
           </div>
 
+          {error && (
+            <div className="mb-6 p-4 rounded-lg bg-red-500/5 border border-red-500/20 text-red-400 text-sm flex items-start gap-3 shadow-[0_0_15px_rgba(239,68,68,0.1)] animate-in fade-in slide-in-from-top-2 duration-300">
+               <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="shrink-0 mt-0.5"><circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/></svg>
+              <span>{error}</span>
+            </div>
+          )}
+
+          {message && (
+            <div className="mb-6 p-4 rounded-lg bg-emerald-500/5 border border-emerald-500/20 text-emerald-400 text-sm flex items-start gap-3 shadow-[0_0_15px_rgba(16,185,129,0.1)] animate-in fade-in slide-in-from-top-2 duration-300">
+               <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="shrink-0 mt-0.5"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+              <span>{message}</span>
+            </div>
+          )}
+
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4" noValidate>
             <div className="space-y-2">
               <label htmlFor="identifier" className="text-sm font-medium leading-none block">Username or Email</label>
@@ -78,16 +92,6 @@ export default function ForgotPassword() {
               {errors.identifier && <span className="text-xs text-red-500 block">{errors.identifier.message}</span>}
             </div>
 
-            {error && (
-              <div className="p-4 rounded-lg bg-red-500/5 border border-red-500/20 text-red-400 text-sm flex items-start gap-3 shadow-[0_0_15px_rgba(239,68,68,0.1)]">
-                <span>{error}</span>
-              </div>
-            )}
-            {message && (
-              <div className="p-4 rounded-lg bg-emerald-500/5 border border-emerald-500/20 text-emerald-400 text-sm flex items-start gap-3 shadow-[0_0_15px_rgba(16,185,129,0.1)]">
-                <span>{message}</span>
-              </div>
-            )}
 
             <button 
               type="submit" 

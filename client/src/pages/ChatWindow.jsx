@@ -312,12 +312,14 @@ function MainContent({ setThreads }) {
     // Case A: New Chat Page (No ID) -> Clear screen
     if (!threadId) {
       setMessages([]);
+      setLoadingChat(false);
       return;
     }
 
     // Case B: We just created this thread locally -> SKIP FETCH
     if (currentChatThreadId.current === threadId) {
       currentChatThreadId.current = null; // Reset for next time
+      setLoadingChat(false);
       return;
     }
 
