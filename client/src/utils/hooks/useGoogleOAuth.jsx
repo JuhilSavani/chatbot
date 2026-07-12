@@ -9,6 +9,7 @@ export const useGoogleOAuth = () => {
     redirect_uri: GOOGLE_REDIRECT_URI,
     response_type: "code",
     scope: SCOPE,
+    state: typeof window !== "undefined" ? window.location.origin : "",
   };
   
   const qs = new URLSearchParams(options);

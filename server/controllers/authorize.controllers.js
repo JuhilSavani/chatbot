@@ -8,6 +8,17 @@ import { oauth2Client } from "../clients/googleoauth2.clients.js";
 
 const IS_PROD = process.env.NODE_ENV !== "development";
 
+const getClientOrigin = (req) => {
+  const allowedOrigins = (process.env.CLIENT_APP_ORIGIN_URL || "http://localhost:3000").split(",").map(url => url.trim());
+  let origin = req.headers.origin || req.query.state;
+  if (!origin && req.headers.referer) {
+    try {
+      origin = new URL(req.headers.referer).origin;
+    } catch (e) {}
+  }
+  return allowedOrigins.includes(origin) ? origin : allowedOrigins[0];
+};
+
 const client = jwksClient({
   jwksUri: `${process.env.SUPABASE_PROJECT_URL}/auth/v1/.well-known/jwks.json`,
 });
@@ -18,6 +29,29 @@ const getKey = (header, callback) => {
     const signingKey = key.getPublicKey();
     callback(null, signingKey);
   });
+};
+
+const sanitizeAuthError = (error, defaultMessage) => {
+  if (!error) return defaultMessage;
+  
+  // Use HTTP status codes if provided by Supabase AuthApiError
+  if (error.status === 429) {
+    return "Too many requests. Please try again later.";
+  }
+  if (error.status >= 500) {
+    return "An internal service error occurred. Please try again later.";
+  }
+
+  // Fallback to string matching for cases where status might be missing
+  const msg = (error.message || "").toLowerCase();
+  if (msg.includes("rate limit")) {
+    return "Too many requests. Please try again later.";
+  }
+  if (msg.includes("database") || msg.includes("connection") || msg.includes("internal") || msg.includes("timeout")) {
+    return "An internal service error occurred. Please try again later.";
+  }
+
+  return error.message || defaultMessage;
 };
 
 export const register = async (req, res) => {
@@ -38,11 +72,11 @@ export const register = async (req, res) => {
     const { data, error } = await supabase.auth.signUp({ 
       email, 
       password,   
-      options: { emailRedirectTo: `${process.env.CLIENT_APP_ORIGIN_URL || "http://localhost:3000"}/login` }
+      options: { emailRedirectTo: `${getClientOrigin(req)}/login` }
     });
 
     if (error || !data.user) 
-      return res.status(400).json({ message: error.message || "Signup failed." });
+      return res.status(400).json({ message: sanitizeAuthError(error, "Signup failed.") });
 
     const newUser = await User.create({
       id: data.user.id,
@@ -170,7 +204,7 @@ export const googleCallback = async (req, res) => {
     });
 
     // ↩️ Redirect back to the client app
-    res.redirect(process.env.CLIENT_APP_ORIGIN_URL || "http://localhost:3000");
+    res.redirect(`${getClientOrigin(req)}/chat`);
   } catch (error) {
     console.error(error.stack);
     res.status(500).json({ message: "Google sign-in failed. Please try again." });
@@ -179,6 +213,7 @@ export const googleCallback = async (req, res) => {
 
 export const forgotPassword = async (req, res) => {
   const { identifier } = req.body;
+  console.log(`[forgotPassword] Received request for identifier: ${identifier}`);
   if (!identifier) 
     return res.status(400).json({ message: "Provide username or email to reset password" });
 
@@ -192,15 +227,25 @@ export const forgotPassword = async (req, res) => {
         : where(fn("LOWER", col("username")), "=", normalizedIdentifier),
     });
 
-    if (!user)
+    if (!user) {
+      console.log(`[forgotPassword] User not found for identifier: ${identifier}`);
       return res.status(404).json({ message: "No account found with the provided username or email" });
+    }
 
-    await supabase.auth.resetPasswordForEmail(user.email, {
-      redirectTo: `${process.env.CLIENT_APP_ORIGIN_URL || "http://localhost:3000"}/reset-password`,
+    console.log(`[forgotPassword] Requesting Supabase to send reset link to: ${user.email}`);
+    const { error } = await supabase.auth.resetPasswordForEmail(user.email, {
+      redirectTo: `${getClientOrigin(req)}/reset-password`,
     });
+    
+    if (error) {
+      console.error(`[forgotPassword] Supabase Auth Error:`, error);
+      return res.status(400).json({ message: sanitizeAuthError(error, "Failed to send password reset link") });
+    }
+
+    console.log(`[forgotPassword] Successfully sent reset link to: ${user.email}`);
     return res.status(200).json({ message: `We have sent a password reset link at ${user.email}` });
   } catch (error) {
-    console.error(error.stack);
+    console.error(`[forgotPassword] Server Exception:`, error.stack);
     return res.status(500).json({ message: "Failed to send password reset link" });
   }
 };
@@ -232,7 +277,7 @@ export const resetPassword = async (req, res) => {
     });
 
     if (error)
-      return res.status(400).json({ message: error.message || "Failed to reset password" });
+      return res.status(400).json({ message: sanitizeAuthError(error, "Failed to reset password") });
 
     return res.status(200).json({ message: "Password updated successfully" });
   } catch (error) {
@@ -263,7 +308,7 @@ export const resendVerificationEmail = async (req, res) => {
       type: "signup",
       email: user.email,
       options: {
-        emailRedirectTo: `${process.env.CLIENT_APP_ORIGIN_URL || "http://localhost:3000"}/login`
+        emailRedirectTo: `${getClientOrigin(req)}/login`
       }
     });
 
@@ -271,7 +316,7 @@ export const resendVerificationEmail = async (req, res) => {
       if (error.message.includes("already verified") || error.message.includes("already confirmed")) {
          return res.status(400).json({ message: "Email is already verified. You can log in directly." });
       }
-      return res.status(400).json({ message: error.message || "Failed to resend verification email" });
+      return res.status(400).json({ message: sanitizeAuthError(error, "Failed to resend verification email") });
     }
 
     return res.status(200).json({ message: `We have resent the verification link to ${user.email}` });
