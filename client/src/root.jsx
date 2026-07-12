@@ -15,6 +15,7 @@ export function Layout({ children }) {
       <head>
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <meta name="google-site-verification" content="DQx30H-gJTeW5HInUFtvgkf26JJ2LZx9eCNqYG_t8YU" />
         <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
         <Meta />
         <Links />
