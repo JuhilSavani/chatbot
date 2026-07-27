@@ -69,6 +69,13 @@ export const register = async (req, res) => {
     if (existingUser) 
       return res.status(409).json({ message: "Username already taken" });
 
+    const existingEmail = await User.findOne({
+      where: where(fn("LOWER", col("email")), "=", email.toLowerCase()),
+    });
+
+    if (existingEmail) 
+      return res.status(409).json({ message: "Email already registered" });
+
     const { data, error } = await supabase.auth.signUp({ 
       email, 
       password,   
@@ -184,7 +191,8 @@ export const googleCallback = async (req, res) => {
 
     if (!user) {
       const name = supabaseUser.user_metadata?.full_name || supabaseUser.email.split("@")[0];
-      const base = name.replace(/\s+/g, "_").toLowerCase();
+      // Max length is 30. The shortId + underscore takes 7 chars, so base can be at most 23 chars.
+      const base = name.replace(/\s+/g, "_").toLowerCase().slice(0, 23);
       const shortId = crypto.createHash("md5").update(supabaseUser.id).digest("hex").slice(0, 6);
       const username = `${base}_${shortId}`;
 

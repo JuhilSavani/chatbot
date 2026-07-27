@@ -25,7 +25,7 @@ function Register() {
     },
     maxLength: {
       value: 30,
-      message: "Username cannot exceed 20 characters"
+      message: "Username cannot exceed 30 characters"
     },
     pattern: {
       value: /^[a-zA-Z0-9_]+$/,
